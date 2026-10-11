@@ -97,7 +97,7 @@ invoke.OnServerInvoke=function(player,action,payload)
  end
  if ok and action~="State" and action~="Rankings" then
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
-   or action=="Feed" or action=="Evolve"
+   or action=="Feed" or action=="Evolve" or action=="Hire"
   changed(player,message,visual)
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
