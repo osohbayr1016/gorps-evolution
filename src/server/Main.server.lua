@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
 local R=require(ReplicatedStorage.Shared.Rules)
+local Adventure=require(ReplicatedStorage.Shared.Adventure)
 local E=require(ReplicatedStorage.Shared.Economy)
 local Data=require(script.Parent.Data)
 local World=require(script.Parent.World)
@@ -11,6 +12,7 @@ local folder=Instance.new("Folder");folder.Name="GorpsRemotes";folder.Parent=Rep
 local invoke=Instance.new("RemoteFunction");invoke.Name="Action";invoke.Parent=folder
 local notify=Instance.new("RemoteEvent");notify.Name="Update";notify.Parent=folder
 local cooldown={}
+local wildCooldown={}
 local function send(player,message)
  local p=Data.get(player)
  if p and player.Parent==Players then
@@ -36,6 +38,18 @@ end
 local function gather(player,kind)
  local p=Data.get(player)
  if not p then return end
+ if kind=="Wild" then
+  local now=os.clock()
+  if now-(wildCooldown[player] or -100)>15 then
+   wildCooldown[player]=now
+   local enemyLevel=math.clamp(math.floor(p.Level/3)+1,1,20)
+   local won,message=Adventure.hunt(p,enemyLevel)
+   if won then changed(player,message,false) else send(player,message) end
+  else
+   send(player,"Your companion needs a moment before the next hunt")
+  end
+  return
+ end
  local ok,message=R.gather(p,kind)
  if ok then changed(player,message,false) end
 end
@@ -134,4 +148,5 @@ Players.PlayerRemoving:Connect(function(player)
  if p then task.spawn(Leaderboards.write,player,R.copy(p)) end
  Data.unload(player)
  cooldown[player]=nil
+ wildCooldown[player]=nil
 end)

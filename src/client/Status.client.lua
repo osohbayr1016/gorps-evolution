@@ -9,11 +9,11 @@ gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
 local text=Instance.new("TextLabel")
 text.AnchorPoint=Vector2.new(0.5,0)
 text.Position=UDim2.fromScale(0.5,0.08)
-text.Size=UDim2.new(0.8,0,0,70)
+text.Size=UDim2.new(.6,0,0,54)
 text.BackgroundColor3=Color3.fromRGB(28,35,43)
 text.BackgroundTransparency=0.06
 text.TextColor3=Color3.fromRGB(229,242,242)
-text.TextScaled=true
+text.TextSize=17
 text.TextWrapped=true
 text.Font=Enum.Font.GothamBold
 text.Text="GORPS EVOLUTION • Starting planet..."
@@ -27,7 +27,7 @@ while player.Parent do
  local hud=player.PlayerGui:FindFirstChild("GorpsHUD")
  local status=ReplicatedStorage:FindFirstChild("GorpsStartupStatus")
  local stage=status and status.Value or "BOOTSTRAP_NOT_STARTED"
- if hud and stage=="SERVER_ONLINE" then
+ if hud then
   gui:Destroy()
   return
  end

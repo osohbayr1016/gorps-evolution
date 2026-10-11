@@ -13,7 +13,7 @@ local ok,err=pcall(function()
  World.make()
 end)
 if ok then
- status.Value="WORLD_READY"
+ if status.Value~="SERVER_ONLINE" then status.Value="WORLD_READY" end
  print("[Gorps Bootstrap] Planet is ready before player data loads.")
 else
  status.Value="WORLD_ERROR: "..tostring(err):sub(1,180)

@@ -2,7 +2,7 @@
 
 A Roblox creature-survival, ranch-building and economy game by **TMT Core Studios**.
 
-**Current status:** Phase 1 + Phase 2 foundation implemented as a Roblox Studio build. The repository is not yet a playtested, published Roblox experience. Source is published directly on `main`.
+**Current status:** Phase 1–2 source foundation with active Studio gameplay repair; **NOT** ready for public release. Studio launches use temporary unsaved profiles. See [release gates](docs/RELEASE_GATES.md). Source is published directly on `main`.
 
 ## First playable planet — map and UI refresh
 
@@ -39,7 +39,7 @@ This is local live sync, **not remote control of your Mac from ChatGPT**; GitHub
 3. Run `aftman install`, then `rojo build default.project.json -o GorpsEvolution.rbxlx`.
 4. Open the **newly downloaded** `GorpsEvolution.rbxlx` in Studio as a **new place** (do not press Play in an already-open old build). Press **Play**. The permanent Baseplate + SafetySpawn keep characters safe even while the planet and profile are loading.
 5. For hot-reload development, run `rojo serve` and connect the Rojo Studio plugin.
-6. **Publish a private test experience before relying on persistence.** In Studio, enable access to API Services for test DataStores, and avoid pointing Studio test sessions at a production datastore. Studio falls back to **unsaved** test data when API access is unavailable.
+6. **Publish a private test experience before relying on persistence.** In Studio, enable access to API Services for test DataStores, and avoid pointing Studio test sessions at a production datastore. Studio **always uses isolated unsaved test profiles**, regardless of API access. Private published experiences are required for persistence QA.
 7. Use a 12-player maximum server size until plots and world streaming are expanded.
 
 The GitHub Actions pipeline generates a `GorpsEvolution.rbxlx` artifact on every push to `main`. Download from **Actions → Roblox validation → Artifacts** if you prefer not to build locally.
@@ -108,3 +108,10 @@ The independent `WorldBootstrap.server.lua` now generates Planet Verdant immedia
 The CI check `scripts/verify_runtime_package.py` verifies that the produced XML place actually contains live Source on every critical Script, LocalScript and ModuleScript. The previous CI only validated the baked floor and spawn, which did not prove the gameplay scripts existed.
 
 For errors, switch to **Server** in Studio and open **View → Output**. Search for `[Gorps Bootstrap]`, `[Gorps World]` and `[Gorps Server]`. If the red error marker appears, share the first error.
+
+
+## Gameplay runtime repair
+
+An independent authored map can show while gameplay is broken: this does **not** mean the game is playable. Earlier builds initialized DataStores and OrderedDataStores at Lua module load, which can stop startup in unpublished Studio sessions. The current system intentionally skips external datastore initialization in Studio and creates the HUD before waiting for server remotes. Hunt interactions now run role-sensitive companion-vs-wildlife combat rather than awarding meat unconditionally.
+
+**The Studio Output pane is the source of runtime truth.** GitHub CI cannot execute the actual Roblox engine or inspect your local Studio instance. Follow [docs/RELEASE_GATES.md](docs/RELEASE_GATES.md) to verify the next build.

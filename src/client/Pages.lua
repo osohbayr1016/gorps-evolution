@@ -23,28 +23,79 @@ function Pages.render(parent,tab,p,trade,send,label,button,rankings)
  local function heading(text) local t=label(parent,text,20,Color3.fromRGB(139,225,187),35);t.Font=Enum.Font.GothamBold end
  local function line(text) label(parent,text,14,Color3.fromRGB(198,214,211),35) end
  local function action(text,code,data) button(parent,text,function() send(code,data or {}) end) end
+ local function card(name,detail)
+  local panel=Instance.new("Frame")
+  panel.Name="Card_"..name
+  panel.Size=UDim2.new(1,-8,0,0)
+  panel.AutomaticSize=Enum.AutomaticSize.Y
+  panel.BackgroundColor3=Color3.fromRGB(38,55,62)
+  panel.BorderSizePixel=0
+  panel.Parent=parent
+  local round=Instance.new("UICorner");round.CornerRadius=UDim.new(0,11);round.Parent=panel
+  local pad=Instance.new("UIPadding")
+  pad.PaddingLeft=UDim.new(0,12);pad.PaddingRight=UDim.new(0,12)
+  pad.PaddingTop=UDim.new(0,12);pad.PaddingBottom=UDim.new(0,12);pad.Parent=panel
+  local layout=Instance.new("UIListLayout")
+  layout.Padding=UDim.new(0,6);layout.Parent=panel
+  local title=label(panel,name,17,Color3.fromRGB(243,240,218),27)
+  title.Font=Enum.Font.GothamBold
+  if detail then label(panel,detail,13,Color3.fromRGB(183,204,201),35) end
+  return panel
+ end
+ local function cardLine(where,what)
+  label(where,what,14,Color3.fromRGB(211,228,221),26)
+ end
+ local function cardAction(where,what,code,data)
+  button(where,what,function() send(code,data or {}) end)
+ end
+ local function progress(where,value,maxValue)
+  local bar=Instance.new("Frame")
+  bar.Size=UDim2.new(1,-10,0,8)
+  bar.BackgroundColor3=Color3.fromRGB(68,82,88)
+  bar.BorderSizePixel=0;bar.Parent=where
+  local arc=Instance.new("UICorner");arc.CornerRadius=UDim.new(1,0);arc.Parent=bar
+  local fill=Instance.new("Frame");fill.Size=UDim2.fromScale(math.clamp(value/math.max(1,maxValue),0,1),1)
+  fill.BackgroundColor3=Color3.fromRGB(111,212,177);fill.BorderSizePixel=0;fill.Parent=bar
+  local rounded=Instance.new("UICorner");rounded.CornerRadius=UDim.new(1,0);rounded.Parent=fill
+ end
  heading(tab)
  if tab=="Ranch" then
-  line("Welcome to Planet Verdant. Harvest with E near trees, crystals and wild creatures.")
-  line("Raise creatures to help your ranch thrive. Expand your fence to hold more pets.")
-  line("Fence level "..p.BaseLevel.."  •  Capacity "..math.min(40,3+(p.BaseLevel-1)*2))
-  action("Expand ranch  •  "..tostring(p.BaseLevel*200).." coins + materials","Expand")
-  action("Collect worker deliveries","Collect")
-  line("Craft level "..p.CraftLevel.."  •  XP "..p.CraftXP)
-  line("Time played: "..math.floor(p.Seconds/60).." minutes")
+  local first=card("WELCOME TO VERDANT","Explore the village, gather supplies and raise your first Gorp.")
+  cardLine(first,"Ranch  "..p.BaseLevel.." / 8     |     Creatures  "..#p.Pets.." / "..math.min(40,3+(p.BaseLevel-1)*2))
+  progress(first,p.BaseLevel,8)
+  cardAction(first,"EXPAND MY RANCH  •  "..tostring(p.BaseLevel*200).." coins","Expand")
+  local mission=card("YOUR NEXT MOVE","Your first adventure takes just a few minutes.")
+  local gatherCount=p.Quests and (p.Quests.Gatherer or 0) or 0
+  local fed=p.Quests and (p.Quests.Provider or 0) or 0
+  cardLine(mission,"01   Collect resources     "..math.min(15,gatherCount).."/15")
+  progress(mission,gatherCount,15)
+  cardLine(mission,"02   Feed your companion     "..math.min(3,fed).."/3")
+  progress(mission,fed,3)
+  cardLine(mission,"03   Craft items and hire a helper")
+  cardAction(mission,"COLLECT WORKER DELIVERIES","Collect")
+  local help=card("PLANET GUIDE","Walk toward glowing objects and press E to harvest. Hunt wild Gorps for meat.")
+  cardLine(help,"G  •  Show or hide game menu")
+  cardLine(help,"E  •  Interact with resources and shops")
+  cardLine(help,"First reward: +70 coins for harvesting 15 resources")
  elseif tab=="Creatures" then
+  local active=p.ActiveId
   for _,pet in ipairs(p.Pets) do
    local def=C.Species[pet.species]
-   line(pet.species.."  ["..pet.rarity.."]   Lv."..pet.level.."  "..def.role.."  Evolve "..pet.evolved.."/2")
-   line("HP "..def.hp.."  •  ATK "..def.attack.."  •  SPD "..def.speed.."  •  XP "..pet.xp)
-   if p.ActiveId~=pet.id then action("Set "..pet.species.." as companion","SelectPet",{id=pet.id}) end
-   action("Feed "..pet.species.." (meat + berry)","Feed",{id=pet.id})
-   action("Evolve "..pet.species,"Evolve",{id=pet.id})
+   local selected=active==pet.id and "  •  ACTIVE" or ""
+   local panel=card(pet.species.."  /  "..pet.rarity..selected,
+    def.role.."  •  Level "..pet.level.." / 25  •  Evolution "..pet.evolved.." / 2")
+   cardLine(panel,"Health "..def.hp.."    Attack "..def.attack.."    Speed "..def.speed)
+   cardLine(panel,"Growth to next level")
+   progress(panel,pet.xp,pet.level*45)
+   if active~=pet.id then cardAction(panel,"SELECT AS COMPANION","SelectPet",{id=pet.id}) end
+   cardAction(panel,"FEED  •  1 meat + 1 berry","Feed",{id=pet.id})
+   cardAction(panel,"EVOLVE  •  Requires rare minerals","Evolve",{id=pet.id})
   end
-  action("Hatch a creature • Incubator + crystal","Hatch")
-  line("Egg infusion "..(p.EggInfusion or 0).."/3: rare or epic hatch bonuses")
-  action("Infuse egg • 3 iron + 2 crystals","InfuseEgg")
-  line("Evolve at creature levels 5 and 12 using iron and crystals.")
+  local eggs=card("EGG LABORATORY","Craft an incubator, infuse minerals and discover new species.")
+  cardLine(eggs,"Infusion "..(p.EggInfusion or 0).." / 3")
+  progress(eggs,p.EggInfusion or 0,3)
+  cardAction(eggs,"INFUSE  •  3 iron + 2 crystals","InfuseEgg")
+  cardAction(eggs,"HATCH  •  Incubator + crystal","Hatch")
  elseif tab=="Backpack" then
   line("Sell gathered materials for coins; resources can also be used to craft items.")
   for _,id in ipairs(sortedKeys(C.Resources)) do
@@ -61,32 +112,36 @@ function Pages.render(parent,tab,p,trade,send,label,button,rankings)
    action("Craft "..id,"Craft",{id=id})
   end
  elseif tab=="Shop" then
-  line("The workshop sells supplies and decorative items for earned coins.")
   for _,id in ipairs(sortedKeys(C.Shop)) do
    local item=C.Shop[id]
-   line(id.."  •  "..item.price.." coins")
-   line("Contains "..costText(item.grant))
-   action("Buy "..id,"Buy",{id=id})
+   local entry=card(id,item.price.." coins  •  "..costText(item.grant))
+   cardAction(entry,"PURCHASE  •  "..item.price.." coins","Buy",{id=id})
   end
  elseif tab=="Workers" then
-  line("Workers produce resources once per minute, charging wages per delivery.")
-  line("While away, paid production is capped at 60 cycles. Unpaid workers stop.")
+  local summary=card("RANCH CREW","Hire workers to harvest automatically. Wages are charged only for completed production.")
+  cardLine(summary,"One production cycle = 60 seconds")
+  cardAction(summary,"COLLECT DELIVERIES","Collect")
   for _,id in ipairs(sortedKeys(C.Workers)) do
    local worker=C.Workers[id]
    local owned=p.Workers[id] and p.Workers[id].count or 0
-   line(id.."  •  Employed "..owned.."/5  •  Hire "..worker.price.." coins")
-   line("Wage "..worker.wage.." coins per minute per worker  •  "..costText(worker.grant))
-   action("Hire "..id,"Hire",{id=id})
+   local staff=card(id.."  •  "..owned.."/5 employed",
+    "Wage "..worker.wage.." coins / worker / minute")
+   cardLine(staff,"Production: "..costText(worker.grant))
+   cardAction(staff,"HIRE  •  "..worker.price.." coins","Hire",{id=id})
   end
-  action("Collect worker production","Collect")
  elseif tab=="Quests" then
+  local missions={
+   Gatherer="Gather materials",Provider="Care for your companion",Maker="Craft useful equipment",
+   Employer="Build a ranch crew",Explorer="Hunt wild creatures"
+  }
   for _,id in ipairs(sortedKeys(C.Quests)) do
-   local q=C.Quests[id];local progress=p.Quests[id] or 0
-   local desc=({Gatherer="Gather resources",Provider="Feed creatures",Maker="Craft items",
-    Employer="Hire helpers",Explorer="Hunt wild creatures"})[id]
-   line(desc.."  •  "..math.min(progress,q.goal).."/"..q.goal)
-   if p.Claimed[id] then line("Reward collected")
-   else action("Claim "..q.reward.." coins: "..id,"Claim",{id=id}) end
+   local q=C.Quests[id]
+   local value=p.Quests[id] or 0
+   local entry=card(missions[id],"REWARD  +"..q.reward.." coins")
+   cardLine(entry,math.min(value,q.goal).." / "..q.goal)
+   progress(entry,value,q.goal)
+   if p.Claimed[id] then cardLine(entry,"COMPLETE  ✓")
+   else cardAction(entry,"CLAIM REWARD","Claim",{id=id}) end
   end
  elseif tab=="Trade" then
   line("Player trading is a mutual exchange. Both players must offer and confirm.")
