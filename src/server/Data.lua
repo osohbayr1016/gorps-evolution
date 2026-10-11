@@ -9,6 +9,7 @@ local Data={}
 local profiles={}
 local dirty={}
 local saving={}
+local versions={}
 local function retry(callback)
  local last
  for attempt=1,3 do
@@ -33,10 +34,10 @@ function Data.load(player)
   end
  end
  local p=Rules.load(saved,os.time())
- profiles[player]=p;dirty[player]=false
+ profiles[player]=p;dirty[player]=false;versions[player]=0
  local stats=Instance.new("Folder");stats.Name="leaderstats";stats.Parent=player
- for _,name in ipairs({"Coins","Wins","Level"}) do
-  local stat=Instance.new("IntValue");stat.Name=name;stat.Value=p[name] or 0;stat.Parent=stats
+ for _,name in ipairs({"Coins","Wins","Level","Minutes"}) do
+  local stat=Instance.new("IntValue");stat.Name=name;stat.Value=name=="Minutes" and math.floor(p.Seconds/60) or (p[name] or 0);stat.Parent=stats
  end
  return p
 end
@@ -44,6 +45,7 @@ function Data.change(player)
  local p=profiles[player]
  if not p then return end
  dirty[player]=true
+ versions[player]=(versions[player] or 0)+1
  local board=player:FindFirstChild("leaderstats")
  if board then
   for _,name in ipairs({"Coins","Wins","Level"}) do
@@ -54,11 +56,15 @@ function Data.change(player)
 end
 function Data.save(player)
  local p=profiles[player]
- if not p or saving[player] then return true end
+ if not p then return true end
+ local deadline=os.clock()+20
+ while saving[player] and os.clock()<deadline do task.wait(0.1) end
+ if saving[player] then return false end
  if not dirty[player] then return true end
  saving[player]=true
  -- Snapshot to avoid mutations while a yielding cloud request is in progress.
- local snapshot=Rules.copy and Rules.copy(p) or p
+ local snapshot=Rules.copy(p)
+ local version=versions[player]
  local ok,err=retry(function()
   return Store:UpdateAsync("player_"..player.UserId,function(_old)
    return snapshot
@@ -67,7 +73,7 @@ function Data.save(player)
  saving[player]=nil
  if ok then
   -- Changes during the request must be persisted in the next cycle.
-  if profiles[player]==p then dirty[player]=false end
+  if profiles[player]==p and versions[player]==version then dirty[player]=false end
  else
   warn("[Gorps] Save failed for ",player.UserId,err)
  end
@@ -75,7 +81,7 @@ function Data.save(player)
 end
 function Data.unload(player)
  Data.save(player)
- profiles[player]=nil;dirty[player]=nil
+ profiles[player]=nil;dirty[player]=nil;versions[player]=nil
 end
 function Data.start()
  task.spawn(function()
