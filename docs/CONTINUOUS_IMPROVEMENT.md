@@ -12,7 +12,15 @@ Owner: TMT Core Studios. Updated: 2026-10-12. This is the cross-run implementati
 
 No paid dependencies, player-value wagers, live publishing or Robux changes. Phase 5 requires real Studio/private-experience evidence and user approval. The existing hourly automation resumes from this file; this document itself does not schedule execution.
 
-## Latest implemented milestone: GE-TRADE-01a — persisted trade fail-closed boundary
+## Latest implemented milestone: GE-TRADE-01b — crash-convergent receipt policy
+
+- Fresh baseline: [`82ad3af`](https://github.com/osohbayr1016/gorps-evolution/commit/82ad3af22e9c4b8d6bc0c81ab23b110f331106e3). Its exact push [Actions run 38171261926](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38171261926) completed successfully. Published player trading remains fail-closed.
+- Implemented: pure `TradeReceiptPolicy` with copied immutable participant/offer/before/after payloads, exact-profile preparation, conflicting-marker refusal, PREPARING → COMMITTED/ABORTED, committed/aborted per-profile resolution, session-metadata preservation, terminal COMPLETE, and idempotent retries after unknown outcomes. Commit requires both markers; committed work cannot abort; completion requires both committed results.
+- Regression: `scripts/test_trade_receipt_policy.luau` passes 101 assertions. It simulates a crash after each of seven durable write boundaries. Boundaries 1–3 converge to ABORTED with original balances; boundaries 4–7 converge to COMPLETE with both after snapshots exactly once. It also covers immutable copies, profile drift, marker conflicts, invalid participants, user/role impersonation and transition retries.
+- Protocol: `docs/TRADE_RECOVERY.md` records invariants, write order and remaining integration gates. CI packages the policy but `Config.DurableTrades` deliberately remains false.
+- Verification boundary: this is a deterministic pure policy, not DataStore I/O. It cannot prove UpdateAsync contention, throttling, an error after a successful write, server shutdown or join-time recovery. A server-only adapter plus fake-store and private-published fault injection are still required before enabling trade.
+
+## Previous implemented milestone: GE-TRADE-01a — persisted trade fail-closed boundary
 
 - Fresh baseline: [`5fdd2d6`](https://github.com/osohbayr1016/gorps-evolution/commit/5fdd2d65ea34d8be896b5fe27fdb89a7b8a3e092). Its exact push [Actions run 38167073758](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38167073758) completed successfully, including 31 session-ownership assertions. Live DataStore fault injection remains pending.
 - Confirmed P0 loss/duplication exposure: `TradeRules.exchange` changes both live profiles, then normal profile saving writes two independent DataStore keys. A crash or exhausted retry after only one key is saved can permanently settle only one side. The existing staged in-memory exchange prevents partial mutation inside one running server, but cannot make two persistence keys atomic.
@@ -129,7 +137,7 @@ Confirmed means supported by current source or an executed regression. Suspected
 
 | ID | Priority / state | Evidence and impact | Next concrete action |
 | --- | --- | --- | --- |
-| GE-TRADE-01 | P0 release blocker; known loss path mitigated / feature still closed | GE-TRADE-01a keeps `Config.DurableTrades=false`, rejects every published trade remote and exposes the locked state in UI. Unsaved Studio exchanges pass 26 headless assertions, but no durable cross-profile recovery exists. | Build an immutable receipt + per-profile prepare journal with idempotent commit/abort recovery; fault-inject every write boundary before changing the flag. |
+| GE-TRADE-01 | P0 release blocker; policy tested / persistence adapter missing / feature closed | GE-TRADE-01a keeps published exchange fail-closed. GE-TRADE-01b adds a 101-assertion pure receipt policy that converges safely across all seven modeled write-boundary crashes, but it performs no DataStore I/O. | Add a server-only UpdateAsync adapter and join-time recovery while the flag remains false; fake-store errors before/after every callback, then private-published fault injection. |
 | GE-START-02 | P1; source fixed / Studio pending | [`70084b6`](https://github.com/osohbayr1016/gorps-evolution/commit/70084b6be1b886797d9480c4e58068f57484c927) binds removal/join handlers, deduplicates initialization and enumerates existing players after bootstrap. [Run 38135950394](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38135950394) passed; no real join-during-bootstrap evidence exists. | In Studio, delay bootstrap and verify an already-present plus concurrently joining player each receive exactly one profile/ranch. Add a deterministic lifecycle harness if an engine defect appears. |
 | GE-SAVE-02 | P1; source guarded / fault injection pending | `70084b6` uses per-player tokens, parent checks and unloads a profile installed after departure. It does not execute a real yielding DataStore disconnect test. | Fault-inject departure before/after `Data.load` returns; assert no orphan ranch, message, movement connection or later save. |
 | GE-SAVE-03 | P1 release blocker; source guarded / live fault injection pending | GE-SAVE-03a atomically claims a persisted session, renews it, rejects stale writers and releases on leave/shutdown. The 31-assertion pure policy suite cannot prove Roblox DataStore timing, throttling or crash recovery. | In a private published experience, rapidly reconnect across servers and fault-inject final-save failure; prove either safe refusal or preserved newest progress, lease takeover after expiry, and no rollback/duplication. |
@@ -181,8 +189,8 @@ Research is translated into backlog/implementation decisions. It is not a reason
 
 ## NEXT ACTION
 
-1. Verify the exact main commit/Actions run for GE-TRADE-01a and record results when resuming. Repair a failing build or supplied first red Studio/private-server error before adding another milestone.
-2. If Studio feedback is supplied, fix the first confirmed defect. Otherwise continue P0 GE-TRADE-01 with a pure receipt state machine first: immutable participant/offers, PREPARING → COMMITTED/ABORTED, per-profile markers and idempotent recovery. Add deterministic failure injection before integrating DataStore writes or enabling `DurableTrades`.
+1. Verify the exact main commit/Actions run for GE-TRADE-01b and record results when resuming. Repair a failing build or supplied first red Studio/private-server error before adding another milestone.
+2. If Studio feedback is supplied, fix the first confirmed defect. Otherwise continue P0 GE-TRADE-01 by building a server-only persistence adapter around the policy, with session-token checks, join-time marker recovery and a fake UpdateAsync store that injects both pre-write and post-write errors. Keep `DurableTrades=false`.
 3. GE-START-02 / GE-SAVE-02 / GE-SAVE-03 still require engine/fault-injection evidence. Published trading must remain closed until every coordinator/profile write boundary has recovery evidence.
 4. After verified core/visual gates, progress to skill-based non-wager PvP, original refined assets/clips, genuine multi-planet craftable travel and seasonal content. No public publishing or Robux changes are authorized.
 

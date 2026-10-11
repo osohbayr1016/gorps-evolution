@@ -63,6 +63,7 @@
 - Native-Part Motor6D rigs and procedural action poses are implemented; visible joint motion, collision behavior, Animation Editor compatibility and mobile performance remain unverified. Run [CREATURE_ART.md](CREATURE_ART.md) before accepting the art milestone.
 - Live PvP, interplanetary travel, premium Robux purchases, and matchmaking are out of scope for this initial Phase 1–2 branch.
 - Published player trading is deliberately fail-closed because separate profile keys are not a durable transaction. Do not enable `Config.DurableTrades` until receipt/prepare/commit/abort recovery passes every-write-boundary private-server fault injection.
+- The 101-assertion receipt suite models state transitions only. It does not call DataStoreService; live trade stays closed until the adapter, join-time recovery and private-published crash cases in `TRADE_RECOVERY.md` pass.
 - OrderedDataStore requests require production permissions and are rate limited. Verify ranking update frequency.
 - Studio build and Selene checks are necessary but insufficient for acceptance.
 - The session-policy suite is pure Luau. It does not prove real `UpdateAsync` retries, throttling, unknown outcomes or cross-server lease timing; capture both server logs and the persisted value in a private published experience.

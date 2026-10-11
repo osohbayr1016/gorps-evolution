@@ -12,6 +12,7 @@ smoke=Path("src/server/StudioSmoke.server.lua").read_text()
 data=Path("src/server/Data.lua").read_text()
 sessions=Path("src/server/SessionPolicy.lua").read_text()
 trade=Path("src/server/Trade.lua").read_text()
+trade_receipts=Path("src/server/TradeReceiptPolicy.lua").read_text()
 config=Path("src/shared/Config.lua").read_text()
 contracts={
  "egg pool defined": "C.Eggs={" in config and "C.EggOrder" in config,
@@ -41,6 +42,12 @@ contracts={
     and 'if not Data.supportsTrading() then' in server
     and 'Trade.action(player,action,payload' in server
     and 'TradeRules.exchange' in trade,
+ "trade receipt recovery remains gated":all(token in trade_receipts for token in (
+    'Policy.PREPARING="PREPARING"','Policy.COMMITTED="COMMITTED"',
+    'Policy.ABORTED="ABORTED"','Policy.COMPLETE="COMPLETE"',
+    'function Policy.prepare(','function Policy.commit(','function Policy.abort(',
+    'function Policy.resolve(','function Policy.complete('
+ )) and 'C.DurableTrades=false' in config,
 }
 for label,ok in contracts.items():
  assert ok,f"FAILED gameplay contract: {label}"

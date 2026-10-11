@@ -86,7 +86,12 @@ The settlement engine stages both sides before applying pet or material changes,
 
 As an immediate safety boundary, `Config.DurableTrades=false` is enforced by the server in every published session and the UI removes invite/offer controls. Unsaved Studio multiplayer remains available for functional testing. This prevents the confirmed cross-key loss path from being exposed to persisted inventories; it is not a durable-trade implementation.
 
-**Still release-blocking:** each player's profile persists separately. A transaction receipt/escrow-and-recovery protocol must be implemented and crash-tested before changing the release flag. Required evidence includes failure after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets.
+`TradeReceiptPolicy.lua` now defines and headlessly fault-injects the required
+PREPARING, COMMITTED, ABORTED and COMPLETE transitions. Its 101 assertions
+converge safely after each of seven modeled durable writes. The policy is pure
+and deliberately disconnected from live trade; see `TRADE_RECOVERY.md`.
+
+**Still release-blocking:** each player's profile persists separately. The policy must be integrated through session-checked UpdateAsync callbacks and join-time recovery, then crash-tested against fake and private-published stores before changing the release flag. Required evidence includes failures before and after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets.
 
 ## First-session collection loop (Pet Simulator 99 / Steal An Egg inspired)
 
