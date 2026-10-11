@@ -64,6 +64,20 @@ The HUD should be visible immediately. If server connectivity fails, it should s
 
 Studio test progress is intentionally discarded to keep isolated, unpublished testing safe. Test persistence separately in a private **published** Roblox experience with real DataStores.
 
+## Single-profile session ownership — live fault injection pending
+
+Published loads now claim one reserved session token atomically with
+`UpdateAsync`. Autosaves renew its five-minute lease, every save rejects a
+foreign token, and leave/shutdown final saves remove the token. Legacy profile
+tables retain gameplay fields, while malformed profile/lock values fail closed
+instead of being replaced with defaults. A 31-assertion pure policy regression
+covers takeover, stale writes, release and retry states.
+
+This source guard is not production proof. Roblox DataStoreService timing,
+throttling, crash behavior and unknown write outcomes still require the
+private-published rapid-rejoin/fault-injection cases in `STUDIO_QA.md`. The
+guard protects one profile key; it does not make a two-profile trade atomic.
+
 For bugs, send the first red Output error, plus a screenshot showing the current game and Explorer > ServerScriptService tree.
 
 ## Trade integrity follow-up

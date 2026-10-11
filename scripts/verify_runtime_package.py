@@ -34,6 +34,8 @@ required={
  "ServerScriptService/GorpsServer/Main":"Script",
  "ServerScriptService/GorpsServer/WorldBootstrap":"Script",
  "ServerScriptService/GorpsServer/SpawnSafety":"Script",
+ "ServerScriptService/GorpsServer/Data":"ModuleScript",
+ "ServerScriptService/GorpsServer/SessionPolicy":"ModuleScript",
  "ReplicatedStorage/Shared/Config":"ModuleScript",
  "ReplicatedStorage/Shared/Onboarding":"ModuleScript",
  "ReplicatedStorage/Shared/CreatureFactory":"ModuleScript",

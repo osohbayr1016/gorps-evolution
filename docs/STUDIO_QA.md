@@ -48,6 +48,8 @@
 | 22 | Two-client pet trade | Active pets cannot be traded; capacity rules enforced |
 | 23 | Cancel/disconnect mid-trade | No transfer; offers discarded |
 | 24 | Close/rejoin experience | Coins, inventory, pets, worker state, quests and cooldowns persisted |
+| 24a | Leave and immediately rejoin a private published server after earning a distinctive coin amount | New session loads that amount, or explicitly refuses while the prior five-minute lease is active; never loads defaults |
+| 24b | Rejoin after a deliberately interrupted final save / expired lease | New server takes ownership after expiry, stale server cannot overwrite it, and no coins/items roll back or duplicate |
 | 25 | Ordered leaderboards | Saved Coins, Wins, Minutes values appear after refresh |
 | 26 | Mobile viewport / touch | Menu scrolls, buttons usable, no off-screen actions |
 | 27 | Multi-user server (8-12) | Ranches unique, node respawn and profile saves stable |
@@ -62,6 +64,7 @@
 - Trades are server-local and not durable multi-player database transactions; a server crash during a trade can cause cross-profile persistence disagreement. Consider escrow plus idempotency before opening the trading system to large public audiences.
 - OrderedDataStore requests require production permissions and are rate limited. Verify ranking update frequency.
 - Studio build and Selene checks are necessary but insufficient for acceptance.
+- The session-policy suite is pure Luau. It does not prove real `UpdateAsync` retries, throttling, unknown outcomes or cross-server lease timing; capture both server logs and the persisted value in a private published experience.
 
 ## Empty baseplate regression
 
