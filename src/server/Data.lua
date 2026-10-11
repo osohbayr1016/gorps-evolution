@@ -48,9 +48,9 @@ function Data.change(player)
  versions[player]=(versions[player] or 0)+1
  local board=player:FindFirstChild("leaderstats")
  if board then
-  for _,name in ipairs({"Coins","Wins","Level"}) do
+  for _,name in ipairs({"Coins","Wins","Level","Minutes"}) do
    local stat=board:FindFirstChild(name)
-   if stat then stat.Value=p[name] or 0 end
+   if stat then stat.Value=name=="Minutes" and math.floor(p.Seconds/60) or (p[name] or 0) end
   end
  end
 end
