@@ -148,25 +148,51 @@ invoke.OnServerInvoke=function(player,action,payload)
   rankings=action=="Rankings" and rankings or nil,
   hatch=ok and action=="HatchEgg" and rankings or nil}
 end
-Players.PlayerAdded:Connect(function(player)
+-- Bind removal before joins; a player can join while World.make() is yielding.
+-- Each Player instance gets one initialization token, even if it is both in
+-- GetPlayers() and delivered by PlayerAdded during handler registration.
+local starting={}
+local function initializePlayer(player)
+ if player.Parent~=Players or starting[player] then return end
+ local token={}
+ starting[player]=token
  task.spawn(function()
+  if starting[player]~=token or player.Parent~=Players then return end
   local p=Data.load(player)
-  if not p then return end
+  if not p then
+   if starting[player]==token then starting[player]=nil end
+   return
+  end
+  -- DataStore:GetAsync can yield across PlayerRemoving. Dispose of a profile
+  -- installed after departure rather than assigning an orphan ranch.
+  if starting[player]~=token or player.Parent~=Players then
+   if Data.get(player)==p then Data.unload(player) end
+   return
+  end
   E.tick(p,os.time())
   Data.change(player)
+  if starting[player]~=token or player.Parent~=Players then return end
   if not World.assign(player,p) then
    player:Kick("Server is full of ranches. Please try another server.")
    return
   end
   player.CharacterAdded:Connect(function(character)
+   if starting[player]~=token or player.Parent~=Players then return end
    World.spawn(player,character)
-   movement(player)
+   if starting[player]==token and player.Parent==Players then movement(player) end
   end)
-  if player.Character then World.spawn(player,player.Character);movement(player) end
-  send(player,"Welcome to Chaos Galaxy!")
+  if player.Character then
+   World.spawn(player,player.Character)
+   if starting[player]==token and player.Parent==Players then movement(player) end
+  end
+  if starting[player]==token and player.Parent==Players then
+   send(player,"Welcome to Chaos Galaxy!")
+   print("[Gorps Server] Player ready:",player.UserId)
+  end
  end)
-end)
+end
 Players.PlayerRemoving:Connect(function(player)
+ starting[player]=nil
  Trade.disconnect(player,function(who,msg) send(who,msg) end)
  World.release(player)
  local p=Data.get(player)
@@ -176,3 +202,8 @@ Players.PlayerRemoving:Connect(function(player)
  wildCooldown[player]=nil
 end)
 
+
+-- Catch Studio players that spawned before the world finished loading.
+-- Event hook is attached first so a concurrent join cannot be missed.
+Players.PlayerAdded:Connect(initializePlayer)
+for _,player in ipairs(Players:GetPlayers()) do initializePlayer(player) end
