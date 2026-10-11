@@ -11,7 +11,7 @@ function R.new(now)
  return {Coins=250,Level=1,XP=0,CraftLevel=1,CraftXP=0,BaseLevel=1,Wins=0,Seconds=0,
   Inventory={Wood=12,Stone=8,Iron=0,Meat=5,Berries=8,Crystal=0,Fiber=3},Items={},
   Pets={{id=1,species="Gorp",rarity="Common",level=1,xp=0,evolved=0}},NextId=2,ActiveId=1,
-  Workers={},Quests={},Claimed={},LastWheel=0,LastSeen=now}
+  Workers={},Quests={},Claimed={},LastWheel=0,LastSeen=now,EggInfusion=0}
 end
 function R.pet(p,id)
  if not valid(id,10000000) then return nil end
@@ -31,12 +31,13 @@ end
 function R.load(saved,now)
  local p=R.new(now)
  if type(saved)~="table" then return p end
- for _,field in ipairs({"Coins","Level","XP","CraftLevel","CraftXP","BaseLevel","Wins","Seconds","NextId","ActiveId","LastWheel","LastSeen"}) do
+ for _,field in ipairs({"Coins","Level","XP","CraftLevel","CraftXP","BaseLevel","Wins","Seconds","NextId","ActiveId","LastWheel","LastSeen","EggInfusion"}) do
   if valid(saved[field],4000000000) then p[field]=saved[field] end
  end
  p.BaseLevel=math.clamp(p.BaseLevel,1,8)
  p.Level=math.clamp(p.Level,1,100)
  p.CraftLevel=math.clamp(p.CraftLevel,1,20)
+ p.EggInfusion=math.clamp(p.EggInfusion,0,3)
  p.NextId=math.max(2,p.NextId)
  for id in pairs(C.Resources) do
   if type(saved.Inventory)=="table" and valid(saved.Inventory[id]) then p.Inventory[id]=saved.Inventory[id] end
@@ -148,6 +149,13 @@ function R.gather(p,id)
  R.quest(p,"Gatherer",amount)
  if id=="Wild" then R.quest(p,"Explorer",1) end
  return true,"Collected "..amount.." "..node[1]
+end
+function R.infuse(p)
+ if p.EggInfusion>=3 then return false,"Egg already fully infused" end
+ if (p.Items.EggIncubator or 0)<1 then return false,"Craft an EggIncubator first" end
+ if not R.spend(p,{Iron=3,Crystal=2}) then return false,"Need 3 iron and 2 crystals" end
+ p.EggInfusion+=1
+ return true,"Egg infusion +"..p.EggInfusion
 end
 function R.expand(p)
  if p.BaseLevel>=8 then return false,"Maximum base level" end
