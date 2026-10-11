@@ -91,13 +91,13 @@ def group(parent, name):
 
 world = group(document, "PlanetVerdant")
 terrain = group(world, "TerrainAndPaths")
-block(terrain, "Ground", (0, 0, 0), (648, 2, 648), (64, 121, 100), material="Grass")
-block(terrain, "SpawnCourtyard", (0, 1.18, 0), (60, .45, 50), (220, 198, 151), material="Sand")
-block(terrain, "MainRoadNorth", (0, 1.15, 98), (15, .35, 175), (188, 174, 143))
-block(terrain, "MainRoadSouth", (0, 1.15, -110), (15, .35, 175), (188, 174, 143))
-block(terrain, "RanchPath", (0, 1.15, -163), (515, .35, 10), (192, 181, 155))
-block(terrain, "ForestPath", (-125, 1.15, 115), (11, .35, 205), (172, 161, 137))
-block(terrain, "MinesPath", (133, 1.15, 120), (11, .35, 205), (172, 161, 137))
+block(terrain, "Ground", (0, 0, 0), (648, 2, 648), (79, 129, 101), material="Grass")
+block(terrain, "SpawnCourtyard", (0, 1.18, 0), (60, .45, 50), (165, 153, 128), material="Slate")
+block(terrain, "MainRoadNorth", (0, 1.15, 98), (15, .35, 175), (159, 150, 128))
+block(terrain, "MainRoadSouth", (0, 1.15, -110), (15, .35, 175), (159, 150, 128))
+block(terrain, "RanchPath", (0, 1.15, -163), (515, .35, 10), (153, 147, 126))
+block(terrain, "ForestPath", (-125, 1.15, 115), (11, .35, 205), (152, 149, 128))
+block(terrain, "MinesPath", (133, 1.15, 120), (11, .35, 205), (152, 149, 128))
 for i in range(8):
     angle = math.tau * i / 8
     x, z = math.cos(angle)*47, math.sin(angle)*40
@@ -107,38 +107,155 @@ for x, z, sx, sz in [(-185,130,75,65),(185,155,75,70),(-240,265,70,65),(246,265,
     block(terrain, "LowHill", (x, 4, z), (sx, 9, sz), (77, 131, 105), shape="Ball", material="Grass")
 
 hub = group(world, "VillageHub")
-block(hub, "WelcomePlatform", (0, 1.7, 8), (42, 1.3, 26), (218, 194, 149), material="Wood")
+block(hub, "WelcomePlatform", (0, 1.7, 8), (42, 1.3, 26), (169, 150, 119), material="Slate")
 block(hub, "FountainBasin", (0, 3.1, 4), (2.3, 15, 15), (127, 158, 167),
       shape="Cylinder", material="Slate", rotation=(0, 0, 90))
-block(hub, "FountainWater", (0, 4.4, 4), (.6, 12, 12), (87, 205, 212),
-      shape="Cylinder", material="Neon", rotation=(0, 0, 90))
+block(hub, "FountainWater", (0, 4.4, 4), (.6, 12, 12), (92, 163, 159),
+      shape="Cylinder", material="Glass", rotation=(0, 0, 90))
 block(hub, "FountainColumn", (0, 7.5, 4), (7, 2.6, 2.6), (141, 173, 177),
       shape="Cylinder", rotation=(0, 0, 90))
-block(hub, "FountainTop", (0, 11.5, 4), (5, 2.5, 5), (112, 221, 227), shape="Ball", solid=False, material="Neon")
+block(hub, "FountainTop", (0, 11.5, 4), (5, 2.5, 5), (149, 209, 195), shape="Ball", solid=False, material="Glass")
+
+# Four recognizable silhouettes share a small, reusable kit but never identical facades.
+# Geometry is authored in Edit mode and interaction doors retain their names.
+SHOP_KIT = {
+    "TradingPost": {"roof": (113, 74, 59), "trim": (227, 182, 115),
+                    "wood": (93, 68, 58), "mark": "Coin"},
+    "CraftingWorkshop": {"roof": (76, 91, 104), "trim": (118, 179, 190),
+                         "wood": (77, 83, 88), "mark": "Tools"},
+    "FarmerGuild": {"roof": (99, 117, 76), "trim": (194, 187, 112),
+                    "wood": (103, 90, 63), "mark": "Sheaf"},
+    "CreatureNursery": {"roof": (127, 97, 125), "trim": (222, 170, 194),
+                        "wood": (112, 82, 101), "mark": "Egg"},
+}
+
 
 def hut(parent, title, x, z, theme):
-    h=group(parent,title)
-    block(h, "Floor", (x, 2, z), (22, 2, 17), (161, 126, 98), material="Wood")
+    kit = SHOP_KIT[title]
+    h = group(parent, title)
+    stone = (150, 141, 125)
+    timber = kit["wood"]
+    accent = kit["trim"]
+    roof = kit["roof"]
+
+    # The front faces south (-Z); keep Door exactly where world shop prompts expect.
+    block(h, "Floor", (x, 2, z), (24, 2, 19), stone, material="Slate")
     block(h, "Walls", (x, 8, z), (19, 11, 15), theme, material="Wood")
-    # Two pitched roof planes create a readable village silhouette. The old
-    # single flat cuboid made every station look like an unfinished grey box.
-    block(h, "RoofLeft", (x, 14.9, z-4.4), (25, 1.6, 11), (71, 91, 105),
-          material="Slate", rotation=(24, 0, 0))
-    block(h, "RoofRight", (x, 14.9, z+4.4), (25, 1.6, 11), (71, 91, 105),
-          material="Slate", rotation=(-24, 0, 0))
-    block(h, "RoofRidge", (x, 17.0, z), (25.5, .8, 1.2), (56, 74, 88),
-          material="Slate")
-    block(h, "Door", (x, 5.5, z-8), (5, 7, .5), (74, 83, 88), material="Wood")
-    block(h, "DoorGlow", (x, 7, z-8.4), (1, 1, .4), (231, 203, 121), material="Neon")
-    for dx in [-6,6]:
-        block(h, "Window", (x+dx, 9, z-7.6), (3, 3, .4), (130, 212, 225),
-              material="Neon")
+    block(h, "PlinthFront", (x, 2.8, z-8.1), (22, 1.15, 2.8), timber, material="Wood")
+    for side in (-1, 1):
+        dx = side * 9.6
+        block(h, "CornerPost", (x+dx, 8.8, z-7.9), (1.5, 12.1, 1.8), timber, material="Wood")
+        block(h, "WindowFrame", (x+side*6, 9, z-7.95), (4.6, 4.7, .85),
+              timber, material="Wood", solid=False)
+        block(h, "Window", (x+side*6, 9, z-8.5), (3.0, 3.2, .28),
+              (151, 199, 198), material="Glass", solid=False)
+        block(h, "WindowSill", (x+side*6, 6.75, z-8.65), (4.8, .52, 1.2),
+              stone, material="Slate", solid=False)
+        block(h, "WindowShutter", (x+side*9.1, 9, z-8.45), (.55, 4.5, .65),
+              accent, material="Wood", solid=False)
+    for height in (4.0, 12.65):
+        block(h, "FacadeBeam", (x, height, z-8.0), (21, .65, 1.4),
+              timber, material="Wood", solid=False)
+
+    block(h, "RoofLeft", (x, 15.1, z-4.5), (26.5, 1.6, 11.3),
+          roof, material="Slate", rotation=(24, 0, 0))
+    block(h, "RoofRight", (x, 15.1, z+4.5), (26.5, 1.6, 11.3),
+          roof, material="Slate", rotation=(-24, 0, 0))
+    block(h, "RoofRidge", (x, 17.35, z), (27, 1.0, 1.7), timber, material="Wood")
+    # Distinct high roofline details read from the spawn/overview camera.
+    for side in (-1, 1):
+        block(h, "RoofFinial", (x+side*12, 17.4, z), (1.2, 2.7, 1.2),
+              accent, material="Wood", solid=False)
+        block(h, "EaveFront", (x+side*6.2, 13.5, z-9.2), (12.8, .5, .75),
+              timber, material="Wood", solid=False)
+
+    block(h, "Door", (x, 5.5, z-8), (5, 7, .5), timber, material="Wood")
+    block(h, "DoorFrameTop", (x, 9.2, z-8.8), (6.9, .9, .9),
+          accent, material="Wood", solid=False)
+    block(h, "DoorHandle", (x+1.7, 5.3, z-8.55), (.55, .55, .55),
+          accent, shape="Ball", solid=False, material="Metal")
+    block(h, "Awning", (x, 12.2, z-10.2), (11.6, .8, 4.2),
+          roof, material="Wood", rotation=(-8, 0, 0), solid=False)
+    block(h, "SignBoard", (x, 13.2, z-10.8), (10.5, 3.4, .7),
+          timber, material="Wood", solid=False)
+    block(h, "SignTrim", (x, 13.2, z-11.25), (9.3, 2.55, .18),
+          accent, material="Wood", solid=False)
+
+    # Solid icon silhouettes are not glowing floating rectangles. Their color
+    # and shapes pair with native UI dock icons and indicate shop purpose.
+    if kit["mark"] == "Coin":
+        block(h, "MerchantCoin", (x, 13.2, z-11.5), (1.1, 2.0, 2.0),
+              (238, 205, 123), shape="Cylinder", rotation=(0, 90, 0),
+              material="Metal", solid=False)
+        for dx in (-3.4, 3.4):
+            block(h, "MerchantCrate", (x+dx, 3.2, z-11.4), (3.4, 2.0, 2.9),
+                  (155, 116, 77), material="Wood", solid=False)
+    elif kit["mark"] == "Tools":
+        for slope in (-35, 35):
+            block(h, "CrossedTool", (x, 13.3, z-11.65), (.65, 2.55, .4),
+                  (55, 77, 84), material="Metal", rotation=(0, 0, slope),
+                  solid=False)
+        block(h, "ForgeChimney", (x+6.9, 19.1, z+4), (3.4, 8.5, 3.4),
+              (108, 110, 113), material="Slate")
+        block(h, "ForgeCap", (x+6.9, 23.7, z+4), (4.8, .7, 4.8),
+              timber, material="Metal")
+    elif kit["mark"] == "Sheaf":
+        for dx in (-1.0, 0, 1.0):
+            block(h, "WheatIcon", (x+dx, 13.2, z-11.6), (.65, 2.2, .5),
+                  (238, 208, 126), material="Wood", rotation=(0, 0, dx*18),
+                  solid=False)
+        for side in (-1, 1):
+            block(h, "FarmBarrel", (x+side*10, 3.3, z-11),
+                  (3.0, 3.2, 3.0), (128, 104, 69),
+                  shape="Cylinder", material="Wood", solid=False, rotation=(0,0,90))
+    elif kit["mark"] == "Egg":
+        block(h, "EggIcon", (x, 13.3, z-11.7), (1.8, 2.35, .65),
+              (253, 225, 184), shape="Ball", solid=False)
+        for side in (-1, 1):
+            block(h, "NestStand", (x+side*10.2, 2.7, z-11.3),
+                  (4.0, 1.2, 4), timber, solid=False, material="Wood")
+            block(h, "NestEgg", (x+side*10.2, 4.15, z-11.3),
+                  (2.4, 3.0, 2.4), (234, 207, 212),
+                  shape="Ball", solid=False)
     return h
 
-hut(hub,"TradingPost",-62,6,(180,153,120))
-hut(hub,"CraftingWorkshop",61,6,(169,164,153))
-hut(hub,"FarmerGuild",-52,-51,(153,176,131))
-hut(hub,"CreatureNursery",54,-51,(210,158,173))
+
+hut(hub,"TradingPost",-62,6,(185,167,142))
+hut(hub,"CraftingWorkshop",61,6,(157,171,166))
+hut(hub,"FarmerGuild",-52,-51,(172,181,148))
+hut(hub,"CreatureNursery",54,-51,(191,168,179))
+
+
+# A recognizable gate frames the first resource route without blocking its
+# 15-stud-wide walkable center. This is a fixed visual compass, not a portal.
+wayfinder = group(hub, "VerdantWayfinder")
+for side in (-1, 1):
+    px = side * 18.5
+    block(wayfinder, "GateFoot", (px, 2, 43), (6.0, 2.0, 6.0),
+          (133, 128, 111), material="Slate")
+    block(wayfinder, "GatePillar", (px, 9.7, 43), (3.6, 14.0, 3.6),
+          (119, 119, 100), material="Slate")
+    block(wayfinder, "GateCap", (px, 17.3, 43), (5.2, 1.4, 5.2),
+          (199, 172, 117), material="Slate")
+    block(wayfinder, "GuideBanner", (px, 12, 40.7), (2.7, 7, .4),
+          (side==-1 and 98 or 196, side==-1 and 170 or 154, 136),
+          material="Fabric", solid=False)
+block(wayfinder, "GateLintel", (0, 17.2, 43), (37.4, 2.3, 3.6),
+      (102, 110, 97), material="Slate")
+block(wayfinder, "GateCrest", (0, 19.7, 43), (8.2, 2.8, 2.8),
+      (205, 184, 124), material="Wood", solid=False)
+for side in (-1, 1):
+    # Seats and garden pots live outside the central travel lane.
+    px = side * 22
+    for z in (-9, 15):
+        block(hub, "PlazaPlanter", (px, 2.3, z), (7.5, 2.3, 7.5),
+              (139, 122, 103), material="Slate", solid=False)
+        block(hub, "PlanterFoliage", (px, 4.1, z), (6.6, 2.5, 6.6),
+              (94, 155, 113), shape="Ball", material="Grass", solid=False)
+    block(hub, "PlazaBench", (px, 3, 4), (8, 1.2, 2.2),
+          (144, 112, 83), material="Wood", solid=False)
+    block(hub, "BenchBack", (px, 4.7, 5), (8, 2.3, .8),
+          (121, 94, 73), material="Wood", solid=False)
 
 for k, (x,z) in enumerate([(34,32),(-34,32),(34,-30),(-34,-30)]):
     block(hub,"LanternPost_%d"%k,(x,5,z),(.9,8,.9),(87,81,75),material="Wood")
@@ -330,6 +447,48 @@ for i in range(20):
     z=math.sin(a)*d
     block(scenery,"OuterStone",(x,2.5,z),(rng.uniform(5,11),rng.uniform(5,10),rng.uniform(6,13)),
           (110,145,131),shape="Ball",material="Slate")
+
+
+# Asset regression contracts run each time the generator runs (including CI).
+# They check authored structure/route clearance, not Studio render quality.
+def verify_village_kit():
+    named = {}
+    for obj in document.iter("Item"):
+        props = obj.find("Properties")
+        name = next((entry.text for entry in (props if props is not None else [])
+                     if entry.get("name") == "Name"), None)
+        if name:
+            named.setdefault(name, []).append(obj)
+    for station, kit in SHOP_KIT.items():
+        models = named.get(station, [])
+        assert len(models) == 1, (station, "missing distinctive station")
+        parts = {
+            next((entry.text for entry in child.find("Properties")
+                  if entry.get("name") == "Name"), None)
+            for child in models[0] if child.tag == "Item"
+        }
+        expected = {"Door", "SignBoard", "SignTrim", "Awning", "WindowFrame",
+                    "RoofLeft", "RoofRight", "RoofRidge", "RoofFinial"}
+        unique = {"Coin": "MerchantCoin", "Tools": "CrossedTool",
+                  "Sheaf": "WheatIcon", "Egg": "EggIcon"}[kit["mark"]]
+        assert expected | {unique} <= parts, (station, "missing kit piece", expected - parts)
+        assert sum(part == "Door" for part in parts) == 1, (station, "prompt entry lost")
+    gate = named.get("VerdantWayfinder", [])
+    assert len(gate) == 1, "missing village-to-harvest focal landmark"
+    for obj in gate[0].iter("Item"):
+        props = obj.find("Properties")
+        if props is None:
+            continue
+        name = next((p.text for p in props if p.get("name") == "Name"), "")
+        if name not in {"GateFoot", "GatePillar", "GateCap", "GuideBanner"}:
+            continue
+        frame = next(p for p in props if p.get("name") == "CFrame")
+        x = float(frame.find("X").text)
+        assert abs(x) >= 15.0, (name, "gate blocks walking center")
+    assert count < 2300, "village art overran current static part budget"
+
+
+verify_village_kit()
 
 OUT.parent.mkdir(parents=True,exist_ok=True)
 ET.indent(document,space="  ")
