@@ -3,6 +3,7 @@
 from pathlib import Path
 
 ui=Path("src/client/Ui.lua").read_text()
+onboarding=Path("src/shared/Onboarding.lua").read_text()
 pages=Path("src/client/Pages.lua").read_text()
 widgets=Path("src/client/Widgets.lua").read_text()
 icons=Path("src/client/Icons.lua").read_text()
@@ -17,7 +18,14 @@ checks={
     and 'W.order(parent,b)' in widgets,
  "compact HUD":'framed(gui,"Brand"' in ui
     and 'framed(gui,"Wallet"' in ui and 'framed(gui,"CollectionWindow"' in ui,
- "first-session objective":'MissionProgress' in ui and 'self.objectiveBody.Text=' in ui,
+ "actionable first-session objective":'MissionProgress' in ui
+    and 'MissionAction' in ui and 'self:openTab(self.objectiveTab or "Quests")' in ui
+    and 'Onboarding.resolve(p)' in ui and 'self.objectiveDetail.Text=objective.detail' in ui,
+ "complete onboarding state machine":all(token in onboarding for token in (
+    'id = "Gatherer"','id = "Hatch"','id = "Provider"','id = "Maker"',
+    'id = "Employer"','id = "Explorer"','id = "Expand"','id = "Explore"',
+    'action = "CLAIM REWARD"'
+ )) and 'Grow your ranch and explore' not in ui,
  "no overlapping dock when modal opens":'self.dock.Visible=not open' in ui
     and 'self.objective.Visible=not open' in ui,
  "mobile panel bounds":'math.min(narrow and width-18 or 720,width-18)' in ui,

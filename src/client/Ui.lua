@@ -1,10 +1,12 @@
 local Players=game:GetService("Players")
 local TweenService=game:GetService("TweenService")
 local UserInputService=game:GetService("UserInputService")
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local W=require(script.Parent.Widgets)
 local Icons=require(script.Parent.Icons)
 local Pages=require(script.Parent.Pages)
-local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
+local Config=require(ReplicatedStorage.Shared.Config)
+local Onboarding=require(ReplicatedStorage.Shared.Onboarding)
 
 local UI={}
 UI.__index=UI
@@ -73,15 +75,18 @@ function UI.new(send)
  self.wallet=coin;self.levelLine=line;self.walletContainer=wallet
  local objective=framed(gui,"Mission",Color3.fromRGB(24,39,54))
  objective.Position=UDim2.fromOffset(16,137)
- objective.Size=UDim2.fromOffset(262,75)
+ objective.Size=UDim2.fromOffset(262,132)
  self.objective=objective
- local objectiveTitle=absoluteText(objective,"NEXT QUEST",12,C.gold)
+ local objectiveTitle=absoluteText(objective,"NEXT STEP",12,C.gold)
  objectiveTitle.Position=UDim2.fromOffset(13,9);objectiveTitle.Size=UDim2.fromOffset(226,20)
  local objectiveBody=absoluteText(objective,"Collect materials 0/15",14,C.light)
- objectiveBody.Position=UDim2.fromOffset(13,33);objectiveBody.Size=UDim2.fromOffset(238,29)
+ objectiveBody.Position=UDim2.fromOffset(13,31);objectiveBody.Size=UDim2.fromOffset(238,23)
  self.objectiveBody=objectiveBody
+ local objectiveDetail=absoluteText(objective,"Follow the mint trail north",11,C.muted)
+ objectiveDetail.Position=UDim2.fromOffset(13,55);objectiveDetail.Size=UDim2.fromOffset(238,18)
+ self.objectiveDetail=objectiveDetail
  local objectiveLine=Instance.new("Frame")
- objectiveLine.Name="MissionProgress";objectiveLine.Position=UDim2.fromOffset(13,65)
+ objectiveLine.Name="MissionProgress";objectiveLine.Position=UDim2.fromOffset(13,78)
  objectiveLine.Size=UDim2.fromOffset(236,4);objectiveLine.BackgroundColor3=Color3.fromRGB(72,89,107)
  objectiveLine.BorderSizePixel=0;objectiveLine.Parent=objective
  W.round(objectiveLine,4)
@@ -89,6 +94,22 @@ function UI.new(send)
  objectiveFill.BackgroundColor3=C.mint;objectiveFill.Size=UDim2.fromScale(0,1)
  objectiveFill.BorderSizePixel=0;objectiveFill.Parent=objectiveLine
  W.round(objectiveFill,4);self.objectiveFill=objectiveFill
+ local objectiveAction=Instance.new("TextButton")
+ objectiveAction.Name="MissionAction"
+ objectiveAction.Position=UDim2.fromOffset(13,91)
+ objectiveAction.Size=UDim2.fromOffset(236,30)
+ objectiveAction.BackgroundColor3=C.mint
+ objectiveAction.TextColor3=C.deep
+ objectiveAction.Text="VIEW QUEST  →"
+ objectiveAction.TextSize=11
+ objectiveAction.Font=Enum.Font.GothamBold
+ objectiveAction.AutoButtonColor=false
+ objectiveAction.Parent=objective
+ W.round(objectiveAction,8)
+ objectiveAction.Activated:Connect(function()
+  self:openTab(self.objectiveTab or "Quests")
+ end)
+ self.objectiveAction=objectiveAction
 
  local dim=noWorldBlocking(gui);self.dim=dim
  local panel=framed(gui,"CollectionWindow",Color3.fromRGB(23,33,51))
@@ -244,7 +265,7 @@ function UI.new(send)
   dock.Size=UDim2.fromOffset(math.min(510,width-24),narrow and 60 or 68)
   if narrow then
    objective.Position=UDim2.fromOffset(9,124)
-   objective.Size=UDim2.fromOffset(math.min(260,width-18),75)
+   objective.Size=UDim2.fromOffset(math.min(260,width-18),132)
    brand.Position=UDim2.fromOffset(9,63);brand.Size=UDim2.fromOffset(137,49)
    descriptor.Visible=false;logo.Text="GORPS"
    wallet.Position=UDim2.new(1,-9,0,63);wallet.Size=UDim2.fromOffset(160,49)
@@ -254,7 +275,7 @@ function UI.new(send)
     if glyph then glyph.Size=UDim2.fromOffset(24,24) end
    end
   else
-   objective.Position=UDim2.fromOffset(16,137);objective.Size=UDim2.fromOffset(262,75)
+   objective.Position=UDim2.fromOffset(16,137);objective.Size=UDim2.fromOffset(262,132)
    brand.Position=UDim2.fromOffset(16,74);brand.Size=UDim2.fromOffset(220,51)
    descriptor.Visible=true;logo.Text="GORPS"
    wallet.Position=UDim2.new(1,-16,0,74);wallet.Size=UDim2.fromOffset(190,51)
@@ -375,18 +396,12 @@ function UI:render()
  self.wallet.Text=tostring(p.Coins)
  local capacity=math.min(40,3+(p.BaseLevel-1)*2)
  self.levelLine.Text="LEVEL "..p.Level.."  ·  "..#p.Pets.."/"..capacity.." GORPS"
- local gathered=(p.Quests and p.Quests.Gatherer) or 0
- local fed=(p.Quests and p.Quests.Provider) or 0
- if gathered<15 then
-  self.objectiveBody.Text="Collect resources  "..math.min(gathered,15).."/15"
-  self.objectiveFill.Size=UDim2.fromScale(math.clamp(gathered/15,0,1),1)
- elseif fed<3 then
-  self.objectiveBody.Text="Feed a Gorp  "..math.min(fed,3).."/3"
-  self.objectiveFill.Size=UDim2.fromScale(math.clamp(fed/3,0,1),1)
- else
-  self.objectiveBody.Text="Grow your ranch and explore"
-  self.objectiveFill.Size=UDim2.fromScale(1,1)
- end
+ local objective=Onboarding.resolve(p)
+ self.objectiveBody.Text=objective.title.."  "..objective.current.."/"..objective.goal
+ self.objectiveDetail.Text=objective.detail
+ self.objectiveFill.Size=UDim2.fromScale(objective.progress,1)
+ self.objectiveAction.Text=objective.action.."  →"
+ self.objectiveTab=objective.tab
  if not self.open then return end
  local info={
   Ranch={"MY RANCH","Expand, manage your animals and complete quests"},

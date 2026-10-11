@@ -82,6 +82,15 @@ Studio QA still required: hatch coin pricing and odds, appearance/disappearance 
 
 The compact HUD, centered interactive collection window, deterministic card order and 3D creature/egg preview implementation is documented in [UI_QA.md](UI_QA.md). Studio rendering, mobile and controller QA remain mandatory.
 
+The follow-up objective rail now deterministically guides the full source-level
+starter loop: collect and claim, hatch, feed, craft, hire, hunt, claim remaining
+rewards, then expand the ranch. Each call-to-action only opens the relevant UI;
+the server remains authoritative for rewards and purchases. A 50-assertion
+headless regression validates ordering, routes, reward priority, malformed
+snapshots and bounded progress. This does not prove player comprehension,
+touch-control clearance, gamepad focus or real Studio updates; run the fresh
+profile journey in `UI_QA.md` before accepting the onboarding gate.
+
 
 ## Companion art source milestone — engine acceptance pending
 
