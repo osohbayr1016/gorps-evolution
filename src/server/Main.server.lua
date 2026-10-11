@@ -6,6 +6,7 @@ local E=require(ReplicatedStorage.Shared.Economy)
 local Data=require(script.Parent.Data)
 local World=require(script.Parent.World)
 local Trade=require(script.Parent.Trade)
+local Leaderboards=require(script.Parent.Leaderboards)
 local folder=Instance.new("Folder");folder.Name="GorpsRemotes";folder.Parent=ReplicatedStorage
 local invoke=Instance.new("RemoteFunction");invoke.Name="Action";invoke.Parent=folder
 local notify=Instance.new("RemoteEvent");notify.Name="Update";notify.Parent=folder
@@ -40,10 +41,12 @@ local function gather(player,kind)
 end
 World.make(gather)
 Data.start()
+Leaderboards.start(Data)
 local function act(player,action,payload)
  local p=Data.get(player)
  if not p then return false,"Profile loading" end
  if action=="State" then return true,"Ready" end
+ if action=="Rankings" then return true,"Rankings refreshed",Leaderboards.top() end
  if type(payload)~="table" then return false,"Invalid request" end
  local tradeOps={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
  if tradeOps[action] then
@@ -87,18 +90,18 @@ invoke.OnServerInvoke=function(player,action,payload)
   return {ok=false,message="Slow down"}
  end
  cooldown[player]=now
- local success,ok,message=pcall(act,player,action,payload or {})
+ local success,ok,message,rankings=pcall(act,player,action,payload or {})
  if not success then
   warn("[Gorps] Action failed:",action,ok)
   return {ok=false,message="Could not complete that action"}
  end
- if ok and action~="State" then
+ if ok and action~="State" and action~="Rankings" then
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
    or action=="Feed" or action=="Evolve"
   changed(player,message,visual)
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
- return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player)}
+ return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player),rankings=rankings}
 end
 Players.PlayerAdded:Connect(function(player)
  task.spawn(function()
@@ -121,6 +124,8 @@ end)
 Players.PlayerRemoving:Connect(function(player)
  Trade.disconnect(player,function(who,msg) send(who,msg) end)
  World.release(player)
+ local p=Data.get(player)
+ if p then task.spawn(Leaderboards.write,player,R.copy(p)) end
  Data.unload(player)
  cooldown[player]=nil
 end)
