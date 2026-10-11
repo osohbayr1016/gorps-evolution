@@ -55,6 +55,7 @@ local function act(player,action,payload)
  end
  if action=="Feed" then return R.feed(p,payload.id)
  elseif action=="Evolve" then return R.evolve(p,payload.id)
+ elseif action=="InfuseEgg" then return R.infuse(p)
  elseif action=="SelectPet" then
   if not R.pet(p,payload.id) then return false,"Creature not found" end
   p.ActiveId=payload.id;return true,"Companion selected"
@@ -73,7 +74,9 @@ local function act(player,action,payload)
   if #p.Pets>=R.capacity(p) then return false,"Expand your ranch first" end
   if not R.spend(p,{EggIncubator=1,Crystal=1}) then return false,"Need incubator and crystal" end
   local species=C.SpeciesOrder[math.random(1,#C.SpeciesOrder)]
-  return R.addPet(p,species)
+  local rarity=p.EggInfusion>=3 and "Epic" or (p.EggInfusion>=1 and "Rare" or C.Species[species].rarity)
+  p.EggInfusion=0
+  return R.addPet(p,species,rarity)
  elseif action=="UFO" then
   local t=os.date("!*t",os.time())
   if t.wday~=1 and t.wday~=7 then return false,"UFO trader is available Saturdays and Sundays (UTC)" end
@@ -97,7 +100,7 @@ invoke.OnServerInvoke=function(player,action,payload)
  end
  if ok and action~="State" and action~="Rankings" then
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
-   or action=="Feed" or action=="Evolve" or action=="Hire"
+   or action=="Feed" or action=="Evolve" or action=="Hire" or action=="Wheel"
   changed(player,message,visual)
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
