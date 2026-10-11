@@ -22,6 +22,16 @@ local function changed(player,message,visual)
  if p and visual then World.update(player,p) end
  send(player,message)
 end
+local function movement(player)
+ local p=Data.get(player)
+ if not p then return end
+ local companion=R.pet(p,p.ActiveId)
+ local humanoid=player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+ if humanoid then
+  local stats=companion and R.stats(companion)
+  humanoid.WalkSpeed=stats and stats.role=="Transport" and math.clamp(stats.speed,18,30) or 16
+ end
+end
 local function gather(player,kind)
  local p=Data.get(player)
  if not p then return end
@@ -86,6 +96,7 @@ invoke.OnServerInvoke=function(player,action,payload)
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
    or action=="Feed" or action=="Evolve"
   changed(player,message,visual)
+  if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
  return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player)}
 end
@@ -99,8 +110,11 @@ Players.PlayerAdded:Connect(function(player)
    player:Kick("Server is full of ranches. Please try another server.")
    return
   end
-  player.CharacterAdded:Connect(function(character) World.spawn(player,character) end)
-  if player.Character then World.spawn(player,player.Character) end
+  player.CharacterAdded:Connect(function(character)
+   World.spawn(player,character)
+   movement(player)
+  end)
+  if player.Character then World.spawn(player,player.Character);movement(player) end
   send(player,"Welcome to Chaos Galaxy!")
  end)
 end)
