@@ -97,6 +97,14 @@ function Policy.valid(receipt) return validReceipt(receipt) end
 function Policy.same(left,right)
  return validReceipt(left) and validReceipt(right) and equal(left,right)
 end
+function Policy.sameTransaction(left,right)
+ if not validReceipt(left) or not validReceipt(right) then return false end
+ local leftValue=copy(left)
+ local rightValue=copy(right)
+ leftValue.state=Policy.PREPARING
+ rightValue.state=Policy.PREPARING
+ return equal(leftValue,rightValue)
+end
 function Policy.prepare(profile,receipt,role)
  if not validReceipt(receipt) or receipt.state~=Policy.PREPARING
   or (role~="a" and role~="b") or type(profile)~="table" then

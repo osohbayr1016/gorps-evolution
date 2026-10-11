@@ -13,6 +13,7 @@ data=Path("src/server/Data.lua").read_text()
 sessions=Path("src/server/SessionPolicy.lua").read_text()
 trade=Path("src/server/Trade.lua").read_text()
 trade_receipts=Path("src/server/TradeReceiptPolicy.lua").read_text()
+trade_persistence=Path("src/server/TradePersistence.lua").read_text()
 config=Path("src/shared/Config.lua").read_text()
 contracts={
  "egg pool defined": "C.Eggs={" in config and "C.EggOrder" in config,
@@ -47,6 +48,11 @@ contracts={
     'Policy.ABORTED="ABORTED"','Policy.COMPLETE="COMPLETE"',
     'function Policy.prepare(','function Policy.commit(','function Policy.abort(',
     'function Policy.resolve(','function Policy.complete('
+ )) and 'C.DurableTrades=false' in config,
+ "trade persistence adapter remains release-gated":all(token in trade_persistence for token in (
+    'function Persistence.execute(','function Persistence.recoverProfile(',
+    'SessionPolicy.owns(','ReceiptPolicy.sameTransaction(',
+    'Persistence.RETRIES=3'
  )) and 'C.DurableTrades=false' in config,
 }
 for label,ok in contracts.items():
