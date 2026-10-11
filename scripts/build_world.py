@@ -243,20 +243,20 @@ for i in range(29):
     h=rng.uniform(4,10)
     block(mushrooms,"MushroomStem",(x,h/2+1,z),(1.9,h,1.9),
           (225,214,192),material="SmoothPlastic")
-    color=rng.choice([(210,131,199),(119,178,228),(239,166,152),(196,164,234)])
-    block(mushrooms,"Glowcap",(x,h+1,z),(rng.uniform(5,9),3.7,7),color,
+    cap_color=rng.choice([(210,131,199),(119,178,228),(239,166,152),(196,164,234)])
+    block(mushrooms,"Glowcap",(x,h+1,z),(rng.uniform(5,9),3.7,7),cap_color,
           shape="Ball",solid=False,material="Neon")
     for j in range(3):
         block(mushrooms,"GlowDot",(x+rng.uniform(-2,2),h+2.8,z+rng.uniform(-2,2)),
               (.6,.6,.6),(249,233,208),shape="Ball",solid=False,material="Neon")
 markets=group(landmarks,"MarketDecor")
-for x,z,color in [(-37,27,(117,204,172)),(38,27,(233,180,130)),
+for x,z,fabric_color in [(-37,27,(117,204,172)),(38,27,(233,180,130)),
                   (-26,-32,(218,143,172)),(28,-32,(125,168,219))]:
     stall=group(markets,"MarketStall")
     block(stall,"Counter",(x,3.6,z),(11,2.2,5),(165,128,99),material="Wood")
     for side in [-1,1]:
         block(stall,"CanopySupport",(x+side*4.8,6.1,z),(1,6,1),(121,93,72),material="Wood")
-    block(stall,"Canopy",(x,9.3,z),(13,1.4,8),color,material="SmoothPlastic")
+    block(stall,"Canopy",(x,9.3,z),(13,1.4,8),fabric_color,material="SmoothPlastic")
     for k in range(3):
         block(stall,"MarketCrate",(x-3+k*3,5.1,z),(2.5,1.4,2.2),
               (184,148,100),material="Wood")
