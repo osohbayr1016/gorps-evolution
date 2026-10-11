@@ -1,0 +1,20 @@
+name: Roblox validation
+on:
+  push:
+    branches: [main, feat/phase1-phase2-core]
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ok-nick/setup-aftman@v0.4.2
+      - name: Lint Luau
+        run: selene src
+      - name: Build Roblox place file
+        run: rojo build default.project.json -o GorpsEvolution.rbxlx
+      - name: Upload Studio build
+        uses: actions/upload-artifact@v4
+        with:
+          name: GorpsEvolution-place
+          path: GorpsEvolution.rbxlx
