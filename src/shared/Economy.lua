@@ -49,6 +49,13 @@ function E.tick(p,now)
      local goods={}
      for material,count in pairs(def.grant) do goods[material]=count*w.count*payable end
      R.add(p,goods);completed+=payable*w.count
+     if id=="Caretaker" and #p.Pets>0 then
+      for i=1,math.min(payable*w.count,120) do
+       local pet=p.Pets[((i-1)%#p.Pets)+1]
+       local fed=R.feed(p,pet.id)
+       if not fed then break end
+      end
+     end
     end
     -- Advance even if unpaid to avoid accumulating imaginary debt.
     w.last=now
