@@ -10,8 +10,12 @@ jobs:
       - uses: ok-nick/setup-aftman@v0.4.2
       - name: Lint Luau
         run: selene src
+      - name: Generate authored 3D world
+        run: python3 scripts/build_world.py
       - name: Build Roblox place file
         run: rojo build default.project.json -o GorpsEvolution.rbxlx
+      - name: Verify authored planet model
+        run: python3 scripts/verify_world.py world/PlanetVerdant.rbxmx GorpsEvolution.rbxlx
       - name: Validate baked ground and spawn
         run: python3 scripts/verify_spawn.py default.project.json GorpsEvolution.rbxlx
       - name: Assert packaged gameplay scripts

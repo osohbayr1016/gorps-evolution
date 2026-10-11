@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
+local CreatureFactory=require(script.Parent.CreatureFactory)
 local World={}
 local folder
 local worldReady=false
@@ -45,67 +46,85 @@ end
 function World.make(onGather)
  if type(onGather)=="function" then gatherHandler=onGather end
  if worldReady and folder and folder.Parent then return folder end
- if folder and folder.Parent then folder:Destroy() end
- folder=Instance.new("Folder");folder.Name="ChaosGalaxy";folder.Parent=workspace
- part(folder,"Ground",Vector3.new(650,2,650),CFrame.new(0,-1,0),Color3.fromRGB(48,87,75),Enum.Material.Grass)
- part(folder,"LandingField",Vector3.new(100,0.4,36),CFrame.new(0,0.1,18),Color3.fromRGB(69,78,87),Enum.Material.Slate)
+ local planet=workspace:WaitForChild("PlanetVerdant",15)
+ if not planet then error("Authored PlanetVerdant map missing. Run python3 scripts/build_world.py then let Rojo sync.") end
+ local nodes=planet:FindFirstChild("ResourceNodes")
+ local terrain=planet:FindFirstChild("TerrainAndPaths")
+ if not nodes or not terrain or not terrain:FindFirstChild("Ground") then
+  error("PlanetVerdant is incomplete: missing ResourceNodes or Ground")
+ end
+ folder=workspace:FindFirstChild("ChaosGalaxy")
+ if not folder then
+  folder=Instance.new("Folder")
+  folder.Name="ChaosGalaxy"
+  folder.Parent=workspace
+ end
  for row=1,2 do
   for col=1,6 do
-   local x=(col-3.5)*89
-   local z=-210+(row-1)*93
-   table.insert(spots,Vector3.new(x,0,z))
+   table.insert(spots,Vector3.new((col-3.5)*89,1,-210+(row-1)*93))
   end
  end
- local kinds={"Tree","Tree","Rock","Ore","Bush","Crystal","Fiber","Wild"}
- for i=1,70 do
-  local kind=kinds[(i-1)%#kinds+1]
-  local angle=i*2.3999632
-  local distance=75+(i%6)*28
-  local x=math.cos(angle)*distance
-  local z=math.sin(angle)*distance+115
-  z=math.clamp(z,-14,296)
-  local node=Instance.new("Model");node.Name=kind.."_"..i;node.Parent=folder
-  local base=part(node,"Interact",Vector3.new(5,5,5),CFrame.new(x,3,z),
-   Color3.fromRGB(99,154,127),Enum.Material.SmoothPlastic,Enum.PartType.Ball)
-  if kind=="Tree" then
-   base.Shape=Enum.PartType.Block;base.Size=Vector3.new(3,10,3);base.Position=Vector3.new(x,5,z)
-   base.Color=Color3.fromRGB(115,82,63)
-   part(node,"Canopy",Vector3.new(11,11,11),CFrame.new(x,12,z),Color3.fromRGB(54,146,100),Enum.Material.Grass,Enum.PartType.Ball)
-  elseif kind=="Wild" then
-   base.Color=Color3.fromRGB(217,105,104)
-   part(node,"Ear",Vector3.new(2,5,2),CFrame.new(x-2,7,z),base.Color,nil,Enum.PartType.Ball)
-  elseif kind=="Ore" then base.Color=Color3.fromRGB(144,169,192)
-  elseif kind=="Crystal" then base.Color=Color3.fromRGB(152,118,236);base.Material=Enum.Material.Neon
-  elseif kind=="Bush" then base.Color=Color3.fromRGB(86,171,90)
-  elseif kind=="Fiber" then base.Color=Color3.fromRGB(193,202,119)
-  else base.Color=Color3.fromRGB(119,127,135) end
-  local prompt=Instance.new("ProximityPrompt")
-  prompt.ActionText=kind=="Wild" and "Hunt" or "Harvest"
-  prompt.ObjectText=kind;prompt.MaxActivationDistance=12;prompt.HoldDuration=0.5;prompt.Parent=base
-  local cooling=false
-  prompt.Triggered:Connect(function(player)
-   if cooling or not gatherHandler then return end
-   local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-   if not root or (root.Position-base.Position).Magnitude>17 then return end
-   cooling=true;prompt.Enabled=false
-   gatherHandler(player,kind)
-   task.delay(C.Nodes[kind][3],function()
-    if prompt.Parent then cooling=false;prompt.Enabled=true end
-   end)
+ local count=0
+ for _,node in ipairs(nodes:GetChildren()) do
+  if node:IsA("Model") then
+   local kind=string.match(node.Name,"^([A-Za-z]+)_")
+   local base=node:FindFirstChild("Interact")
+   if kind and C.Nodes[kind] and base and base:IsA("BasePart") then
+    local prompt=base:FindFirstChildOfClass("ProximityPrompt")
+    if not prompt then prompt=Instance.new("ProximityPrompt");prompt.Parent=base end
+    prompt.ActionText=kind=="Wild" and "Hunt" or "Harvest"
+    prompt.ObjectText=kind
+    prompt.MaxActivationDistance=13
+    prompt.HoldDuration=.3
+    prompt.RequiresLineOfSight=false
+    local cooling=false
+    prompt.Triggered:Connect(function(player)
+     if cooling or not gatherHandler then return end
+     local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+     if not root or (root.Position-base.Position).Magnitude>19 then return end
+     cooling=true
+     prompt.Enabled=false
+     local ok,err=pcall(gatherHandler,player,kind)
+     if not ok then warn("[Gorps World] Harvest failed:",err) end
+     task.delay(C.Nodes[kind][3],function()
+      if prompt.Parent then cooling=false;prompt.Enabled=true end
+     end)
+    end)
+    count+=1
+   end
+  end
+ end
+ local village=planet:FindFirstChild("VillageHub")
+ if village then
+  for _,shop in ipairs(village:GetChildren()) do
+   local tab=({
+    TradingPost="Shop",CraftingWorkshop="Crafting",
+    FarmerGuild="Workers",CreatureNursery="Creatures"
+   })[shop.Name]
+   local door=tab and shop:FindFirstChild("Door",true)
+   if tab and door and door:IsA("BasePart") then
+    local prompt=Instance.new("ProximityPrompt")
+    prompt.ActionText="Open "..tab
+    prompt.ObjectText=shop.Name
+    prompt.MaxActivationDistance=17
+    prompt.RequiresLineOfSight=false
+    prompt.Parent=door
+    prompt.Triggered:Connect(function(player)
+     local remotes=ReplicatedStorage:FindFirstChild("GorpsRemotes")
+     local signal=remotes and remotes:FindFirstChild("Update")
+     if signal then signal:FireClient(player,{openTab=tab}) end
+    end)
+   end
+  end
+ end
+ local ship=planet:FindFirstChild("UFO")
+ if ship and ship:IsA("Model") then
+  RunService.Heartbeat:Connect(function(dt)
+   if ship.Parent then ship:PivotTo(ship:GetPivot()*CFrame.Angles(0,dt*0.12,0)) end
   end)
  end
- -- Rotating trade ship: event is open during each weekend UTC.
- local ufo=Instance.new("Model");ufo.Name="WeeklyUFO";ufo.Parent=folder
- local plate=part(ufo,"Saucer",Vector3.new(18,3,18),CFrame.new(0,22,0),
-  Color3.fromRGB(111,205,217),Enum.Material.Metal,Enum.PartType.Cylinder)
- local dome=part(ufo,"Dome",Vector3.new(10,7,10),CFrame.new(0,26,0),
-  Color3.fromRGB(152,120,240),Enum.Material.Glass,Enum.PartType.Ball)
- ufo.PrimaryPart=plate;sign(ufo,dome,"WEEKEND UFO")
- RunService.Heartbeat:Connect(function(dt)
-  if ufo.Parent then ufo:PivotTo(ufo:GetPivot()*CFrame.Angles(0,dt*0.25,0)) end
- end)
  worldReady=true
- print("[Gorps World] Planet Verdant initialized: 70 nodes, 12 ranch sites and weekend UFO.")
+ print("[Gorps World] Authored map loaded: "..count.." harvest nodes, 12 plots, UFO, static terrain.")
  return folder
 end
 function World.update(player,profile)
@@ -117,7 +136,7 @@ function World.update(player,profile)
  assignedSpot.model=base
  local pos=assignedSpot.pos
  local half=20+profile.BaseLevel*3
- part(base,"Land",Vector3.new(half*2,0.7,half*2),CFrame.new(pos.X,0.2,pos.Z),Color3.fromRGB(99,133,101),Enum.Material.Grass)
+ part(base,"Land",Vector3.new(half*2,0.7,half*2),CFrame.new(pos.X,1.5,pos.Z),Color3.fromRGB(99,133,101),Enum.Material.Grass)
  for _,side in ipairs({-1,1}) do
   for step=-half,half,8 do
    local offset=math.clamp(step,-half,half)
@@ -131,6 +150,26 @@ function World.update(player,profile)
   Color3.fromRGB(206,194,167),Enum.Material.WoodPlanks)
  part(base,"Roof",Vector3.new(18+profile.BaseLevel*2,2,15),CFrame.new(pos.X,11,pos.Z-10),
   Color3.fromRGB(78,96,115),Enum.Material.Slate)
+ part(base,"Door",Vector3.new(4,6,.45),CFrame.new(pos.X,3.5,pos.Z-16.2),
+  Color3.fromRGB(91,116,118),Enum.Material.Wood)
+ for _,side in ipairs({-1,1}) do
+  part(base,"Window",Vector3.new(3.5,3,.5),CFrame.new(pos.X+side*5.8,6,pos.Z-16.3),
+   Color3.fromRGB(126,218,229),Enum.Material.Glass)
+  part(base,"Lantern",Vector3.new(1.5,2,1.5),CFrame.new(pos.X+side*7.3,5.8,pos.Z-16.8),
+   Color3.fromRGB(242,209,130),Enum.Material.Neon,Enum.PartType.Ball)
+ end
+ for i=1,3 do
+  part(base,"CropBed",Vector3.new(8,.55,3.1),CFrame.new(pos.X-12,1.5,pos.Z+2+i*4),
+   Color3.fromRGB(120,90,74),Enum.Material.Ground)
+  for j=1,4 do
+   part(base,"Sprout",Vector3.new(1.1,2,1.1),CFrame.new(pos.X-15+j*1.7,2.5,pos.Z+2+i*4),
+    Color3.fromRGB(89,189,121),Enum.Material.Grass,Enum.PartType.Ball)
+  end
+ end
+ part(base,"WaterBowl",Vector3.new(4,.8,4),CFrame.new(pos.X+9,1.5,pos.Z+7),
+  Color3.fromRGB(113,170,193),Enum.Material.Metal,Enum.PartType.Cylinder)
+ part(base,"RanchStone",Vector3.new(8,1.2,4),CFrame.new(pos.X+9,1.4,pos.Z+13),
+  Color3.fromRGB(173,165,147),Enum.Material.Slate)
  local marker=part(base,"Name",Vector3.new(3,3,3),CFrame.new(pos.X,5,pos.Z+half-4),Color3.fromRGB(73,159,169))
  marker.Transparency=1;marker.CanCollide=false
  sign(base,marker,player.DisplayName.."'s Ranch")
@@ -151,58 +190,20 @@ function World.update(player,profile)
  local petData
  for _,pet in ipairs(profile.Pets) do if pet.id==profile.ActiveId then petData=pet;break end end
  if petData then
-  local def=C.Species[petData.species]
-  local color=Color3.fromRGB(unpack(def.color))
-  local pet=Instance.new("Model");pet.Name="Companion_"..petData.species;pet.Parent=base
-  local body=part(pet,"Body",Vector3.new(5,4,5),CFrame.new(pos.X,4,pos.Z+2),color,nil,Enum.PartType.Ball)
-  pet.PrimaryPart=body
-  for _,side in ipairs({-1,1}) do
-   part(pet,"Eye",Vector3.new(0.8,1,0.8),CFrame.new(pos.X+side*1.1,4.5,pos.Z-0.3),
-    Color3.fromRGB(24,32,42),nil,Enum.PartType.Ball)
-   part(pet,"Ear",Vector3.new(1.5,3,1.5),CFrame.new(pos.X+side*1.6,7,pos.Z+2),
-    color,nil,Enum.PartType.Ball)
+  local origin=pos+Vector3.new(0,5,2)
+  local model=CreatureFactory.create(petData,origin,base)
+  if model then
+   companions[player]={model=model,home=pos,current=origin}
   end
-  local tier=table.find(C.Rarities,petData.rarity) or 1
-  local variant=petData.evolved
-  local scale=1+variant*0.18+(tier-1)*0.06
-  body.Size=Vector3.new(5,4,5)*scale
-  if def.role=="Tank" then
-   part(pet,"Armor",Vector3.new(5*scale,2,4*scale),CFrame.new(pos.X,6,pos.Z+3),
-    Color3.fromRGB(95,105,115),Enum.Material.Slate,Enum.PartType.Ball)
-  elseif def.role=="Assassin" then
-   for _,side in ipairs({-1,1}) do
-    part(pet,"Blade",Vector3.new(1,4,1),CFrame.new(pos.X+side*3,4,pos.Z+2),
-     Color3.fromRGB(222,181,246),Enum.Material.Neon)
-   end
-  elseif def.role=="Support" then
-   part(pet,"Halo",Vector3.new(4,0.5,4),CFrame.new(pos.X,8.5,pos.Z+2),
-    Color3.fromRGB(144,254,207),Enum.Material.Neon,Enum.PartType.Cylinder)
-  elseif def.role=="Transport" then
-   part(pet,"Saddle",Vector3.new(3,1,3),CFrame.new(pos.X,6,pos.Z+2),
-    Color3.fromRGB(85,65,81),Enum.Material.Fabric)
-  elseif def.role=="Miner" then
-   part(pet,"Helmet",Vector3.new(3,1.5,3),CFrame.new(pos.X,6.8,pos.Z+2),
-    Color3.fromRGB(247,206,93),Enum.Material.Metal)
-   part(pet,"Headlamp",Vector3.new(1.3,1.3,1.3),CFrame.new(pos.X,7,pos.Z+0.6),
-    Color3.fromRGB(250,239,173),Enum.Material.Neon,Enum.PartType.Ball)
-  elseif def.role=="Ranged" then
-   for _,side in ipairs({-1,1}) do
-    part(pet,"Wing",Vector3.new(3,1,4),CFrame.new(pos.X+side*3,4.5,pos.Z+3),
-     Color3.fromRGB(96,187,229),Enum.Material.SmoothPlastic)
-   end
-  end
-  sign(pet,body,petData.species.." Lv."..petData.level)
-  for _,piece in ipairs(pet:GetDescendants()) do
-   if piece:IsA("BasePart") then piece.CanCollide=false end
-  end
-  companions[player]={model=pet,home=pos,current=body.Position}
  end
 end
 function World.assign(player,p)
  local used={}
  for _,spot in pairs(assigned) do used[spot.index]=true end
  local index
- for i=1,#spots do if not used[i] then index=i;break end end
+ for _,i in ipairs({9,10,8,11,7,12,3,4,2,5,1,6}) do
+  if not used[i] then index=i;break end
+ end
  if not index then return false end
  assigned[player]={index=index,pos=spots[index]}
  World.update(player,p)
@@ -212,7 +213,10 @@ function World.spawn(player,character)
  local slot=assigned[player]
  if slot then
   local root=character:WaitForChild("HumanoidRootPart",10)
-  if root then character:PivotTo(CFrame.new(slot.pos+Vector3.new(0,6,15))) end
+  if root then
+   local start=slot.pos+Vector3.new(0,6,15)
+   character:PivotTo(CFrame.lookAt(start,Vector3.new(0,6,0)))
+  end
  end
 end
 function World.release(player)

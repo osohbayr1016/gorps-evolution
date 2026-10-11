@@ -18,7 +18,10 @@ local function send(name,args)
 end
 ui=UI.new(send)
 update.OnClientEvent:Connect(function(data)
- if type(data)=="table" then ui:update(data.profile,data.trade,data.message,data.rankings) end
+ if type(data)=="table" then
+  ui:update(data.profile,data.trade,data.message,data.rankings)
+  if data.openTab then ui:openTab(data.openTab) end
+ end
 end)
 task.spawn(function()
  for attempt=1,25 do

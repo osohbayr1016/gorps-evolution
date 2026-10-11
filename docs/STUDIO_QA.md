@@ -71,3 +71,16 @@
 - If a world module errors, a **bright red** `GorpsWorldFailureMarker` must appear.
 - CI must reject a place build that is missing the Main server/client scripts or shared game modules.
 - When Rojo live sync is connected, a new push to main should download automatically into the local clone, then propagate into Studio edit mode; Stop/Play to reload.
+
+## Authored planet + gameplay UI acceptance
+
+- With Rojo connected and Play **stopped**, Workspace contains `PlanetVerdant`. Its child groups include `VillageHub`, `ForestsAndWildlife`, `ResourceNodes`, `RanchPlots`, `SignatureLandmarks`, and `UFO`.
+- Village hub, quarry, lagoon, glowcap forest, roads, and stalls are visible in **Edit mode**.
+- Playing shows the top HUD, right menu, mission hint, player ranch, and moving starter Gorp.
+- Harvest an `Interact` node using E; currency/inventory and quest progress change.
+- At a village shop door, press E; the menu should open directly to Shop/Crafting/Workers/Creatures.
+- The first ranch assigned should be one of the two center-near-village plots.
+- In the Server Output look for `[Gorps World] Authored map loaded: 70 harvest nodes`.
+- New CI assertions must confirm 350+ baked 3D parts, 70 nodes, and 12 ranch plots in the generated place before upload.
+
+If the editor still looks empty after the initial map update, stop the live-sync Terminal process and relaunch `bash scripts/studio-live-sync.sh`, then reconnect the Rojo Studio plugin. Do not download a new .rbxlx.

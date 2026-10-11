@@ -17,10 +17,15 @@ local function check(value,message)
  assert(value,"[Gorps Smoke] "..message)
 end
 local function fresh() return R.new(1800000000) end
-local planet=workspace:WaitForChild("ChaosGalaxy",10)
-local ground=planet and planet:FindFirstChild("Ground")
+local planet=workspace:WaitForChild("PlanetVerdant",10)
+local terrain=planet and planet:FindFirstChild("TerrainAndPaths")
+local ground=terrain and terrain:FindFirstChild("Ground")
 check(ground and ground:IsA("BasePart") and ground.Anchored and ground.CanCollide,
  "runtime planet ground must exist and be collidable")
+check(planet and planet:FindFirstChild("ResourceNodes") and #planet.ResourceNodes:GetChildren()==70,
+ "authored world contains all 70 resource nodes")
+check(planet and planet:FindFirstChild("RanchPlots") and #planet.RanchPlots:GetChildren()==12,
+ "authored world contains all 12 ranch plots")
 check(baseplate.Size.X>=650 and baseplate.Size.Z>=650,
  "fallback baseplate covers every ranch")
 check(safeSpawn.Position.Y>baseplate.Position.Y+baseplate.Size.Y/2,

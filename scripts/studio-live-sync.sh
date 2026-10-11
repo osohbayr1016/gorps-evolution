@@ -20,6 +20,7 @@ if [[ "$(git branch --show-current)" != "main" ]]; then
 fi
 echo "GORPS: source from origin/main; syncing to Roblox Studio at localhost:34872."
 echo "Open Studio in EDIT MODE, select Plugins > Rojo > Connect (one-time)."
+echo "The authored PlanetVerdant model appears in Studio EDIT mode after map generation."
 echo "Stop/Play after a sync to restart server scripts. Keep this Terminal window open."
 git fetch --quiet origin main
 if [[ -z "$(git status --porcelain)" ]]; then
@@ -27,6 +28,7 @@ if [[ -z "$(git status --porcelain)" ]]; then
 else
  echo "Local edits detected; skipping initial auto-pull to protect your files."
 fi
+python3 scripts/build_world.py
 rojo serve default.project.json &
 rojo_pid=$!
 trap 'kill "$rojo_pid" 2>/dev/null || true' EXIT INT TERM
@@ -48,6 +50,10 @@ while kill -0 "$rojo_pid" 2>/dev/null; do
  latest="$(git rev-parse origin/main)"
  if [[ "$current" != "$latest" ]]; then
   if git merge --ff-only origin/main; then
+   if ! python3 scripts/build_world.py; then
+    echo "World generator failed! Keep the previous working Studio place; review Terminal errors."
+    continue
+   fi
    echo "GORPS: synced new GitHub version $latest to Rojo; Stop then Play to retest."
    last=""
   else
