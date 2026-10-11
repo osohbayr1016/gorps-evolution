@@ -44,7 +44,7 @@ local function exchange(p,target,offer)
   local pet,i=R.pet(p,offer.id)
   table.remove(p.Pets,i)
   local success=R.addPet(target,pet.species,pet.rarity)
-  assert(success)
+  assert(success,"validated creature trade failed")
   local received=target.Pets[#target.Pets]
   received.level=pet.level;received.xp=pet.xp;received.evolved=pet.evolved
  end
