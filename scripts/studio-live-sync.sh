@@ -2,6 +2,13 @@
 # Run once per dev session. Automatically fast-forwards GitHub main and Rojo syncs to Studio.
 set -Eeuo pipefail
 cd "$(dirname "$0")/.."
+# Include Aftman-managed tool shims on macOS/Linux, even when shell PATH is incomplete.
+if [[ -d "$HOME/.aftman/bin" ]]; then
+ case ":$PATH:" in
+  *":$HOME/.aftman/bin:"*) ;;
+  *) export PATH="$HOME/.aftman/bin:$PATH" ;;
+ esac
+fi
 if [[ ! -d .git ]]; then
  echo "Run this script from your cloned Gorps Evolution repository."
  exit 1
@@ -11,7 +18,9 @@ if ! command -v rojo >/dev/null 2>&1; then
  exit 1
 fi
 if ! command -v lune >/dev/null 2>&1; then
- echo "Lune is required to generate editable creature rigs. Install Aftman, then run: aftman install"
+ echo "Lune missing: run 'aftman install' in this repository, then retry."
+ echo "Aftman shims normally live in $HOME/.aftman/bin; check: ls -l \"$HOME/.aftman/bin/lune\""
+ echo "If needed, add that directory to PATH in your ~/.zshrc."
  exit 1
 fi
 if ! command -v git >/dev/null 2>&1; then
