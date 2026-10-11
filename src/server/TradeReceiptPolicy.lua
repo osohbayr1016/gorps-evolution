@@ -19,7 +19,7 @@ local function whole(value,minimum,maximum)
   and value>=minimum and value<=maximum
 end
 local function validId(id)
- return type(id)=="string" and #id>=16 and #id<=200
+ return type(id)=="string" and #id>=16 and #id<=44
 end
 local function equal(left,right)
  if type(left)~=type(right) then return false end

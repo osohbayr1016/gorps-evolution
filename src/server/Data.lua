@@ -8,6 +8,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.Rules)
 local Config=require(ReplicatedStorage.Shared.Config)
 local SessionPolicy=require(script.Parent.SessionPolicy)
+local TradePersistence=require(script.Parent.TradePersistence)
 local Data={}
 local profiles={}
 local versions={}
@@ -54,6 +55,28 @@ local function claimSession(liveStore,key,token)
  end
  return false,lastError
 end
+local function tradeStore(liveStore)
+ local adapter={}
+ function adapter:update(key,transform)
+  local rejected
+  local value=liveStore:UpdateAsync(key,function(old)
+   local nextValue,reason=transform(old)
+   rejected=reason
+   return nextValue
+  end)
+  if value==nil then return nil,rejected end
+  return value
+ end
+ return adapter
+end
+local function releaseClaim(liveStore,key,token)
+ local ok,result=retry(function()
+  return liveStore:UpdateAsync(key,function(old)
+   return SessionPolicy.releaseRaw(old,token)
+  end)
+ end)
+ return ok and SessionPolicy.confirms(result,token,true)
+end
 local function syncBoard(player,p)
  local board=player:FindFirstChild("leaderstats")
  if not board then
@@ -96,8 +119,21 @@ function Data.load(player)
    end
    return nil
   end
-  saved=result
+  local key="player_"..player.UserId
+  local recovered,status,recoveryDetail=TradePersistence.recoverForLoad(
+   tradeStore(liveStore),key,token,player.UserId,result
+  )
+  if not recovered then
+   warn("[Gorps Data] Trade recovery failed:",player.UserId,status,recoveryDetail)
+   releaseClaim(liveStore,key,token)
+   player:Kick("Unable to safely recover a pending trade. Please retry.")
+   return nil
+  end
+  saved=recovered
   sessions[player]=token
+  if status~=TradePersistence.CLEAN then
+   warn("[Gorps Data] Recovered persisted trade:",player.UserId,status)
+  end
  else
   print("[Gorps Data] Local Studio test profile: saves are intentionally disabled.")
  end
@@ -132,7 +168,12 @@ function Data.save(player,release)
  local rejected
  local ok,err=retry(function()
   return liveStore:UpdateAsync("player_"..player.UserId,function(old)
-   local nextValue,reason=SessionPolicy.save(old,snapshot,token,os.time(),release==true)
+   local nextValue,reason
+   if release==true and type(old)=="table" and old._trade~=nil then
+    nextValue,reason=SessionPolicy.releaseRaw(old,token)
+   else
+    nextValue,reason=SessionPolicy.save(old,snapshot,token,os.time(),release==true)
+   end
    rejected=reason
    return nextValue
   end)
@@ -145,6 +186,8 @@ function Data.save(player,release)
  if confirmed and release then sessions[player]=nil end
  if not ok then
   warn("[Gorps Data] Save error:",player.UserId,err)
+ elseif not confirmed and rejected=="Trade recovery required" then
+  warn("[Gorps Data] Autosave deferred for pending trade:",player.UserId)
  elseif not confirmed then
   warn("[Gorps Data] Stale session write rejected:",player.UserId,rejected)
   sessions[player]=nil

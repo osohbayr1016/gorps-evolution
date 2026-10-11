@@ -46,6 +46,9 @@ function Policy.save(stored,snapshot,token,now,release)
  if not validToken(token) or not validTime(now) or type(snapshot)~="table" then
   return nil,"Invalid session save"
  end
+ if type(stored)=="table" and stored._trade~=nil then
+  return nil,"Trade recovery required"
+ end
  -- An error response can hide a successful release. A same-token retry may
  -- acknowledge that terminal state, but never a later server's release.
  if release and type(stored)=="table" and stored._session==nil
@@ -56,12 +59,24 @@ function Policy.save(stored,snapshot,token,now,release)
   return nil,"Session ownership lost"
  end
  local nextValue=copy(snapshot)
+ if type(stored)=="table" and stored._tradeResult~=nil then
+  nextValue._tradeResult=copy(stored._tradeResult)
+ end
  nextValue._lastSession=token
  if release then
   nextValue._session=nil
  else
   nextValue._session={id=token,expiresAt=now+Policy.TIMEOUT}
  end
+ return nextValue
+end
+function Policy.releaseRaw(stored,token)
+ if not Policy.owns(stored,token) then
+  return nil,"Session ownership lost"
+ end
+ local nextValue=copy(stored)
+ nextValue._lastSession=token
+ nextValue._session=nil
  return nextValue
 end
 function Policy.confirms(stored,token,release)

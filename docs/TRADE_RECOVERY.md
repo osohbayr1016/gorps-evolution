@@ -3,8 +3,9 @@
 Published player trading remains disabled. `TradeReceiptPolicy.lua` defines the
 pure state machine. `TradePersistence.lua` now drives that policy through an
 injected UpdateAsync-style store with session-token checks and per-profile
-recovery; it is not connected to `Data.lua` or live remotes and therefore does
-not make the current game production-safe for trading.
+recovery. `Data.lua` now invokes raw join recovery before gameplay hydration
+and protects pending markers from ordinary saves, but no live trade remote
+executes the durable coordinator. Published trading therefore remains closed.
 
 ## Safety invariants
 
@@ -21,8 +22,10 @@ not make the current game production-safe for trading.
 6. A committed receipt cannot abort. A receipt cannot become `COMPLETE` until
    both profiles confirm the committed result.
 7. Session metadata is preserved when the committed gameplay snapshot is
-   applied. The future adapter must additionally verify the active session
-   token in the same UpdateAsync callback.
+   applied, and every profile callback verifies the active session token.
+8. A normal autosave cannot erase `_trade`. Final unload may release session
+   ownership while preserving the marker, and `_tradeResult` survives later
+   saves as terminal idempotency evidence.
 
 ## Required durable write order
 
@@ -41,13 +44,13 @@ boundary and executes retry/conflict cases against the real policy module.
 
 ## Still required before enabling the feature
 
-- Connect the server-only adapter to the real receipt/profile DataStores while
-  preserving its session checks and bounded retries.
-- Invoke `recoverProfile` during raw join loading before `Rules.load` strips
-  reserved fields; coordinate autosaves so they cannot erase a pending marker.
-- Extend the fake-store suite through the concrete DataStore wrapper. The current
-  suite covers permanent pre-write failure and a lost response after each of the
-  seven durable mutations, but not Roblox throttling or cross-server timing.
+- Add the server-owned settlement entry point that feeds validated before/after
+  snapshots into `execute`, blocks conflicting live mutation, and refreshes
+  both in-memory profiles from the exact durable result.
+- Define bounded COMPLETE/ABORTED receipt retention and operational diagnostics.
+- Extend fault injection through the concrete DataStore wrapper. Current tests
+  cover raw-load PREPARING recovery, marker-safe saves, permanent pre-write
+  failure and lost responses, but not Roblox throttling or cross-server timing.
 - Private published two-account tests for throttling, disconnect, shutdown,
   lease expiry and cross-server rejoin.
 - Receipt retention/cleanup limits and operational diagnostics.
@@ -66,6 +69,13 @@ durably aborts, while a committed decision is never rolled back.
 `recoverProfile` resolves one raw marked profile on join and fails closed when
 the session token, role, user, receipt, or marker does not match.
 
-This separation keeps the fault model executable without granting the module
-live DataStore access. Integration, retention and private-published evidence
-remain release blockers; `DurableTrades` stays false.
+`Data.load` now adapts the live profile DataStore to this interface before
+`Rules.load`, so PREPARING and COMMITTED markers resolve while still raw.
+Invalid recovery fails closed and best-effort releases the claimed session.
+`SessionPolicy.save` defers an autosave that observes `_trade`, preserves a
+terminal `_tradeResult`, and `releaseRaw` lets shutdown relinquish ownership
+without deleting recovery evidence.
+
+Durable execution from the trade remote, in-memory synchronization, retention
+and private-published evidence remain release blockers; `DurableTrades` stays
+false.

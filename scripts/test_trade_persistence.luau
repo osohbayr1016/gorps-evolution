@@ -69,7 +69,7 @@ local tokenA="session-a:111111111111"
 local tokenB="session-b:222222222222"
 local receiptKey="trade:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 local keys={
- receipt="receipt/"..receiptKey,
+ receipt=Adapter.receiptKey(receiptKey),
  a={key="profile/101",token=tokenA},
  b={key="profile/202",token=tokenB},
 }
@@ -195,4 +195,60 @@ equal(conflictStore.values[keys.receipt].participants.a.offer.amount,99,
 equal(conflictStore.values[keys.a.key].Inventory.Wood,100,
  "receipt conflict does not change profile")
 
-print("PASS: "..checks.." trade persistence assertions with pre/post-write faults and session checks (fake store only).")
+local loadReceipt=receipt()
+local loadValues=values()
+loadValues[keys.a.key]=ReceiptPolicy.prepare(loadValues[keys.a.key],loadReceipt,"a")
+loadValues[keys.receipt]=loadReceipt
+local loadStore=Store.new(loadValues,1)
+local loaded,loadState=Adapter.recoverForLoad(
+ loadStore,keys.a.key,tokenA,101,loadValues[keys.a.key]
+)
+equal(loadState,ReceiptPolicy.ABORTED,"load recovery aborts preparing receipt")
+equal(loaded.Inventory.Wood,100,"load recovery preserves pre-commit assets")
+equal(loaded._trade,nil,"load recovery clears pending marker")
+equal(loaded._tradeResult.outcome,ReceiptPolicy.ABORTED,
+ "load recovery preserves terminal idempotency marker")
+equal(loadStore.failed,true,"load recovery survives lost receipt response")
+
+local loadCommittedReceipt=receipt()
+local loadCommittedValues=values()
+loadCommittedValues[keys.a.key]=ReceiptPolicy.prepare(
+ loadCommittedValues[keys.a.key],loadCommittedReceipt,"a"
+)
+loadCommittedValues[keys.b.key]=ReceiptPolicy.prepare(
+ loadCommittedValues[keys.b.key],loadCommittedReceipt,"b"
+)
+loadCommittedReceipt=ReceiptPolicy.commit(loadCommittedReceipt,
+ loadCommittedValues[keys.a.key],loadCommittedValues[keys.b.key])
+loadCommittedValues[keys.receipt]=loadCommittedReceipt
+local loadCommittedStore=Store.new(loadCommittedValues)
+local loadedCommitted,loadedCommittedState=Adapter.recoverForLoad(
+ loadCommittedStore,keys.a.key,tokenA,101,loadCommittedValues[keys.a.key]
+)
+equal(loadedCommittedState,ReceiptPolicy.COMMITTED,
+ "load recovery follows committed decision")
+equal(loadedCommitted.Inventory.Wood,90,"committed load applies after snapshot")
+equal(loadedCommitted._trade,nil,"committed load clears pending marker")
+equal(loadedCommitted._tradeResult.outcome,ReceiptPolicy.COMMITTED,
+ "committed load retains terminal result")
+
+local terminalLoaded,terminalState=Adapter.recoverForLoad(
+ loadStore,keys.a.key,tokenA,101,loaded
+)
+equal(terminalState,ReceiptPolicy.ABORTED,"terminal load retry is recognized")
+equal(terminalLoaded._tradeResult.id,receiptKey,"terminal result remains retry-safe")
+
+local badMarker=copy(loaded)
+badMarker._tradeResult.userId=202
+equal(Adapter.recoverForLoad(loadStore,keys.a.key,tokenA,101,badMarker),nil,
+ "wrong-user terminal marker fails closed")
+equal(Adapter.recoverForLoad(loadStore,keys.a.key,"session-stale:444444444444",101,loaded),nil,
+ "stale load session fails closed")
+equal(Adapter.receiptKey(string.rep("x",45)),nil,"oversized receipt key rejected")
+equal(ReceiptPolicy.valid((function()
+ local value=receipt()
+ value.id=string.rep("x",45)
+ return value
+end)()),false,"oversized receipt id rejected")
+
+print("PASS: "..checks.." trade persistence assertions with pre/post-write faults, load recovery and session checks (fake store only).")

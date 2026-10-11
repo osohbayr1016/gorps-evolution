@@ -6,6 +6,19 @@ local SessionPolicy=require(script.Parent.SessionPolicy)
 local Persistence={}
 Persistence.RETRIES=3
 Persistence.PENDING="PENDING"
+Persistence.CLEAN="CLEAN"
+
+local function copy(value)
+ if type(value)~="table" then return value end
+ local result={}
+ for key,item in pairs(value) do result[key]=copy(item) end
+ return result
+end
+
+function Persistence.receiptKey(id)
+ if type(id)~="string" or #id<16 or #id>44 then return nil end
+ return "trade_"..id
+end
 
 local function validEntry(entry)
  return type(entry)=="table" and type(entry.key)=="string" and #entry.key>0
@@ -172,6 +185,44 @@ function Persistence.recoverProfile(store,receiptKey,profileKey,sessionToken,rol
  end)
  if not profile then return nil,Persistence.PENDING,reason end
  return profile,receipt.state,receipt
+end
+
+local function validMarker(marker,userId,terminal)
+ if type(marker)~="table" or marker.version~=ReceiptPolicy.VERSION
+  or marker.userId~=userId or (marker.role~="a" and marker.role~="b")
+  or not Persistence.receiptKey(marker.id) then return false end
+ if terminal then
+  return marker.outcome==ReceiptPolicy.ABORTED
+   or marker.outcome==ReceiptPolicy.COMMITTED
+ end
+ return marker.outcome==nil
+end
+
+function Persistence.recoverForLoad(store,profileKey,sessionToken,userId,claimed)
+ if type(userId)~="number" or userId%1~=0 or userId<1
+  or type(claimed)~="table"
+  or not SessionPolicy.owns(claimed,sessionToken) then
+  return nil,Persistence.PENDING,"Invalid claimed profile recovery"
+ end
+ local pending=claimed._trade
+ local terminal=claimed._tradeResult
+ if pending~=nil and terminal~=nil then
+  return nil,Persistence.PENDING,"Profile has conflicting trade markers"
+ end
+ if pending~=nil then
+  if not validMarker(pending,userId,false) then
+   return nil,Persistence.PENDING,"Invalid pending trade marker"
+  end
+  return Persistence.recoverProfile(store,Persistence.receiptKey(pending.id),
+   profileKey,sessionToken,pending.role)
+ end
+ if terminal~=nil then
+  if not validMarker(terminal,userId,true) then
+   return nil,Persistence.PENDING,"Invalid terminal trade marker"
+  end
+  return copy(claimed),terminal.outcome
+ end
+ return copy(claimed),Persistence.CLEAN
 end
 
 return Persistence

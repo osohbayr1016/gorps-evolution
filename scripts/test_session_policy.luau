@@ -66,4 +66,27 @@ equal(corruptLockReason,"Corrupt session lock","corrupt lock reason")
 equal(Policy.claim({},"short",now),nil,"invalid token rejected")
 equal(Policy.save(claimedA,{},serverA,-1,false),nil,"invalid timestamp rejected")
 equal(Policy.claim({},serverA,math.huge),nil,"infinite timestamp rejected")
-print("PASS: "..checks.." session ownership assertions (pure policy; live DataStore QA remains pending).")
+local pending=Policy.claim({Coins=600,_trade={
+ version=1,id="trade:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+ role="a",userId=101,
+}},serverA,now)
+local blockedSave,pendingReason=Policy.save(pending,{Coins=999},serverA,now+1,false)
+equal(blockedSave,nil,"autosave cannot erase pending trade marker")
+equal(pendingReason,"Trade recovery required","pending trade save reason")
+local rawRelease=Policy.releaseRaw(pending,serverA)
+equal(rawRelease.Coins,600,"raw release preserves gameplay")
+equal(rawRelease._trade.id,pending._trade.id,"raw release preserves trade marker")
+equal(rawRelease._session,nil,"raw release clears ownership")
+equal(rawRelease._lastSession,serverA,"raw release records terminal owner")
+
+local terminal=Policy.claim({Coins=625,_tradeResult={
+ version=1,id="trade:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+ role="a",userId=101,outcome="COMMITTED",
+}},serverA,now)
+local terminalSave=Policy.save(terminal,{Coins=630},serverA,now+1,false)
+equal(terminalSave.Coins,630,"terminal trade profile resumes normal saves")
+equal(terminalSave._tradeResult.outcome,"COMMITTED",
+ "normal save preserves terminal idempotency marker")
+equal(Policy.releaseRaw(claimedB,serverA),nil,"foreign owner cannot raw-release profile")
+
+print("PASS: "..checks.." session ownership and trade-marker assertions (pure policy; live DataStore QA remains pending).")

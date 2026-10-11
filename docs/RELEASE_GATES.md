@@ -91,12 +91,13 @@ PREPARING, COMMITTED, ABORTED and COMPLETE transitions. Its 101 assertions
 converge safely after each of seven modeled durable writes. The policy is pure
 and deliberately disconnected from live trade; see `TRADE_RECOVERY.md`.
 
-`TradePersistence.lua` now adds the next isolated layer: bounded retries,
-session-token checks, immutable receipt matching, seven-boundary lost-response
-fault injection and raw-profile recovery for PREPARING/COMMITTED markers. It is
-packaged but not wired to `Data.lua`; the release flag remains false.
+`TradePersistence.lua` provides bounded retries, session-token checks,
+immutable receipt matching and seven-boundary lost-response fault injection.
+The published load path now resolves raw PREPARING/COMMITTED markers before
+`Rules.load`, and autosave/unload cannot erase pending recovery evidence.
+No live trade remote executes this path; the release flag remains false.
 
-**Still release-blocking:** each player's profile persists separately. The adapter must be integrated into raw profile load/save without allowing normal autosaves to strip markers, then crash-tested against the concrete DataStore wrapper and a private-published store before changing the release flag. Required evidence includes failures before and after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets.
+**Still release-blocking:** each player's profile persists separately. A server-owned settlement entry point must still synchronize durable outcomes with both live in-memory profiles. Receipt retention/diagnostics and crash tests against the concrete/private-published DataStore remain mandatory before changing the release flag. Required evidence includes failures before and after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets.
 
 ## First-session collection loop (Pet Simulator 99 / Steal An Egg inspired)
 

@@ -51,9 +51,12 @@ contracts={
  )) and 'C.DurableTrades=false' in config,
  "trade persistence adapter remains release-gated":all(token in trade_persistence for token in (
     'function Persistence.execute(','function Persistence.recoverProfile(',
-    'SessionPolicy.owns(','ReceiptPolicy.sameTransaction(',
-    'Persistence.RETRIES=3'
- )) and 'C.DurableTrades=false' in config,
+    'function Persistence.recoverForLoad(','SessionPolicy.owns(',
+    'ReceiptPolicy.sameTransaction(','Persistence.RETRIES=3'
+ )) and 'TradePersistence.recoverForLoad(' in data
+    and 'Autosave deferred for pending trade' in data
+    and 'SessionPolicy.releaseRaw(' in data
+    and 'C.DurableTrades=false' in config,
 }
 for label,ok in contracts.items():
  assert ok,f"FAILED gameplay contract: {label}"

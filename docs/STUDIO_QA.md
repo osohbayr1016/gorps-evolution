@@ -101,3 +101,20 @@ In Studio Play, hire a Farmer and use Workers > Collect around the timestamps in
 ## Creature reaction milestone
 
 Run every case in [CREATURE_ART.md](CREATURE_ART.md), including active/inactive and rejected feeding, all seven rigs, two observers, respawn and evolved portrait framing. Source/headless passes are not a substitute for these tests.
+## Trade raw-load recovery fault case — source integrated, private publish required
+
+Published trading remains disabled. For a dedicated disposable test universe,
+seed a profile with a valid session-owned `_trade` marker and matching receipt,
+then join once for PREPARING and once for COMMITTED:
+
+- PREPARING must become ABORTED, preserve the original inventory and clear the
+  pending marker into an ABORTED terminal result.
+- COMMITTED must apply the exact after snapshot once and retain a COMMITTED
+  terminal result.
+- An invalid receipt, wrong user/role or unavailable receipt store must kick
+  with the safe recovery message; it must never load defaults.
+- During a pending marker, autosave must log that it deferred. Leaving must
+  release `_session` without deleting `_trade`.
+
+Do not run this against valuable player data. CI fake-store coverage is not
+evidence of Roblox DataStore timing, throttling or cross-server behavior.
