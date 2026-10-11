@@ -140,6 +140,35 @@ function World.update(player,profile)
    part(pet,"Ear",Vector3.new(1.5,3,1.5),CFrame.new(pos.X+side*1.6,7,pos.Z+2),
     color,nil,Enum.PartType.Ball)
   end
+  local tier=table.find(C.Rarities,petData.rarity) or 1
+  local variant=petData.evolved
+  local scale=1+variant*0.18+(tier-1)*0.06
+  body.Size=Vector3.new(5,4,5)*scale
+  if def.role=="Tank" then
+   part(pet,"Armor",Vector3.new(5*scale,2,4*scale),CFrame.new(pos.X,6,pos.Z+3),
+    Color3.fromRGB(95,105,115),Enum.Material.Slate,Enum.PartType.Ball)
+  elseif def.role=="Assassin" then
+   for _,side in ipairs({-1,1}) do
+    part(pet,"Blade",Vector3.new(1,4,1),CFrame.new(pos.X+side*3,4,pos.Z+2),
+     Color3.fromRGB(222,181,246),Enum.Material.Neon)
+   end
+  elseif def.role=="Support" then
+   part(pet,"Halo",Vector3.new(4,0.5,4),CFrame.new(pos.X,8.5,pos.Z+2),
+    Color3.fromRGB(144,254,207),Enum.Material.Neon,Enum.PartType.Cylinder)
+  elseif def.role=="Transport" then
+   part(pet,"Saddle",Vector3.new(3,1,3),CFrame.new(pos.X,6,pos.Z+2),
+    Color3.fromRGB(85,65,81),Enum.Material.Fabric)
+  elseif def.role=="Miner" then
+   part(pet,"Helmet",Vector3.new(3,1.5,3),CFrame.new(pos.X,6.8,pos.Z+2),
+    Color3.fromRGB(247,206,93),Enum.Material.Metal)
+   part(pet,"Headlamp",Vector3.new(1.3,1.3,1.3),CFrame.new(pos.X,7,pos.Z+0.6),
+    Color3.fromRGB(250,239,173),Enum.Material.Neon,Enum.PartType.Ball)
+  elseif def.role=="Ranged" then
+   for _,side in ipairs({-1,1}) do
+    part(pet,"Wing",Vector3.new(3,1,4),CFrame.new(pos.X+side*3,4.5,pos.Z+3),
+     Color3.fromRGB(96,187,229),Enum.Material.SmoothPlastic)
+   end
+  end
   sign(pet,body,petData.species.." Lv."..petData.level)
   for _,piece in ipairs(pet:GetDescendants()) do
    if piece:IsA("BasePart") then piece.CanCollide=false end
