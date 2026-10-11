@@ -2,6 +2,7 @@ local TweenService=game:GetService("TweenService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Config=require(ReplicatedStorage.Shared.Config)
 local CreatureFactory=require(ReplicatedStorage.Shared.CreatureFactory)
+local Icons=require(script.Parent.Icons)
 local W={}
 W.colors={
  ink=Color3.fromRGB(23,33,50),surface=Color3.fromRGB(35,48,69),
@@ -111,6 +112,18 @@ function W.row(parent,height)
  frame.BackgroundTransparency=1;frame.Parent=parent
  W.order(parent,frame)
  return frame
+end
+function W.resourceIcon(parent,id,size)
+ local box=Instance.new("Frame")
+ box.Name="ResourceIcon_"..id
+ box.Size=UDim2.fromOffset(size or 40,size or 40)
+ box.BackgroundColor3=Color3.fromRGB(53,72,97)
+ box.BorderSizePixel=0;box.Parent=parent
+ W.round(box,10)
+ local glyph=Icons.create(box,id,math.floor((size or 40)*.72))
+ glyph.AnchorPoint=Vector2.new(.5,.5)
+ glyph.Position=UDim2.fromScale(.5,.5)
+ return box
 end
 function W.petPortrait(parent,species,rarity,pet)
  local preview=Instance.new("ViewportFrame")

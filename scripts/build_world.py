@@ -11,6 +11,7 @@ import math
 from pathlib import Path
 import random
 import xml.etree.ElementTree as ET
+from resource_models import build_resource
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "world" / "PlanetVerdant.rbxmx"
@@ -49,25 +50,37 @@ def color(props, rgb):
         ET.SubElement(c, key).text = f"{value / 255:.6f}"
 
 
-def block(parent, name, pos, size, rgb, shape="Block", solid=True, material="SmoothPlastic"):
+def block(parent, name, pos, size, rgb, shape="Block", solid=True, material="SmoothPlastic",
+          rotation=(0,0,0), part_class="Part"):
     global count
     count += 1
-    obj, props = item(parent, "Part", name)
+    obj, props = item(parent, part_class, name)
     cf = ET.SubElement(props, "CoordinateFrame", {"name": "CFrame"})
     for component, value in zip("XYZ", pos):
         ET.SubElement(cf, component).text = f"{value:.5f}"
+    pitch,yaw,roll=[math.radians(x) for x in rotation]
+    cp,sp=math.cos(pitch),math.sin(pitch)
+    cy,sy=math.cos(yaw),math.sin(yaw)
+    cr,sr=math.cos(roll),math.sin(roll)
+    matrix=[
+        (cy*cr, cr*sy*sp-sr*cp, cr*sy*cp+sr*sp),
+        (cy*sr, sr*sy*sp+cr*cp, sr*sy*cp-cr*sp),
+        (-sy,cy*sp,cy*cp)
+    ]
     for r in range(3):
         for c in range(3):
-            ET.SubElement(cf, f"R{r}{c}").text = "1" if r == c else "0"
+            ET.SubElement(cf, f"R{r}{c}").text = f"{matrix[r][c]:.6f}"
     vector(props, "Size", size)
     color(props, rgb)
     prop(props, "bool", "Anchored", True)
     prop(props, "bool", "CanCollide", solid)
     prop(props, "bool", "CastShadow", True)
-    prop(props, "token", "Shape", {"Ball": 0, "Block": 1, "Cylinder": 2}[shape])
+    if part_class=="Part":
+        prop(props, "token", "Shape", {"Ball": 0, "Block": 1, "Cylinder": 2}[shape])
     # Enum.Material identifiers are stable values in Roblox.
     material_id = {"SmoothPlastic":272,"Grass":1280,"Wood":512,
-                   "Slate":800,"Neon":288,"Metal":1088,"Sand":1296}
+                   "Slate":800,"Neon":288,"Metal":1088,"Sand":1296,
+                   "Glass":1568,"Fabric":1298,"Ground":1360}
     prop(props, "token", "Material", material_id.get(material, 272))
     return obj
 
@@ -162,33 +175,7 @@ for i in range(70):
     z=min(286,max(37,math.sin(angle)*dist+156))
     if abs(x)<25: x+=42 if x>=0 else -42
     node=group(nodes,f"{kind}_{i+1:03d}")
-    if kind=="Tree":
-        block(node,"Interact",(x,5.5,z),(4,9,4),(141,100,67),material="Wood")
-        for j in range(3):
-            block(node,f"Leaves{j}",(x,11+j*3,z),(12-j*2,8,12-j*2),
-                  (57+j*15,151+j*12,101),shape="Ball",solid=False,material="Grass")
-    elif kind in ("Rock","Ore","Crystal"):
-        palette={"Rock":(130,143,147),"Ore":(114,166,185),"Crystal":(151,114,232)}
-        block(node,"Interact",(x,4,z),(7,6,6),palette[kind],
-              shape="Ball",material="Neon" if kind=="Crystal" else "Slate")
-        if kind!="Rock":
-            for j in (-1,1):
-                block(node,"Shard",(x+j*2,6.3,z+2),(2,5,2),
-                      (194,218,224) if kind=="Ore" else (183,153,250),
-                      solid=False,material="Neon")
-    elif kind=="Wild":
-        block(node,"Interact",(x,4,z),(6,4,5),(217,129,116),shape="Ball")
-        block(node,"Head",(x,5.2,z-3),(4,3.5,4),(224,153,126),shape="Ball",solid=False)
-        for dx in (-2,2):
-            block(node,"Ear",(x+dx,7,z-3),(1.4,4,1.4),(206,126,121),
-                  shape="Ball",solid=False)
-    else:
-        rgb={"Bush":(91,180,113),"Fiber":(197,196,109)}
-        block(node,"Interact",(x,2.8,z),(6,4.5,6),rgb[kind],shape="Ball")
-        for dx in (-2,2):
-            block(node,"Fruit",(x+dx,5,z-1),(1.5,1.5,1.5),
-                  (239,135,137) if kind=="Bush" else (236,210,123),
-                  shape="Ball",solid=False)
+    build_resource(node,kind,x,z,block,rng)
 
 ufo=group(world,"UFO")
 block(ufo,"Saucer",(0,30,155),(22,4,22),(121,198,210),

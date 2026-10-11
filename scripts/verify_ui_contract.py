@@ -5,6 +5,7 @@ from pathlib import Path
 ui=Path("src/client/Ui.lua").read_text()
 pages=Path("src/client/Pages.lua").read_text()
 widgets=Path("src/client/Widgets.lua").read_text()
+icons=Path("src/client/Icons.lua").read_text()
 factory=Path("src/shared/CreatureFactory.lua").read_text()
 world=Path("src/server/World.lua").read_text()
 checks={
@@ -31,6 +32,13 @@ checks={
     '"HatchEgg"','"Feed"','"Evolve"','"Expand"','"Craft"',
     '"Buy"','"Sell"','"Hire"','"Claim"','"OfferPet"','"Accept"'
  )),
+ "native resource and dock icons": 'local Icons=require(script.Parent.Icons)' in ui
+   and 'Icons.create(button,entry[2],28)' in ui
+   and 'function Icons.create(parent,name,size,tint)' in icons
+   and all(('name=="'+item+'"') in icons for item in
+     ("Eggs","Creatures","Backpack","Quests","Ranch","Coins","Wood","Stone","Iron","Berries")),
+ "resource preview in inventory": 'function W.resourceIcon(parent,id,size)' in widgets
+   and 'W.resourceIcon(header,id,42)' in pages,
  "creature model retained":'function Factory.create(pet,origin,parent)' in factory,
 }
 for name,valid in checks.items():

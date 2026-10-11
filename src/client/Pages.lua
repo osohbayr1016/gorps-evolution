@@ -160,8 +160,21 @@ local function backpack(parent,p,send)
  heading(parent,"YOUR MATERIALS","Collect resources around the world and sell extras for coins.")
  for _,id in ipairs(keys(Config.Resources)) do
   local count=p.Inventory[id] or 0
-  local card=W.card(parent,id.."  ·  "..fmt(count).." owned",
-   "Trade value: ◆ "..Config.Resources[id].." per item")
+  local card=W.card(parent,nil,"Trade value: ◆ "..Config.Resources[id].." per item")
+  local header=W.row(card,46)
+  local symbol=W.resourceIcon(header,id,42)
+  symbol.Position=UDim2.fromOffset(1,1)
+  local itemName=Instance.new("TextLabel")
+  itemName.Name="MaterialCount"
+  itemName.BackgroundTransparency=1
+  itemName.Size=UDim2.new(1,-60,0,37)
+  itemName.Position=UDim2.fromOffset(58,3)
+  itemName.Text=id.."  ·  x"..fmt(count)
+  itemName.TextXAlignment=Enum.TextXAlignment.Left
+  itemName.TextColor3=C.light
+  itemName.TextSize=17
+  itemName.Font=Enum.Font.GothamBold
+  itemName.Parent=header
   action(card,count>=5 and "SELL 5 FOR ◆ "..5*Config.Resources[id] or "COLLECT 5 TO SELL",
    function() send("Sell",{id=id,amount=5}) end,count>=5,C.gold)
  end

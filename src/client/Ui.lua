@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local TweenService=game:GetService("TweenService")
 local UserInputService=game:GetService("UserInputService")
 local W=require(script.Parent.Widgets)
+local Icons=require(script.Parent.Icons)
 local Pages=require(script.Parent.Pages)
 local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
 
@@ -63,8 +64,10 @@ function UI.new(send)
  local wallet=framed(gui,"Wallet",C.deep)
  wallet.AnchorPoint=Vector2.new(1,0)
  wallet.Position=UDim2.new(1,-16,0,74);wallet.Size=UDim2.fromOffset(190,51)
- local coin=absoluteText(wallet,"◆  0",20,C.gold)
- coin.Position=UDim2.fromOffset(13,5);coin.Size=UDim2.fromOffset(165,25)
+ local coin=absoluteText(wallet,"0",20,C.gold)
+ local coinIcon=Icons.create(wallet,"Coins",29)
+ coinIcon.Position=UDim2.fromOffset(11,6)
+ coin.Position=UDim2.fromOffset(47,5);coin.Size=UDim2.fromOffset(125,25)
  local line=absoluteText(wallet,"LEVEL 1  ·  1/3 GORPS",11,C.muted)
  line.Position=UDim2.fromOffset(13,32);line.Size=UDim2.fromOffset(164,15)
  self.wallet=coin;self.levelLine=line;self.walletContainer=wallet
@@ -136,10 +139,14 @@ function UI.new(send)
   b.Name="Tab_"..tab[1]
   b.LayoutOrder=index
   b.Size=UDim2.fromOffset(math.max(74,#tab[2]*11+18),38)
-  b.Text=tab[2];b.TextSize=12;b.Font=Enum.Font.GothamBold
-  b.TextColor3=C.light;b.AutoButtonColor=false
+  b.Text="";b.AutoButtonColor=false
   b.BackgroundColor3=C.surface
   b.Parent=nav;W.round(b,9)
+  local tabIcon=Icons.create(b,tab[1],19)
+  tabIcon.Position=UDim2.fromOffset(7,9)
+  local tabName=absoluteText(b,tab[2],11,C.light)
+  tabName.Position=UDim2.fromOffset(32,8)
+  tabName.Size=UDim2.new(1,-35,0,22)
   b.Activated:Connect(function() self:openTab(tab[1]) end)
   self.tabButtons[tab[1]]=b
  end
@@ -177,12 +184,17 @@ function UI.new(send)
   button.Size=UDim2.new(.2,-9,1,-2)
   button.BackgroundColor3=index==1 and C.gold or C.surface
   button.TextColor3=index==1 and C.deep or C.light
-  button.Text=entry[1]
-  button.TextSize=14
-  button.Font=Enum.Font.GothamBold
+  button.Text=""
   button.AutoButtonColor=false
   button.Parent=items
   W.round(button,10)
+  local picture=Icons.create(button,entry[2],28)
+  picture.AnchorPoint=Vector2.new(.5,0)
+  picture.Position=UDim2.new(.5,0,0,6)
+  local caption=absoluteText(button,entry[1],11,index==1 and C.deep or C.light)
+  caption.Position=UDim2.new(0,0,1,-22)
+  caption.Size=UDim2.new(1,0,0,18)
+  caption.TextXAlignment=Enum.TextXAlignment.Center
   button.Activated:Connect(function() self:openTab(entry[2]) end)
   self.quick[entry[2]]=button
  end
@@ -237,14 +249,20 @@ function UI.new(send)
    descriptor.Visible=false;logo.Text="GORPS"
    wallet.Position=UDim2.new(1,-9,0,63);wallet.Size=UDim2.fromOffset(160,49)
    menu.Position=UDim2.new(1,-8,1,-89);menu.Size=UDim2.fromOffset(72,38)
-   for _,button in pairs(self.quick) do button.TextSize=12 end
+   for _,button in pairs(self.quick) do
+    local glyph=button:FindFirstChild("Icon_"..string.sub(button.Name,7))
+    if glyph then glyph.Size=UDim2.fromOffset(24,24) end
+   end
   else
    objective.Position=UDim2.fromOffset(16,137);objective.Size=UDim2.fromOffset(262,75)
    brand.Position=UDim2.fromOffset(16,74);brand.Size=UDim2.fromOffset(220,51)
    descriptor.Visible=true;logo.Text="GORPS"
    wallet.Position=UDim2.new(1,-16,0,74);wallet.Size=UDim2.fromOffset(190,51)
    menu.Position=UDim2.new(1,-16,1,-24);menu.Size=UDim2.fromOffset(94,44)
-   for _,button in pairs(self.quick) do button.TextSize=14 end
+   for _,button in pairs(self.quick) do
+    local glyph=button:FindFirstChild("Icon_"..string.sub(button.Name,7))
+    if glyph then glyph.Size=UDim2.fromOffset(28,28) end
+   end
   end
  end
  self.resize=resize
@@ -355,7 +373,7 @@ end
 function UI:render()
  local p=self.profile
  if not p then return end
- self.wallet.Text="◆  "..tostring(p.Coins)
+ self.wallet.Text=tostring(p.Coins)
  local capacity=math.min(40,3+(p.BaseLevel-1)*2)
  self.levelLine.Text="LEVEL "..p.Level.."  ·  "..#p.Pets.."/"..capacity.." GORPS"
  local gathered=(p.Quests and p.Quests.Gatherer) or 0

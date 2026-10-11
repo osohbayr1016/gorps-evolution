@@ -37,6 +37,8 @@ required={
  "ReplicatedStorage/Shared/Config":"ModuleScript",
  "ReplicatedStorage/Shared/Rules":"ModuleScript",
  "ReplicatedStorage/Shared/Economy":"ModuleScript",
+ "StarterPlayer/StarterPlayerScripts/GorpsClient/Icons":"ModuleScript",
+ "StarterPlayer/StarterPlayerScripts/GorpsClient/Widgets":"ModuleScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Main":"LocalScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Status":"LocalScript",
 }
