@@ -22,7 +22,7 @@ function R.load(saved,now)
  local p=R.new(now)
  if type(saved)~="table" then return p end
  for _,field in ipairs({"Coins","Level","XP","CraftLevel","CraftXP","BaseLevel","Wins","Seconds","NextId","ActiveId","LastWheel","LastSeen"}) do
-  if valid(saved[field],100000000) then p[field]=saved[field] end
+  if valid(saved[field],4000000000) then p[field]=saved[field] end
  end
  p.BaseLevel=math.clamp(p.BaseLevel,1,8)
  p.Level=math.clamp(p.Level,1,100)
@@ -49,6 +49,7 @@ function R.load(saved,now)
   end
   if #pets>0 then p.Pets=pets end
  end
+ for _,pet in ipairs(p.Pets) do p.NextId=math.max(p.NextId,pet.id+1) end
  if not R.pet(p,p.ActiveId) then p.ActiveId=p.Pets[1].id end
  if type(saved.Workers)=="table" then
   for id in pairs(C.Workers) do
