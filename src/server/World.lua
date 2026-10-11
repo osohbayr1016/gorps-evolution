@@ -126,6 +126,20 @@ function World.update(player,profile)
  local marker=part(base,"Name",Vector3.new(3,3,3),CFrame.new(pos.X,5,pos.Z+half-4),Color3.fromRGB(73,159,169))
  marker.Transparency=1;marker.CanCollide=false
  sign(base,marker,player.DisplayName.."'s Ranch")
+ local workerOffset=0
+ for id,worker in pairs(profile.Workers) do
+  for _=1,math.min(worker.count,5) do
+   workerOffset+=1
+   local wx=pos.X-half+6+(workerOffset%6)*5
+   local wz=pos.Z+8+math.floor(workerOffset/6)*5
+   local suit=id=="Farmer" and Color3.fromRGB(125,185,120)
+    or (id=="Miner" and Color3.fromRGB(113,154,207) or Color3.fromRGB(207,156,112))
+   part(base,id.."Body",Vector3.new(2.2,3,1.8),CFrame.new(wx,3,wz),suit,Enum.Material.Fabric)
+   local head=part(base,id.."Head",Vector3.new(2.1,2.1,2.1),CFrame.new(wx,5.5,wz),
+    Color3.fromRGB(225,195,157),Enum.Material.SmoothPlastic,Enum.PartType.Ball)
+   sign(base,head,id)
+  end
+ end
  local petData
  for _,pet in ipairs(profile.Pets) do if pet.id==profile.ActiveId then petData=pet;break end end
  if petData then
