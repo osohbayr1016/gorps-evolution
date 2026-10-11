@@ -4,7 +4,25 @@ A Roblox creature-survival, ranch-building and economy game by **TMT Core Studio
 
 **Current status:** Phase 1 + Phase 2 foundation implemented as a Roblox Studio build. The repository is not yet a playtested, published Roblox experience. Source is published directly on `main`.
 
-## Get the playable project into Roblox Studio (Mac or Windows)
+## Recommended: live Studio sync on macOS (setup once, then no more place downloads)
+
+Run the following **once** in macOS Terminal:
+
+```bash
+brew install rojo
+git clone https://github.com/osohbayr1016/gorps-evolution.git
+cd gorps-evolution
+rojo plugin install
+bash scripts/studio-live-sync.sh
+```
+
+If you already cloned the repository, use `cd /path/to/gorps-evolution` instead of cloning it again. `rojo plugin install` may require restarting Studio so that the plugin appears.
+
+In Roblox Studio: **Stop** Play, open the game's place, select **Plugins → Rojo → Connect** to localhost port `34872`. Rojo synchronizes edited files from the local repository into Studio's **edit** state. Leave Terminal running. Every 15 seconds, the script checks `origin/main`, pulls only fast-forward updates (never overwrites uncommitted changes), and Rojo syncs the changed sources. **Stop and press Play again** after updates to restart scripts. If Studio is closed, you can restart this script when ready; there is no need to download a .rbxlx every update.
+
+This is local live sync, **not remote control of your Mac from ChatGPT**; GitHub pushes alone cannot inject edits into an arbitrary open Studio window. The Rojo CLI + Studio plugin must run locally. Keep the loopback-only sync endpoint private.
+
+## Alternative: download a release place file (not required after Rojo setup)
 
 1. Install [Roblox Studio](https://create.roblox.com/docs/studio/setup), [Aftman](https://github.com/LPGhatguy/aftman) and [Rojo](https://rojo.space/).
 2. Clone the repository and use the `main` branch.
@@ -70,3 +88,13 @@ The original Rojo project generated its only ground inside `World.make()` at run
 - `src/server/SpawnSafety.server.lua` runs independently of game initialization. It assigns player respawn locations and restores characters if they fall below Y=-20.
 - CI verifies **the actual built .rbxlx** contains collidable ground + spawn. Studio smoke tests check that both exist and the generated planet ground is collidable.
 - To retest, stop Studio, open **the new .rbxlx build artifact**, and press Play. Existing already-open place files do not auto-update when a commit is pushed. If the avatar still falls, send the first red Output error from the server tab.
+
+## Debugging the empty-baseplate problem
+
+Before this update, `Main.server.lua` was the only script responsible for creating the planet, and it first required persistence/trading/economy modules. A failure during initialization could leave only the baked baseplate without any ranch, tree or HUD.
+
+The independent `WorldBootstrap.server.lua` now generates Planet Verdant immediately without waiting for profile or economy systems, and creates a visible red error marker if world generation fails. An independent `Status.client.lua` shows a diagnostic panel if the normal HUD does not initialize.
+
+The CI check `scripts/verify_runtime_package.py` verifies that the produced XML place actually contains live Source on every critical Script, LocalScript and ModuleScript. The previous CI only validated the baked floor and spawn, which did not prove the gameplay scripts existed.
+
+For errors, switch to **Server** in Studio and open **View → Output**. Search for `[Gorps Bootstrap]`, `[Gorps World]` and `[Gorps Server]`. If the red error marker appears, share the first error.

@@ -40,8 +40,11 @@ local function gather(player,kind)
  if ok then changed(player,message,false) end
 end
 World.make(gather)
+local startup=ReplicatedStorage:FindFirstChild("GorpsStartupStatus")
+if startup and startup:IsA("StringValue") then startup.Value="SERVER_ONLINE" end
 Data.start()
 Leaderboards.start(Data)
+print("[Gorps Server] Gameplay remotes, planet and profile lifecycle are online.")
 local function act(player,action,payload)
  local p=Data.get(player)
  if not p then return false,"Profile loading" end

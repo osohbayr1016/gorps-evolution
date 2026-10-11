@@ -61,3 +61,13 @@
 - Trades are server-local and not durable multi-player database transactions; a server crash during a trade can cause cross-profile persistence disagreement. Consider escrow plus idempotency before opening the trading system to large public audiences.
 - OrderedDataStore requests require production permissions and are rate limited. Verify ranking update frequency.
 - Studio build and Selene checks are necessary but insufficient for acceptance.
+
+## Empty baseplate regression
+
+- On Studio Play the first ranches, colorful nodes and UFO should be visible even if player profile loading is delayed.
+- Output must include `[Gorps Bootstrap] Planet is ready before player data loads.`.
+- Output must include `[Gorps World] Planet Verdant initialized`.
+- UI should appear after successful profile load; if it fails, an independent startup diagnostic appears on screen.
+- If a world module errors, a **bright red** `GorpsWorldFailureMarker` must appear.
+- CI must reject a place build that is missing the Main server/client scripts or shared game modules.
+- When Rojo live sync is connected, a new push to main should download automatically into the local clone, then propagate into Studio edit mode; Stop/Play to reload.

@@ -4,6 +4,8 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
 local World={}
 local folder
+local worldReady=false
+local gatherHandler=nil
 local spots={}
 local assigned={}
 local companions={}
@@ -41,6 +43,9 @@ local function sign(parent,anchor,words)
  txt.Font=Enum.Font.GothamBold;txt.TextStrokeTransparency=0.3;txt.TextColor3=Color3.new(1,1,1);txt.Parent=gui
 end
 function World.make(onGather)
+ if type(onGather)=="function" then gatherHandler=onGather end
+ if worldReady and folder and folder.Parent then return folder end
+ if folder and folder.Parent then folder:Destroy() end
  folder=Instance.new("Folder");folder.Name="ChaosGalaxy";folder.Parent=workspace
  part(folder,"Ground",Vector3.new(650,2,650),CFrame.new(0,-1,0),Color3.fromRGB(48,87,75),Enum.Material.Grass)
  part(folder,"LandingField",Vector3.new(100,0.4,36),CFrame.new(0,0.1,18),Color3.fromRGB(69,78,87),Enum.Material.Slate)
@@ -79,11 +84,11 @@ function World.make(onGather)
   prompt.ObjectText=kind;prompt.MaxActivationDistance=12;prompt.HoldDuration=0.5;prompt.Parent=base
   local cooling=false
   prompt.Triggered:Connect(function(player)
-   if cooling then return end
+   if cooling or not gatherHandler then return end
    local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
    if not root or (root.Position-base.Position).Magnitude>17 then return end
    cooling=true;prompt.Enabled=false
-   onGather(player,kind)
+   gatherHandler(player,kind)
    task.delay(C.Nodes[kind][3],function()
     if prompt.Parent then cooling=false;prompt.Enabled=true end
    end)
@@ -99,6 +104,9 @@ function World.make(onGather)
  RunService.Heartbeat:Connect(function(dt)
   if ufo.Parent then ufo:PivotTo(ufo:GetPivot()*CFrame.Angles(0,dt*0.25,0)) end
  end)
+ worldReady=true
+ print("[Gorps World] Planet Verdant initialized: 70 nodes, 12 ranch sites and weekend UFO.")
+ return folder
 end
 function World.update(player,profile)
  local assignedSpot=assigned[player]
