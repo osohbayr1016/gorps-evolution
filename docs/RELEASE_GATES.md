@@ -71,3 +71,9 @@ For bugs, send the first red Output error, plus a screenshot showing the current
 The settlement engine now stages both sides before applying pet or material changes, so a full-capacity 1-for-1 pet swap does not remove one creature prematurely. Rejected transfers must preserve each player's creatures, rarity, level, XP, evolution and inventory. Studio smoke assertions test these transitions.
 
 **Still release-blocking:** each player's profile persists separately. A Roblox server crash, write failure, or process shutdown between the two DataStore writes can leave cross-player trade balances inconsistent. A transaction receipt/escrow-and-recovery protocol must be implemented and crash-tested before public trading is enabled in a production experience. The current fix addresses atomicity only within a live server process.
+
+## First-session collection loop (Pet Simulator 99 / Steal An Egg inspired)
+
+Original implementation details and original Gorps designs are documented in [DESIGN_REFERENCES.md](DESIGN_REFERENCES.md). A server-owned coin egg hatch and visible gathering lifecycle have been added in source.
+
+Studio QA still required: hatch coin pricing and odds, appearance/disappearance of nodes for all players, cooldown/respawn, purchase fail cases, accessible mobile HUD, screen effects and pet proportions. No guarantee of zero runtime bugs until those cases pass on device.

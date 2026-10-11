@@ -127,4 +127,26 @@ check(not TradeRules.exchange(overflowLeft,overflowRight,{kind="Material",id="Wo
  {kind="Material",id="Stone",amount=2}),"material overflow is rejected")
 check(overflowLeft.Inventory.Wood==12 and overflowRight.Inventory.Wood==999999,
  "overflow rejection keeps both inventories unchanged")
+-- Starter egg regression: fair deterministic odds with server-selected roll.
+local starterEgg=R.new(1800000000)
+local initialCoins=starterEgg.Coins
+local hatchOk,hatchMessage,newPet=R.hatchEgg(starterEgg,"Meadow",1)
+check(hatchOk and newPet and newPet.species=="Gorp","Meadow egg first tier hatch succeeds")
+check(starterEgg.Coins==initialCoins-C.Eggs.Meadow.price,"hatching charges coins exactly once")
+check(#starterEgg.Pets==2 and newPet.id==2,"hatching adds a unique creature")
+check(not R.hatchEgg(starterEgg,"Meadow",999),"invalid server hatch roll is rejected")
+check(not R.hatchEgg(starterEgg,"Imaginary",1),"unknown egg is rejected")
+local poor=R.new(1800000000)
+poor.Coins=0
+check(not R.hatchEgg(poor,"Meadow",1),"insufficient money blocks hatching")
+check(poor.Coins==0 and #poor.Pets==1,"failed hatch leaves assets unchanged")
+local full=R.new(1800000000)
+R.addPet(full,"Mole")
+R.addPet(full,"Carrier")
+check(not R.hatchEgg(full,"Meadow",1),"full ranch blocks hatching before charging")
+check(full.Coins==250 and #full.Pets==3,"full ranch preserves coins")
+local wildEgg=R.new(1800000000)
+wildEgg.Coins=500
+local wildOk,_,rarePet=R.hatchEgg(wildEgg,"Wild",100)
+check(wildOk and rarePet and rarePet.species=="Bloom","rare last-ticket roll awarded correctly")
 print("[Gorps Smoke] "..checks.." domain assertions passed (Studio only).")

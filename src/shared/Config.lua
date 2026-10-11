@@ -16,4 +16,15 @@ C.Recipes={FenceKit={cost={Wood=14,Stone=5},grant={FenceKit=1},level=1},FeedPack
 C.Shop={FoodCrate={price=80,grant={Meat=8,Berries=12}},ExpeditionKit={price=160,grant={Wood=15,Stone=12,Iron=5}},DecorationLamp={price=250,grant={DecorationLamp=1}},CrystalBundle={price=450,grant={Crystal=5}}}
 C.Workers={Farmer={price=150,wage=8,grant={Berries=4,Meat=1}},Miner={price=230,wage=12,grant={Stone=3,Iron=1}},Caretaker={price=180,wage=10,grant={Meat=2,Fiber=2}}}
 C.Quests={Gatherer={goal=15,reward=70},Provider={goal=3,reward=90},Maker={goal=2,reward=110},Employer={goal=1,reward=130},Explorer={goal=5,reward=150}}
+C.Eggs={
+ Meadow={title="Meadow Egg",price=100,pool={
+  {species="Gorp",weight=45},{species="Mole",weight=30},
+  {species="Carrier",weight=20},{species="Bloom",weight=5}
+ }},
+ Wild={title="Wild Egg",price=280,pool={
+  {species="Shade",weight=35},{species="Boulder",weight=30},
+  {species="Dart",weight=25},{species="Bloom",weight=10}
+ }}
+}
+C.EggOrder={"Meadow","Wild"}
 return C

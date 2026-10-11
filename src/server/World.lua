@@ -1,5 +1,6 @@
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
+local TweenService=game:GetService("TweenService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
 local CreatureFactory=require(script.Parent.CreatureFactory)
@@ -43,6 +44,43 @@ local function sign(parent,anchor,words)
  txt.BackgroundTransparency=1;txt.Text=words;txt.TextScaled=true
  txt.Font=Enum.Font.GothamBold;txt.TextStrokeTransparency=0.3;txt.TextColor3=Color3.new(1,1,1);txt.Parent=gui
 end
+-- Single shared resource-state machine: prompt, model and cooldown always agree.
+local function setHarvestVisibility(model,visible,animate)
+ local info=model:FindFirstChild("Interact")
+ if not info then return end
+ local storage={}
+ -- Save visual origins once before first depletion. Never trust client-side hide state.
+ for _,item in ipairs(model:GetDescendants()) do
+  if item:IsA("BasePart") then
+   local original=item:GetAttribute("HarvestOriginalTransparency")
+   if original==nil then
+    original=item.Transparency
+    item:SetAttribute("HarvestOriginalTransparency",original)
+    item:SetAttribute("HarvestOriginalCollide",item.CanCollide)
+    item:SetAttribute("HarvestOriginalPosition",item.Position)
+   end
+   local pos=item:GetAttribute("HarvestOriginalPosition")
+   table.insert(storage,{part=item,position=pos,alpha=original})
+  end
+ end
+ for _,entry in ipairs(storage) do
+  local part=entry.part
+  part.CanCollide=visible and part:GetAttribute("HarvestOriginalCollide")==true
+  local targetAlpha=visible and entry.alpha or 1
+  local targetPos=visible and entry.position or (entry.position-Vector3.new(0,2.5,0))
+  if visible then
+   part.Position=entry.position-Vector3.new(0,2.5,0)
+  end
+  if animate then
+   TweenService:Create(part,TweenInfo.new(visible and .42 or .23,Enum.EasingStyle.Back,
+     visible and Enum.EasingDirection.Out or Enum.EasingDirection.In),
+    {Transparency=targetAlpha,Position=targetPos}):Play()
+  else
+   part.Transparency=targetAlpha
+   part.Position=targetPos
+  end
+ end
+end
 function World.make(onGather)
  if type(onGather)=="function" then gatherHandler=onGather end
  if worldReady and folder and folder.Parent then return folder end
@@ -78,16 +116,28 @@ function World.make(onGather)
     prompt.HoldDuration=.3
     prompt.RequiresLineOfSight=false
     local cooling=false
+    node:SetAttribute("HarvestState","Ready")
     prompt.Triggered:Connect(function(player)
      if cooling or not gatherHandler then return end
      local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
      if not root or (root.Position-base.Position).Magnitude>19 then return end
      cooling=true
      prompt.Enabled=false
-     local ok,err=pcall(gatherHandler,player,kind)
-     if not ok then warn("[Gorps World] Harvest failed:",err) end
+     local worked,awarded=pcall(gatherHandler,player,kind,base.Position)
+     if not worked or not awarded then
+      if not worked then warn("[Gorps World] Harvest failed:",awarded) end
+      cooling=false
+      prompt.Enabled=true
+      return
+     end
+     node:SetAttribute("HarvestState","Depleted")
+     setHarvestVisibility(node,false,true)
      task.delay(C.Nodes[kind][3],function()
-      if prompt.Parent then cooling=false;prompt.Enabled=true end
+      if not node.Parent or not prompt.Parent then return end
+      setHarvestVisibility(node,true,true)
+      node:SetAttribute("HarvestState","Ready")
+      cooling=false
+      prompt.Enabled=true
      end)
     end)
     count+=1
@@ -99,7 +149,7 @@ function World.make(onGather)
   for _,shop in ipairs(village:GetChildren()) do
    local tab=({
     TradingPost="Shop",CraftingWorkshop="Crafting",
-    FarmerGuild="Workers",CreatureNursery="Creatures"
+    FarmerGuild="Workers",CreatureNursery="Eggs"
    })[shop.Name]
    local door=tab and shop:FindFirstChild("Door",true)
    if tab and door and door:IsA("BasePart") then
@@ -117,6 +167,24 @@ function World.make(onGather)
    end
   end
  end
+ -- Hatchery landmark is readable from the village plaza.
+ -- The player can also hatch immediately through the bottom HUD shortcut.
+ local nest=Instance.new("Model")
+ nest.Name="GorpsHatchery"
+ nest.Parent=folder
+ for i=1,2 do
+  local x=45+i*7
+  part(nest,"EggPod",Vector3.new(3.4,4.6,3.4),CFrame.new(x,4,-27),
+   i==1 and Color3.fromRGB(253,211,129) or Color3.fromRGB(179,151,247),
+   Enum.Material.SmoothPlastic,Enum.PartType.Ball)
+  local plate=part(nest,"HatchStand",Vector3.new(5.2,1.1,5.2),CFrame.new(x,2,-27),
+   Color3.fromRGB(141,116,104),Enum.Material.Wood,Enum.PartType.Cylinder)
+  plate.CanCollide=false
+ end
+ local labelAnchor=part(nest,"HatcheryLabel",Vector3.new(1,1,1),CFrame.new(55,8,-27),
+  Color3.fromRGB(249,208,133))
+ labelAnchor.Transparency=1;labelAnchor.CanCollide=false
+ sign(nest,labelAnchor,"GORPS HATCHERY")
  local ship=planet:FindFirstChild("UFO")
  if ship and ship:IsA("Model") then
   RunService.Heartbeat:Connect(function(dt)

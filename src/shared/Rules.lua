@@ -150,6 +150,28 @@ function R.gather(p,id)
  if id=="Wild" then R.quest(p,"Explorer",1) end
  return true,"Collected "..amount.." "..node[1]
 end
+-- Coins -> egg -> creature is the first-session progression loop.
+-- The server chooses roll; a client cannot submit probabilities or pet identities.
+function R.hatchEgg(p,id,roll)
+ local egg=C.Eggs[id]
+ if not egg then return false,"Unknown egg" end
+ if #p.Pets>=R.capacity(p) then return false,"Ranch full: expand before hatching" end
+ if p.Coins<egg.price then return false,"Need "..egg.price.." coins" end
+ local total=0
+ for _,entry in ipairs(egg.pool) do total+=entry.weight end
+ if not valid(roll,total) or roll<1 then return false,"Invalid hatch roll" end
+ local cursor=0
+ for _,entry in ipairs(egg.pool) do
+  cursor+=entry.weight
+  if roll<=cursor then
+   local ok,message=R.addPet(p,entry.species)
+   if not ok then return false,message end
+   p.Coins-=egg.price
+   return true,"Hatched "..entry.species.." from "..egg.title.."!",R.copy(p.Pets[#p.Pets])
+  end
+ end
+ return false,"Egg catalog error"
+end
 function R.infuse(p)
  if p.EggInfusion>=3 then return false,"Egg already fully infused" end
  if (p.Items.EggIncubator or 0)<1 then return false,"Craft an EggIncubator first" end

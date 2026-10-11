@@ -17,6 +17,7 @@ local function send(name,args)
   return
  end
  ui:update(result.profile,result.trade,result.message,result.rankings)
+ if result.hatch then ui:showHatch(result.hatch) end
 end
 -- Render interface first. A server failure must never make the client appear empty.
 ui=UI.new(send)
@@ -38,6 +39,7 @@ task.spawn(function()
   if type(data)=="table" then
    ui:update(data.profile,data.trade,data.message,data.rankings)
    if data.openTab then ui:openTab(data.openTab) end
+   if data.pickup then ui:showPickup(data.pickup) end
   end
  end)
  for attempt=1,20 do

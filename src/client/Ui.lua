@@ -71,7 +71,7 @@ local function labelContainer(parent)
  return bg
 end
 function UI.new(send)
- local self=setmetatable({send=send,tab="Ranch",profile=nil,trade={},rankings={},open=true},UI)
+ local self=setmetatable({send=send,tab="Ranch",profile=nil,trade={},rankings={},open=false},UI)
  local gui=Instance.new("ScreenGui")
  gui.Name="GorpsHUD";gui.IgnoreGuiInset=false;gui.ResetOnSpawn=false;gui.DisplayOrder=10
  gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
@@ -106,6 +106,7 @@ function UI.new(send)
  panel.Position=UDim2.new(1,-16,0,90)
  panel.Size=UDim2.fromOffset(420,620)
  self.panel=panel
+ panel.Visible=false
  local heading=text(panel,"YOUR ADVENTURE",14,COLORS.teal,24)
  heading.Position=UDim2.fromOffset(16,14);heading.Size=UDim2.new(1,-32,0,24)
  heading.Font=Enum.Font.GothamBold
@@ -120,7 +121,7 @@ function UI.new(send)
  local nl=Instance.new("UIListLayout");nl.FillDirection=Enum.FillDirection.Horizontal
  nl.Padding=UDim.new(0,6);nl.Parent=nav
  self.tabButtons={}
- local tabs={"Ranch","Creatures","Backpack","Crafting","Shop","Workers","Quests","Trade","Events","Rankings"}
+ local tabs={"Ranch","Eggs","Creatures","Backpack","Crafting","Shop","Workers","Quests","Trade","Events","Rankings"}
  for _,tab in ipairs(tabs) do
   local btn=Instance.new("TextButton")
   btn.Name=tab;btn.Size=UDim2.fromOffset(math.max(80,#tab*9+24),38)
@@ -160,6 +161,28 @@ function UI.new(send)
  local guideText=text(guide,"Harvest trees, rocks or bushes with E. Feed your Gorp to grow stronger.",13,COLORS.cream,44)
  guideText.Position=UDim2.fromOffset(14,30);guideText.Size=UDim2.new(1,-28,0,42)
  self.guideText=guideText
+ local dock=labelContainer(gui)
+ dock.Name="QuickDock"
+ dock.AnchorPoint=Vector2.new(.5,1)
+ dock.Position=UDim2.new(.5,0,1,-15)
+ dock.Size=UDim2.fromOffset(390,62)
+ dock.BackgroundColor3=Color3.fromRGB(34,48,58)
+ self.dock=dock
+ local links={{"EGGS","Eggs"},{"PETS","Creatures"},{"RANCH","Ranch"},{"TASKS","Quests"}}
+ for i,item in ipairs(links) do
+  local shortcut=Instance.new("TextButton")
+  shortcut.Name="Quick_"..item[2]
+  shortcut.Size=UDim2.new(.25,-8,1,-14)
+  shortcut.Position=UDim2.new((i-1)*.25,4,0,7)
+  shortcut.BackgroundColor3=i==1 and Color3.fromRGB(249,204,105) or Color3.fromRGB(60,86,96)
+  shortcut.TextColor3=i==1 and Color3.fromRGB(37,40,48) or COLORS.cream
+  shortcut.TextSize=14
+  shortcut.Font=Enum.Font.GothamBold
+  shortcut.Text=item[1]
+  shortcut.Parent=dock
+  radius(shortcut,9)
+  shortcut.Activated:Connect(function() self:openTab(item[2]) end)
+ end
  local toast=labelContainer(gui)
  toast.Name="Toast";toast.AnchorPoint=Vector2.new(.5,0)
  toast.Position=UDim2.new(.5,0,0,90)
@@ -182,7 +205,8 @@ function UI.new(send)
    open.Size=UDim2.fromOffset(78,38);open.Position=UDim2.new(1,-85,0,10)
    panel.Position=UDim2.new(1,-10,0,73)
    panel.Size=UDim2.new(1,-20,1,-160)
-   guide.Position=UDim2.new(0,10,1,-85)
+   guide.Position=UDim2.new(0,10,1,-165)
+   dock.Size=UDim2.new(1,-24,0,58)
    guide.Size=UDim2.new(1,-20,0,75)
   else
    top.Size=UDim2.new(1,-32,0,64);top.Position=UDim2.fromOffset(16,15)
@@ -191,7 +215,8 @@ function UI.new(send)
    open.Size=UDim2.fromOffset(98,40);open.Position=UDim2.new(1,-108,0,12)
    panel.Position=UDim2.new(1,-16,0,90)
    panel.Size=UDim2.fromOffset(math.min(440,math.floor(sz.X*.36)),math.min(650,sz.Y-140))
-   guide.Position=UDim2.new(0,16,1,-97)
+   guide.Position=UDim2.new(0,16,1,-103)
+   dock.Size=UDim2.fromOffset(390,62)
    guide.Size=UDim2.fromOffset(345,78)
   end
  end
@@ -215,6 +240,73 @@ function UI:openTab(tab)
  self.panel.Visible=true
  self.menuButton.Text="CLOSE [G]"
  self:render()
+end
+function UI:showPickup(reward)
+ if type(reward)~="table" or type(reward.resource)~="string" then return end
+ local amount=tonumber(reward.amount)
+ if not amount or amount<=0 then return end
+ local pill=labelContainer(self.gui)
+ pill.Name="PickupFeedback"
+ pill.AnchorPoint=Vector2.new(.5,.5)
+ pill.Position=UDim2.fromScale(.5,.68)
+ pill.Size=UDim2.fromOffset(230,46)
+ pill.BackgroundColor3=Color3.fromRGB(39,102,81)
+ local copy=text(pill,"+"..amount.." "..string.upper(reward.resource),19,Color3.fromRGB(251,246,224),46)
+ copy.TextXAlignment=Enum.TextXAlignment.Center
+ copy.Font=Enum.Font.GothamBold
+ copy.Size=UDim2.fromScale(1,1)
+ TweenService:Create(pill,TweenInfo.new(.7,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),
+  {Position=UDim2.fromScale(.5,.55),BackgroundTransparency=.38}):Play()
+ task.delay(1.1,function()
+  if pill.Parent then
+   TweenService:Create(pill,TweenInfo.new(.2),{BackgroundTransparency=1}):Play()
+   TweenService:Create(copy,TweenInfo.new(.2),{TextTransparency=1}):Play()
+   task.delay(.25,function() pill:Destroy() end)
+  end
+ end)
+end
+function UI:showHatch(pet)
+ if type(pet)~="table" or type(pet.species)~="string" then return end
+ local overlay=Instance.new("Frame")
+ overlay.Name="HatchReveal"
+ overlay.Size=UDim2.fromScale(1,1)
+ overlay.BackgroundColor3=Color3.fromRGB(9,25,34)
+ overlay.BackgroundTransparency=.2
+ overlay.ZIndex=50
+ overlay.Parent=self.gui
+ local egg=Instance.new("Frame")
+ egg.Name="HatchingEgg";egg.AnchorPoint=Vector2.new(.5,.5)
+ egg.Position=UDim2.fromScale(.5,.45);egg.Size=UDim2.fromOffset(95,126)
+ egg.BackgroundColor3=Color3.fromRGB(255,224,151)
+ egg.ZIndex=51
+ egg.Parent=overlay
+ radius(egg,48)
+ local shine=Instance.new("UIGradient")
+ shine.Rotation=40
+ shine.Color=ColorSequence.new(Color3.fromRGB(255,247,208),Color3.fromRGB(238,168,106))
+ shine.Parent=egg
+ local title=text(overlay,"HATCHING...",23,COLORS.cream,55)
+ title.AnchorPoint=Vector2.new(.5,.5)
+ title.Position=UDim2.fromScale(.5,.68)
+ title.Size=UDim2.new(.8,0,0,55)
+ title.TextXAlignment=Enum.TextXAlignment.Center
+ title.Font=Enum.Font.GothamBold
+ title.ZIndex=52
+ TweenService:Create(egg,TweenInfo.new(.48,Enum.EasingStyle.Back,Enum.EasingDirection.Out),
+  {Size=UDim2.fromOffset(175,220),Rotation=10}):Play()
+ task.delay(.55,function()
+  if not overlay.Parent then return end
+  egg.BackgroundColor3=Color3.fromRGB(106,224,170)
+  TweenService:Create(egg,TweenInfo.new(.25,Enum.EasingStyle.Back),
+   {Size=UDim2.fromOffset(235,235),Rotation=0}):Play()
+  title.Text=string.upper(pet.species).."  •  "..string.upper(pet.rarity or "COMMON")
+ end)
+ task.delay(2.7,function()
+  if overlay.Parent then
+   TweenService:Create(overlay,TweenInfo.new(.32),{BackgroundTransparency=1}):Play()
+   task.delay(.35,function() overlay:Destroy() end)
+  end
+ end)
 end
 function UI:toastMessage(message)
  if not message or message=="" then return end

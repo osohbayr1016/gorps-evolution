@@ -64,7 +64,7 @@ function Factory.create(pet,origin,parent)
  local def=C.Species[pet.species]
  if not def then return nil end
  local tier=table.find(C.Rarities,pet.rarity) or 1
- local scale=1+(pet.evolved or 0)*.2+(tier-1)*.08
+ local scale=.72*(1+(pet.evolved or 0)*.2+(tier-1)*.08)
  local base=Color3.fromRGB(unpack(def.color))
  local light=base:Lerp(Color3.fromRGB(255,245,214),.25)
  local dark=base:Lerp(Color3.fromRGB(35,50,64),.3)
@@ -81,6 +81,14 @@ function Factory.create(pet,origin,parent)
  feet(model,dark,scale,def.role=="Transport")
  if def.role=="Support" then
   horns(model,light,scale,-1,true);horns(model,light,scale,1,true)
+  sphere(model,"LeafTail",Vector3.new(1.5,2.5,2.9)*scale,
+   Vector3.new(0,1.25*scale,3.1*scale),Color3.fromRGB(80,182,125))
+  sphere(model,"ChestBib",Vector3.new(2.6,1.7,1.1)*scale,
+   Vector3.new(0,-.9*scale,-1.95*scale),Color3.fromRGB(243,229,185))
+  for side=-1,1,2 do
+   sphere(model,"EarFrill",Vector3.new(2.2,1.05,1.8)*scale,
+    Vector3.new(side*2.5*scale,1.5*scale,.5*scale),light)
+  end
   sphere(model,"CrystalCrest",Vector3.new(1.7,2.4,1.7)*scale,
    Vector3.new(0,2.85*scale,0),Color3.fromRGB(132,255,197),Enum.Material.Neon)
   for dir=-1,1,2 do

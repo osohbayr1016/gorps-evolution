@@ -77,6 +77,18 @@ function Pages.render(parent,tab,p,trade,send,label,button,rankings)
   cardLine(help,"G  •  Show or hide game menu")
   cardLine(help,"E  •  Interact with resources and shops")
   cardLine(help,"First reward: +70 coins for harvesting 15 resources")
+ elseif tab=="Eggs" then
+  local top=card("THE HATCHERY","Discover new Gorps. Every hatch costs earned coins, and odds are shown below.")
+  cardLine(top,"Ranch space: "..#p.Pets.." / "..math.min(40,3+(p.BaseLevel-1)*2))
+  for _,eggId in ipairs(C.EggOrder) do
+   local egg=C.Eggs[eggId]
+   local cardEgg=card(egg.title,"Cost: "..egg.price.." coins")
+   for _,entry in ipairs(egg.pool) do
+    cardLine(cardEgg,entry.species.."  •  "..entry.weight.."%")
+   end
+   cardAction(cardEgg,"HATCH "..string.upper(egg.title).."  |  "..egg.price.." COINS","HatchEgg",{id=eggId})
+  end
+  cardLine(top,"Hatch creatures, select one as companion, then use its abilities to gather faster.")
  elseif tab=="Creatures" then
   local active=p.ActiveId
   for _,pet in ipairs(p.Pets) do

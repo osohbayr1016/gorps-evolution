@@ -35,23 +35,36 @@ local function movement(player)
   humanoid.WalkSpeed=stats and stats.role=="Transport" and math.clamp(stats.speed,18,30) or 16
  end
 end
-local function gather(player,kind)
+local function gather(player,kind,worldPosition)
  local p=Data.get(player)
- if not p then return end
+ if not p then return false end
+ local resource=C.Nodes[kind] and C.Nodes[kind][1]
+ if not resource then return false end
+ local before=p.Inventory[resource] or 0
  if kind=="Wild" then
   local now=os.clock()
-  if now-(wildCooldown[player] or -100)>15 then
-   wildCooldown[player]=now
-   local enemyLevel=math.clamp(math.floor(p.Level/3)+1,1,20)
-   local won,message=Adventure.hunt(p,enemyLevel)
-   if won then changed(player,message,false) else send(player,message) end
-  else
+  if now-(wildCooldown[player] or -100)<=15 then
    send(player,"Your companion needs a moment before the next hunt")
+   return false
   end
-  return
+  wildCooldown[player]=now
+  local enemyLevel=math.clamp(math.floor(p.Level/3)+1,1,20)
+  local won,message=Adventure.hunt(p,enemyLevel)
+  if not won then
+   send(player,message)
+   return false
+  end
+  changed(player,message,false)
+ else
+  local ok,message=R.gather(p,kind)
+  if not ok then send(player,message);return false end
+  changed(player,message,false)
  end
- local ok,message=R.gather(p,kind)
- if ok then changed(player,message,false) end
+ local earned=math.max(0,(p.Inventory[resource] or 0)-before)
+ if earned>0 then
+  notify:FireClient(player,{pickup={resource=resource,amount=earned,position=worldPosition}})
+ end
+ return true
 end
 World.make(gather)
 local startup=ReplicatedStorage:FindFirstChild("GorpsStartupStatus")
@@ -70,7 +83,13 @@ local function act(player,action,payload)
   return Trade.action(player,action,payload,Data.get,function(who) changed(who,nil,true) end,
    function(who,msg) send(who,msg) end)
  end
- if action=="Feed" then return R.feed(p,payload.id)
+ if action=="HatchEgg" then
+  local egg=C.Eggs[payload.id]
+  if not egg then return false,"Unknown egg" end
+  local total=0
+  for _,entry in ipairs(egg.pool) do total+=entry.weight end
+  return R.hatchEgg(p,payload.id,math.random(1,total))
+ elseif action=="Feed" then return R.feed(p,payload.id)
  elseif action=="Evolve" then return R.evolve(p,payload.id)
  elseif action=="InfuseEgg" then return R.infuse(p)
  elseif action=="SelectPet" then
@@ -117,11 +136,13 @@ invoke.OnServerInvoke=function(player,action,payload)
  end
  if ok and action~="State" and action~="Rankings" then
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
-   or action=="Feed" or action=="Evolve" or action=="Hire" or action=="Wheel"
+   or action=="Feed" or action=="Evolve" or action=="Hire" or action=="Wheel" or action=="HatchEgg"
   changed(player,message,visual)
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
- return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player),rankings=rankings}
+ return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player),
+  rankings=action=="Rankings" and rankings or nil,
+  hatch=ok and action=="HatchEgg" and rankings or nil}
 end
 Players.PlayerAdded:Connect(function(player)
  task.spawn(function()
