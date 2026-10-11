@@ -11,6 +11,8 @@ client=Path("src/client/Main.client.lua").read_text()
 smoke=Path("src/server/StudioSmoke.server.lua").read_text()
 data=Path("src/server/Data.lua").read_text()
 sessions=Path("src/server/SessionPolicy.lua").read_text()
+trade=Path("src/server/Trade.lua").read_text()
+config=Path("src/shared/Config.lua").read_text()
 contracts={
  "egg pool defined": "C.Eggs={" in config and "C.EggOrder" in config,
  "server chooses hatch roll": "math.random(1,total)" in server and "R.hatchEgg(p,payload.id," in server,
@@ -33,6 +35,12 @@ contracts={
     and 'unloading[player]=true' in data
     and 'nextValue._session=nil' in sessions
     and 'stored._lastSession==token' in sessions,
+ "unsafe persisted trades fail closed":'C.DurableTrades=false' in config
+    and 'function Data.supportsTrading()' in data
+    and 'studio or Config.DurableTrades==true' in data
+    and 'if not Data.supportsTrading() then' in server
+    and 'Trade.action(player,action,payload' in server
+    and 'TradeRules.exchange' in trade,
 }
 for label,ok in contracts.items():
  assert ok,f"FAILED gameplay contract: {label}"

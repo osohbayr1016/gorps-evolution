@@ -36,7 +36,9 @@ required={
  "ServerScriptService/GorpsServer/SpawnSafety":"Script",
  "ServerScriptService/GorpsServer/Data":"ModuleScript",
  "ServerScriptService/GorpsServer/SessionPolicy":"ModuleScript",
+ "ServerScriptService/GorpsServer/Trade":"ModuleScript",
  "ReplicatedStorage/Shared/Config":"ModuleScript",
+ "ReplicatedStorage/Shared/TradeRules":"ModuleScript",
  "ReplicatedStorage/Shared/Onboarding":"ModuleScript",
  "ReplicatedStorage/Shared/CreatureFactory":"ModuleScript",
  "ReplicatedStorage/Shared/CreaturePose":"ModuleScript",
@@ -46,6 +48,7 @@ required={
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Icons":"ModuleScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Widgets":"ModuleScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Ui":"ModuleScript",
+ "StarterPlayer/StarterPlayerScripts/GorpsClient/Pages":"ModuleScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Main":"LocalScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Status":"LocalScript",
 }

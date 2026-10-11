@@ -66,6 +66,10 @@ checks={
     '"HatchEgg"','"Feed"','"Evolve"','"Expand"','"Craft"',
     '"Buy"','"Sell"','"Hire"','"Claim"','"OfferPet"','"Accept"'
  )),
+ "published trade safety is visible":'trade={available=false}' in ui
+   and 'if tradeState.available~=true then' in pages
+   and 'PERSISTENT TRADING PAUSED' in pages
+   and 'Trading is available only in unsaved Studio multiplayer tests' in pages,
  "native resource and dock icons": 'local Icons=require(script.Parent.Icons)' in ui
    and 'Icons.create(button,entry[2],28)' in ui
    and 'function Icons.create(parent,name,size,tint)' in icons

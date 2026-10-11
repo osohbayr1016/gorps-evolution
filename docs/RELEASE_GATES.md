@@ -18,7 +18,7 @@ This checklist is a **shipping contract**, not a feature advertisement. A green 
 - Resource node E interaction works; quest and inventory update
 - Hunting a wild creature produces a combat message, with meat/coins only on victory
 - Feed, evolve prerequisites, buy, craft, sell, hire, collect and quest-claim rules
-- Two-player pet and resource trade confirmation/cancellation, including fully occupied ranches and asset overflow
+- Two-player pet and resource trade confirmation/cancellation in unsaved Studio multiplayer, including fully occupied ranches and asset overflow; published trading remains closed pending durable recovery
 - Mobile and controller input, consistent 30+ FPS on target hardware
 - Persistence and reconnect tested **in a private published experience** (studio profile is intentionally temporary)
 
@@ -82,9 +82,11 @@ For bugs, send the first red Output error, plus a screenshot showing the current
 
 ## Trade integrity follow-up
 
-The settlement engine now stages both sides before applying pet or material changes, so a full-capacity 1-for-1 pet swap does not remove one creature prematurely. Rejected transfers must preserve each player's creatures, rarity, level, XP, evolution and inventory. Studio smoke assertions test these transitions.
+The settlement engine stages both sides before applying pet or material changes, so a full-capacity 1-for-1 pet swap does not remove one creature prematurely. Rejected transfers must preserve each player's creatures, rarity, level, XP, evolution and inventory. Studio smoke assertions plus 26 headless checks test these in-process transitions.
 
-**Still release-blocking:** each player's profile persists separately. A Roblox server crash, write failure, or process shutdown between the two DataStore writes can leave cross-player trade balances inconsistent. A transaction receipt/escrow-and-recovery protocol must be implemented and crash-tested before public trading is enabled in a production experience. The current fix addresses atomicity only within a live server process.
+As an immediate safety boundary, `Config.DurableTrades=false` is enforced by the server in every published session and the UI removes invite/offer controls. Unsaved Studio multiplayer remains available for functional testing. This prevents the confirmed cross-key loss path from being exposed to persisted inventories; it is not a durable-trade implementation.
+
+**Still release-blocking:** each player's profile persists separately. A transaction receipt/escrow-and-recovery protocol must be implemented and crash-tested before changing the release flag. Required evidence includes failure after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets.
 
 ## First-session collection loop (Pet Simulator 99 / Steal An Egg inspired)
 

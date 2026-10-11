@@ -46,7 +46,7 @@ local function noWorldBlocking(gui)
 end
 function UI.new(send)
  local self=setmetatable({
-  send=send,tab="Ranch",open=false,profile=nil,trade={},rankings={},
+  send=send,tab="Ranch",open=false,profile=nil,trade={available=false},rankings={},
   toastSerial=0,viewportWidth=1200
  },UI)
  local gui=Instance.new("ScreenGui")

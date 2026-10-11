@@ -16,6 +16,7 @@ Inspired by the clarity of collection-based Roblox games rather than copying the
 - **Ordered component layout**: all UIListLayouts sort by LayoutOrder and widgets assign monotonically increasing numbers. Headers, descriptions and buttons must never reverse or shuffle order when values update.
 - **Affordability**: buttons say exactly what is missing or that an upgrade is locked. The authoritative validation remains on the server; client-disabled actions are only presentation.
 - **Responsive width**: on narrow screens, menu fits viewport width and keyboard shortcuts do not replace touch buttons.
+- **Trade safety state**: published profiles show a `PERSISTENT TRADING PAUSED` card and no invitation or offer controls while durable cross-profile recovery is incomplete. Unsaved Studio multiplayer keeps the test controls.
 
 ## Test in Roblox Studio
 
@@ -32,6 +33,7 @@ Use your existing Rojo GitHub-to-Studio sync. Wait until the terminal pulls the 
 9. Harvest resources while the modal is closed. Coin and objective counters should update without forcing the menu open or resetting scroll.
 10. In **Test > Controller Emulator**, press Y to open the collection window. Use the thumbstick and A to traverse tabs and enabled page actions; disabled actions must be skipped and the selected action must show a thick light ring. While a page action is selected, harvest or claim something so a live profile update redraws that page: focus must move to a valid action or the active tab, never disappear. Hatch an egg, confirm EQUIP starts selected, then press B once to dismiss the reveal and once to close the window. MENU must be selected after closing.
 11. Switch back to mouse/keyboard and touch emulation. Opening a modal must not force a gamepad ring while `PreferredInput` is not Gamepad. Studio Output: no errors from `Widgets`, `Pages`, `Ui`, `Onboarding`, `CreatureFactory` or `Main.client`.
+12. Compare contexts: a two-client local Studio server must expose invite/offer/accept controls, while a private published server must show `PERSISTENT TRADING PAUSED` without an editable username field or invite button.
 
 ## Remaining release blockers
 

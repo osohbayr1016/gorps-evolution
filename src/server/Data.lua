@@ -71,6 +71,9 @@ local function syncBoard(player,p)
  end
 end
 function Data.isStudioTest() return studio end
+function Data.supportsTrading()
+ return studio or Config.DurableTrades==true
+end
 function Data.get(player) return profiles[player] end
 function Data.load(player)
  if profiles[player] then return profiles[player] end

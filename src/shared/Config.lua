@@ -1,5 +1,8 @@
 local C={}
 C.Store="GorpsEvolution_v1"
+-- Keep persisted player-to-player trades closed until GE-TRADE-01 has a
+-- crash-recoverable journal. Studio profiles are unsaved and remain testable.
+C.DurableTrades=false
 C.Resources={Wood=3,Stone=5,Iron=12,Meat=7,Berries=4,Crystal=35,Fiber=3}
 C.Nodes={Tree={"Wood",3,12},Rock={"Stone",2,14},Ore={"Iron",2,20},Bush={"Berries",3,10},Crystal={"Crystal",1,40},Fiber={"Fiber",3,12},Wild={"Meat",3,25}}
 C.Species={

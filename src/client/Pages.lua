@@ -245,6 +245,12 @@ local function quests(parent,p,send)
 end
 local function trade(parent,p,tradeState,send)
  heading(parent,"PLAYER TRADING","Only trade with another player in this server. Both sides must confirm.")
+ if tradeState.available~=true then
+  local locked=W.card(parent,"PERSISTENT TRADING PAUSED",
+   "Your creatures and materials stay protected while crash recovery is being completed.")
+  descriptor(locked,"Trading is available only in unsaved Studio multiplayer tests for now.")
+  return
+ end
  if tradeState.partner then
   local offer=W.card(parent,"TRADE WITH "..tradeState.partner,"Review both offers before accepting.")
   local function offerText(x)

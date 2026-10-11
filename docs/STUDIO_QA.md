@@ -44,9 +44,10 @@
 | 18 | Spin wheel twice in 24h | Second rejected; reconnect cannot reset cooldown |
 | 19 | Weekend UFO exchange | Saturday/Sunday UTC permitted only with costs and capacity |
 | 20 | Trade-up 3 creatures | Excludes active companion; no duplicate creature |
-| 21 | Two-client material trade | Both propose, both accept, balances transfer correctly |
-| 22 | Two-client pet trade | Active pets cannot be traded; capacity rules enforced |
-| 23 | Cancel/disconnect mid-trade | No transfer; offers discarded |
+| 21 | Two-client material trade in local Studio server | Both propose, both accept, balances transfer correctly once |
+| 22 | Two-client pet trade in local Studio server | Active pets cannot be traded; capacity rules enforced |
+| 23 | Cancel/disconnect mid-trade in local Studio server | No transfer; offers discarded |
+| 23a | Open TRADE in a private published server | Protection notice shown; username input, invite, offer and accept controls absent |
 | 24 | Close/rejoin experience | Coins, inventory, pets, worker state, quests and cooldowns persisted |
 | 24a | Leave and immediately rejoin a private published server after earning a distinctive coin amount | New session loads that amount, or explicitly refuses while the prior five-minute lease is active; never loads defaults |
 | 24b | Rejoin after a deliberately interrupted final save / expired lease | New server takes ownership after expiry, stale server cannot overwrite it, and no coins/items roll back or duplicate |
@@ -61,7 +62,7 @@
 - Studio host is not accessible through the current chat: no actual frame-rate, memory, reconnect, or UI device evidence yet.
 - Native-Part Motor6D rigs and procedural action poses are implemented; visible joint motion, collision behavior, Animation Editor compatibility and mobile performance remain unverified. Run [CREATURE_ART.md](CREATURE_ART.md) before accepting the art milestone.
 - Live PvP, interplanetary travel, premium Robux purchases, and matchmaking are out of scope for this initial Phase 1–2 branch.
-- Trades are server-local and not durable multi-player database transactions; a server crash during a trade can cause cross-profile persistence disagreement. Consider escrow plus idempotency before opening the trading system to large public audiences.
+- Published player trading is deliberately fail-closed because separate profile keys are not a durable transaction. Do not enable `Config.DurableTrades` until receipt/prepare/commit/abort recovery passes every-write-boundary private-server fault injection.
 - OrderedDataStore requests require production permissions and are rate limited. Verify ranking update frequency.
 - Studio build and Selene checks are necessary but insufficient for acceptance.
 - The session-policy suite is pure Luau. It does not prove real `UpdateAsync` retries, throttling, unknown outcomes or cross-server lease timing; capture both server logs and the persisted value in a private published experience.

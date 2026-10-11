@@ -13,10 +13,15 @@ local invoke=Instance.new("RemoteFunction");invoke.Name="Action";invoke.Parent=f
 local notify=Instance.new("RemoteEvent");notify.Name="Update";notify.Parent=folder
 local cooldown={}
 local wildCooldown={}
+local function tradeState(player)
+ local state=Trade.status(player)
+ state.available=Data.supportsTrading()
+ return state
+end
 local function send(player,message)
  local p=Data.get(player)
  if p and player.Parent==Players then
-  notify:FireClient(player,{profile=p,trade=Trade.status(player),message=message})
+  notify:FireClient(player,{profile=p,trade=tradeState(player),message=message})
  end
 end
 local function changed(player,message,visual)
@@ -81,6 +86,9 @@ local function act(player,action,payload)
  if type(payload)~="table" then return false,"Invalid request" end
  local tradeOps={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
  if tradeOps[action] then
+  if not Data.supportsTrading() then
+   return false,"Persistent player trading is temporarily closed to protect your inventory"
+  end
   return Trade.action(player,action,payload,Data.get,function(who) changed(who,nil,true) end,
    function(who,msg) send(who,msg) end)
  end
@@ -144,7 +152,7 @@ invoke.OnServerInvoke=function(player,action,payload)
   end
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
- return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player),
+ return {ok=ok,message=message,profile=Data.get(player),trade=tradeState(player),
   rankings=action=="Rankings" and rankings or nil,
   hatch=ok and action=="HatchEgg" and rankings or nil}
 end
