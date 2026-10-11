@@ -1,5 +1,11 @@
 local C=require(script.Parent.Config)
 local R={}
+function R.copy(value)
+ if type(value)~="table" then return value end
+ local nextValue={}
+ for k,v in pairs(value) do nextValue[k]=R.copy(v) end
+ return nextValue
+end
 local function valid(n,max) return type(n)=="number" and n==n and n%1==0 and n>=0 and n<=(max or 1000000) end
 function R.new(now)
  return {Coins=250,Level=1,XP=0,CraftLevel=1,CraftXP=0,BaseLevel=1,Wins=0,Seconds=0,
