@@ -106,6 +106,26 @@ for i in range(8):
 for x, z, sx, sz in [(-185,130,75,65),(185,155,75,70),(-240,265,70,65),(246,265,68,68)]:
     block(terrain, "LowHill", (x, 4, z), (sx, 9, sz), (77, 131, 105), shape="Ball", material="Grass")
 
+# Large, low organic color fields break up the single flat green plane without
+# creating collision steps. Roads sit slightly above these non-collidable mats.
+biome_surfaces = group(terrain, "BiomeSurfaces")
+for index, (x, z, sx, sz, tint, material) in enumerate([
+    (-220, 125, 118, 92, (61, 111, 83), "Grass"),
+    (-238, 230, 128, 116, (68, 116, 91), "Grass"),
+    (-132, 230, 98, 112, (74, 126, 91), "Grass"),
+    (-74, 175, 92, 88, (82, 137, 96), "Grass"),
+    (76, 178, 98, 92, (91, 137, 91), "Grass"),
+    (165, 226, 120, 112, (104, 135, 91), "Grass"),
+    (244, 138, 112, 96, (124, 126, 102), "Slate"),
+    (252, 248, 118, 112, (117, 126, 102), "Slate"),
+    (174, 92, 88, 72, (133, 126, 98), "Ground"),
+    (-186, 68, 86, 68, (70, 122, 99), "Grass"),
+    (-258, 30, 80, 62, (73, 119, 101), "Grass"),
+    (0, 246, 126, 74, (88, 137, 96), "Grass"),
+]):
+    block(biome_surfaces, f"BiomeFloor_{index:02d}", (x, 1.055, z),
+          (sx, .16, sz), tint, shape="Ball", material=material, solid=False)
+
 hub = group(world, "VillageHub")
 block(hub, "WelcomePlatform", (0, 1.7, 8), (42, 1.3, 26), (169, 150, 119), material="Slate")
 block(hub, "FountainBasin", (0, 3.1, 4), (2.3, 15, 15), (127, 158, 167),
@@ -296,22 +316,83 @@ def reserved_route(x,z,padding=0):
     return False
 
 canopy_positions=[]
-for i in range(85):
+forest_types=("Broadleaf","Pine","Birch","Ancient")
+for i in range(64):
     for _ in range(200):
         x=rng.uniform(-302,302);z=rng.uniform(48,301)
         if reserved_route(x,z,6): continue
         if any(math.hypot(x-sx,z-sz)<15 for sx,sz in starter_positions): continue
+        if any(math.hypot(x-tx,z-tz)<12 for tx,tz in canopy_positions): continue
         break
     else:
         raise RuntimeError("Could not place canopy tree outside a travel route")
     canopy_positions.append((x,z))
-    tree=group(forest,f"CanopyTree_{i:03d}")
-    h=rng.uniform(9,17)
-    block(tree,"Trunk",(x,h/2+1,z),(3,h,3),(115,86,68),material="Wood")
-    for j,(offx,offz) in enumerate([(0,0),(4,1),(-4,-1)]):
-        block(tree,f"Leaves_{j}",(x+offx,h+3+j*.8,z+offz),
-              (11,10,11),rng.choice([(79,155,103),(97,177,110),(110,179,120)]),
+    archetype=forest_types[i%len(forest_types)]
+    tree=group(forest,f"CanopyTree_{archetype}_{i:03d}")
+    yaw=rng.uniform(-28,28)
+    if archetype=="Broadleaf":
+        h=rng.uniform(12,17)
+        block(tree,"BroadleafTrunk",(x,h/2+1,z),(h,3.1,3.1),(105,78,61),
+              shape="Cylinder",material="Wood",rotation=(0,0,90))
+        for side in (-1,1):
+            block(tree,"CrownBranch",(x+side*2.6,h-1,z),(6.8,1.4,1.5),
+                  (101,76,59),material="Wood",rotation=(0,side*18,side*26),solid=False)
+        for name,dx,dz,scale,tint in [
+            ("CrownMain",0,0,13,(70,139,91)),
+            ("CrownLeft",-5,1,9,(83,153,95)),
+            ("CrownRight",4,-2,10,(93,163,101)),
+        ]:
+            block(tree,name,(x+dx,h+3,z+dz),(scale,8,scale*.82),tint,
+                  shape="Ball",solid=False,material="Grass")
+    elif archetype=="Pine":
+        h=rng.uniform(15,21)
+        block(tree,"PineTrunk",(x,h/2+1,z),(h,2.4,2.4),(92,70,56),
+              shape="Cylinder",material="Wood",rotation=(0,0,90))
+        for tier,(height,width,tint) in enumerate([
+            (h*.48,12,(54,111,83)),(h*.68,9,(61,126,89)),
+            (h*.84,6.5,(72,141,94)),(h*.96,4,(84,151,99)),
+        ]):
+            block(tree,f"PineBough_{tier}",(x,height+2,z),(width,5.0,width*.72),
+                  tint,part_class="WedgePart",rotation=(0,yaw+tier*90,0),
+                  solid=False,material="Grass")
+        block(tree,"PineTip",(x,h+2.2,z),(2.2,4,2.2),(94,161,105),
+              part_class="WedgePart",rotation=(0,yaw,0),solid=False,material="Grass")
+    elif archetype=="Birch":
+        h=rng.uniform(11,16)
+        block(tree,"BirchTrunk",(x,h/2+1,z),(h,2.5,2.5),(213,207,183),
+              shape="Cylinder",material="Wood",rotation=(0,0,90))
+        for band,height in enumerate((h*.35,h*.68)):
+            block(tree,f"BirchBand_{band}",(x,height+1,z),(.35,2.7,2.7),
+                  (76,72,66),shape="Cylinder",rotation=(0,0,90),solid=False)
+        block(tree,"BirchCrown",(x,h+2,z),(10,7.5,8),(113,167,103),
               shape="Ball",solid=False,material="Grass")
+        block(tree,"BirchCrownHigh",(x+2,h+6,z-1),(7,6,6),(137,183,112),
+              shape="Ball",solid=False,material="Grass")
+    else:
+        h=rng.uniform(10,15)
+        block(tree,"AncientTrunk",(x,h/2+1,z),(3.8,h,3.8),(91,69,57),
+              material="Wood",rotation=(0,yaw,6))
+        for side in (-1,1):
+            block(tree,"AncientBranch",(x+side*3.0,h-1,z+side),
+                  (7.5,1.8,1.8),(91,69,57),material="Wood",
+                  rotation=(0,side*28,side*34),solid=False)
+            block(tree,"AncientFan",(x+side*5.0,h+2,z+side),
+                  (8.5,6.5,5.5),side==-1 and (75,135,92) or (100,153,94),
+                  part_class="WedgePart",rotation=(0,side*45,0),
+                  solid=False,material="Grass")
+
+# A few authored props make the forest floor feel inhabited while staying
+# outside protected routes. They reuse native parts and do not add asset loads.
+for index,(x,z,length,yaw) in enumerate([
+    (-270,112,12,18),(-196,155,10,-24),(-245,252,13,8),
+    (-92,242,11,31),(112,245,12,-18),(205,193,10,26),
+]):
+    block(forest,f"FallenLog_{index}",(x,2.2,z),(length,3.0,3.0),
+          (98,72,56),shape="Cylinder",material="Wood",rotation=(0,yaw,0),
+          solid=False)
+    block(forest,f"LogMoss_{index}",(x,3.45,z),(length*.72,.6,2.2),
+          (82,132,83),shape="Ball",material="Grass",solid=False,
+          rotation=(0,yaw,0))
 
 nodes=group(world,"ResourceNodes")
 kinds=["Tree","Tree","Rock","Ore","Bush","Crystal","Fiber","Wild"]
@@ -400,7 +481,7 @@ for i in range(7):
     block(quarry,"LanternGlow",(x,5,-27),(2.3,2.3,2.3),(254,211,124),
           shape="Ball",solid=False,material="Neon")
 mushrooms=group(landmarks,"GlowcapGrove")
-for i in range(29):
+for i in range(16):
     x=rng.uniform(-290,-175)
     z=rng.uniform(175,298)
     h=rng.uniform(4,10)
@@ -408,8 +489,8 @@ for i in range(29):
           (225,214,192),material="SmoothPlastic")
     cap_color=rng.choice([(210,131,199),(119,178,228),(239,166,152),(196,164,234)])
     block(mushrooms,"Glowcap",(x,h+1,z),(rng.uniform(5,9),3.7,7),cap_color,
-          shape="Ball",solid=False,material="Neon")
-    for j in range(3):
+          shape="Ball",solid=False,material="Glass")
+    for j in range(2):
         block(mushrooms,"GlowDot",(x+rng.uniform(-2,2),h+2.8,z+rng.uniform(-2,2)),
               (.6,.6,.6),(249,233,208),shape="Ball",solid=False,material="Neon")
 markets=group(landmarks,"MarketDecor")

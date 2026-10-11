@@ -96,3 +96,10 @@ cylinders. CI validates the authored and packaged coordinates. Follow
 [MAP_QA.md](MAP_QA.md) for actual Studio navigation, collision, readability,
 device and visual-quality acceptance. Static geometry checks do not prove that
 the map is clean, fun, performant, or release-ready.
+
+The follow-up forest pass replaces the repeated three-ball tree with four
+equally represented silhouettes, adds low biome floor fields and authored
+forest props, and reduces broad Neon glowcap density. Follow
+[BIOME_ART.md](BIOME_ART.md) for the required overview, collision, profiler and
+device tests. The native-Part library is still an intermediate art system, not
+final MeshPart/PBR production quality.
