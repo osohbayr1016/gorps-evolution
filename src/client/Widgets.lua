@@ -27,6 +27,18 @@ function W.border(obj,col,thickness)
  local s=Instance.new("UIStroke");s.Color=col or W.colors.line
  s.Thickness=thickness or 1;s.Transparency=.32;s.Parent=obj;return s
 end
+function W.focus(obj)
+ local ring=Instance.new("UIStroke")
+ ring.Name="ControllerFocus"
+ ring.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
+ ring.Color=W.colors.light
+ ring.Thickness=3
+ ring.Transparency=1
+ ring.Parent=obj
+ obj.SelectionGained:Connect(function() ring.Transparency=0 end)
+ obj.SelectionLost:Connect(function() ring.Transparency=1 end)
+ return ring
+end
 function W.order(parent,child)
  local index=(parent:GetAttribute("OrderCounter") or 0)+1
  parent:SetAttribute("OrderCounter",index)
@@ -59,10 +71,11 @@ function W.button(parent,content,callback,enabled,accent)
  b.TextColor3=enabled==false and W.colors.muted or W.colors.deep
  b.TextSize=14;b.Font=Enum.Font.GothamBold
  b.TextWrapped=true;b.Text=content
- b.AutoButtonColor=false;b.Active=enabled~=false
+ b.AutoButtonColor=false;b.Active=enabled~=false;b.Selectable=enabled~=false
  b.Parent=parent
- W.order(parent,b);W.round(b,10)
+ W.order(parent,b);b.SelectionOrder=b.LayoutOrder;W.round(b,10)
  if enabled~=false then
+  W.focus(b)
   b.Activated:Connect(callback)
   b.MouseEnter:Connect(function()
    TweenService:Create(b,TweenInfo.new(.12),{BackgroundTransparency=.12}):Play()

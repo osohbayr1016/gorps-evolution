@@ -1,4 +1,5 @@
 local Players=game:GetService("Players")
+local GuiService=game:GetService("GuiService")
 local TweenService=game:GetService("TweenService")
 local UserInputService=game:GetService("UserInputService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -104,8 +105,9 @@ function UI.new(send)
  objectiveAction.TextSize=11
  objectiveAction.Font=Enum.Font.GothamBold
  objectiveAction.AutoButtonColor=false
+ objectiveAction.SelectionOrder=10
  objectiveAction.Parent=objective
- W.round(objectiveAction,8)
+ W.round(objectiveAction,8);W.focus(objectiveAction)
  objectiveAction.Activated:Connect(function()
   self:openTab(self.objectiveTab or "Quests")
  end)
@@ -138,7 +140,9 @@ function UI.new(send)
  close.BackgroundColor3=Color3.fromRGB(66,81,104)
  close.Text="X";close.TextSize=18;close.Font=Enum.Font.GothamBold
  close.TextColor3=C.light;close.Parent=panel
- W.round(close,11)
+ close.SelectionOrder=1
+ W.round(close,11);W.focus(close)
+ self.close=close
  close.Activated:Connect(function() self:setOpen(false) end)
  local nav=Instance.new("ScrollingFrame")
  nav.Name="Tabs"
@@ -162,7 +166,8 @@ function UI.new(send)
   b.Size=UDim2.fromOffset(math.max(74,#tab[2]*11+18),38)
   b.Text="";b.AutoButtonColor=false
   b.BackgroundColor3=C.surface
-  b.Parent=nav;W.round(b,9)
+  b.SelectionOrder=10+index
+  b.Parent=nav;W.round(b,9);W.focus(b)
   local tabIcon=Icons.create(b,tab[1],19)
   tabIcon.Position=UDim2.fromOffset(7,9)
   local tabName=absoluteText(b,tab[2],11,C.light)
@@ -208,8 +213,9 @@ function UI.new(send)
   button.TextColor3=index==1 and C.deep or C.light
   button.Text=""
   button.AutoButtonColor=false
+  button.SelectionOrder=10+index
   button.Parent=items
-  W.round(button,10)
+  W.round(button,10);W.focus(button)
   local picture=Icons.create(button,entry[2],28)
   picture.AnchorPoint=Vector2.new(.5,0)
   picture.Position=UDim2.new(.5,0,0,6)
@@ -226,12 +232,13 @@ function UI.new(send)
  menu.AnchorPoint=Vector2.new(1,1)
  menu.Position=UDim2.new(1,-16,1,-24)
  menu.Size=UDim2.fromOffset(94,44)
- menu.Text="MENU [G]"
+ menu.Text="MENU [G/Y]"
  menu.Font=Enum.Font.GothamBold;menu.TextSize=13
  menu.TextColor3=C.light
  menu.BackgroundColor3=C.deep
+ menu.SelectionOrder=1
  menu.Parent=gui
- W.round(menu,13);W.border(menu)
+ W.round(menu,13);W.border(menu);W.focus(menu)
  self.menu=menu
  menu.Activated:Connect(function() self:setOpen(not self.open) end)
  local toast=framed(gui,"Toast",C.surface)
@@ -246,13 +253,24 @@ function UI.new(send)
  self.toastText=toastText
  UserInputService.InputBegan:Connect(function(input,consumed)
   if consumed or UserInputService:GetFocusedTextBox() then return end
-  if input.KeyCode==Enum.KeyCode.G then
+  if input.KeyCode==Enum.KeyCode.G or input.KeyCode==Enum.KeyCode.ButtonY then
    self:setOpen(not self.open)
+  elseif input.KeyCode==Enum.KeyCode.ButtonB then
+   if self.hatchDismiss then
+    self.hatchDismiss()
+   elseif self.open then
+    self:setOpen(false)
+   end
   elseif input.KeyCode==Enum.KeyCode.One then self:openTab("Eggs")
   elseif input.KeyCode==Enum.KeyCode.Two then self:openTab("Creatures")
   elseif input.KeyCode==Enum.KeyCode.Three then self:openTab("Backpack")
   elseif input.KeyCode==Enum.KeyCode.Four then self:openTab("Quests")
   elseif input.KeyCode==Enum.KeyCode.Five then self:openTab("Ranch")
+  end
+ end)
+ UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(function()
+  if self:usesController() then
+   self:selectForController(self.open and self.tabButtons[self.tab] or self.menu)
   end
  end)
  local function resize()
@@ -294,6 +312,41 @@ function UI.new(send)
  resize()
  return self
 end
+function UI:usesController()
+ local preferred=UserInputService.PreferredInput
+ return preferred==Enum.PreferredInput.Gamepad
+  or preferred==Enum.PreferredInput.MicroGamepad
+end
+function UI:selectionTargetIsUsable(target)
+ if target==nil or not target:IsDescendantOf(self.gui) or not target.Selectable then
+  return false
+ end
+ local current=target
+ while current and current~=self.gui do
+  if current:IsA("GuiObject") and not current.Visible then return false end
+  current=current.Parent
+ end
+ return current==self.gui
+end
+function UI:selectForController(target)
+ if not self:usesController() then return end
+ task.defer(function()
+  if self:selectionTargetIsUsable(target) then
+   GuiService.SelectedObject=target
+  end
+ end)
+end
+function UI:restorePageFocus()
+ if not self:usesController() then return end
+ task.defer(function()
+  if not self.open then return end
+  GuiService:Select(self.page)
+  local selected=GuiService.SelectedObject
+  if not selected or not selected:IsDescendantOf(self.page) then
+   self:selectForController(self.tabButtons[self.tab])
+  end
+ end)
+end
 function UI:setOpen(open)
  self.open=open
  self.dim.Visible=open
@@ -301,7 +354,12 @@ function UI:setOpen(open)
  self.dock.Visible=not open
  self.objective.Visible=not open
  self.menu.Visible=not open
- if open then self:render() end
+ if open then
+  self:render()
+  self:selectForController(self.tabButtons[self.tab])
+ else
+  self:selectForController(self.menu)
+ end
 end
 function UI:openTab(tab)
  if not self.tabButtons[tab] then return end
@@ -338,6 +396,8 @@ function UI:showPickup(reward)
 end
 function UI:showHatch(pet)
  if type(pet)~="table" or not Config.Species[pet.species] then return end
+ if self.hatchDismiss then self.hatchDismiss() end
+ local previousSelection=GuiService.SelectedObject
  local overlay=Instance.new("Frame")
  overlay.Name="HatchReveal"
  overlay.Size=UDim2.fromScale(1,1);overlay.BorderSizePixel=0
@@ -368,9 +428,21 @@ function UI:showHatch(pet)
  equip.TextColor3=C.deep;equip.BackgroundColor3=C.gold
  equip.Position=UDim2.fromOffset(20,366)
  equip.Size=UDim2.new(1,-40,0,41)
- equip.Parent=card;W.round(equip,10)
+ equip.SelectionOrder=1
+ equip.Parent=card;W.round(equip,10);W.focus(equip)
+ local dismissed=false
+ local function dismissReveal()
+  if dismissed then return end
+  dismissed=true
+  if overlay.Parent then overlay:Destroy() end
+  self.hatchDismiss=nil
+  local fallback=self.open and self.tabButtons[self.tab] or self.menu
+  self:selectForController(self:selectionTargetIsUsable(previousSelection)
+   and previousSelection or fallback)
+ end
+ self.hatchDismiss=dismissReveal
  equip.Activated:Connect(function()
-  overlay:Destroy()
+  dismissReveal()
   self.send("SelectPet",{id=pet.id})
  end)
  local dismiss=Instance.new("TextButton")
@@ -378,11 +450,13 @@ function UI:showHatch(pet)
  dismiss.Text="X";dismiss.Font=Enum.Font.GothamBold;dismiss.TextSize=17
  dismiss.TextColor3=C.light;dismiss.BackgroundColor3=C.deep
  dismiss.Position=UDim2.new(1,-43,0,8);dismiss.Size=UDim2.fromOffset(34,33)
- dismiss.Parent=card;W.round(dismiss,9)
- dismiss.Activated:Connect(function() overlay:Destroy() end)
+ dismiss.SelectionOrder=2
+ dismiss.Parent=card;W.round(dismiss,9);W.focus(dismiss)
+ dismiss.Activated:Connect(dismissReveal)
  card.Size=UDim2.fromOffset(250,340)
  TweenService:Create(card,TweenInfo.new(.4,Enum.EasingStyle.Back,Enum.EasingDirection.Out),
   {Size=UDim2.fromOffset(320,420)}):Play()
+ self:selectForController(equip)
 end
 function UI:update(profile,trade,message,rankings)
  if profile then self.profile=profile end
@@ -424,6 +498,9 @@ function UI:render()
   button.BackgroundColor3=active and C.gold or C.surface
   self.tabLabels[key].TextColor3=active and C.deep or C.light
  end
+ local selected=GuiService.SelectedObject
+ local restorePageSelection=self:usesController() and selected~=nil
+  and selected:IsDescendantOf(self.page)
  local oldPosition=self.page.CanvasPosition
  self.page:SetAttribute("OrderCounter",0)
  for _,child in ipairs(self.page:GetChildren()) do
@@ -437,6 +514,7 @@ function UI:render()
   end
  end,self.rankings)
  self.page.CanvasPosition=oldPosition
+ if restorePageSelection then self:restorePageFocus() end
 end
 return UI
 

@@ -34,6 +34,24 @@ checks={
  "visible active tab state":'self.tabLabels[tab[1]]=tabName' in ui
     and 'self.tabLabels[key].TextColor3=active and C.deep or C.light' in ui
     and 'button.TextColor3=key==self.tab' not in ui,
+ "controller focus lifecycle":'local GuiService=game:GetService("GuiService")' in ui
+    and 'function UI:usesController()' in ui
+    and 'UserInputService.PreferredInput' in ui
+    and 'GuiService.SelectedObject=target' in ui
+    and 'GuiService:Select(self.page)' in ui
+    and 'selected:IsDescendantOf(self.page)' in ui
+    and 'current:IsA("GuiObject") and not current.Visible' in ui
+    and 'self:selectForController(self.tabButtons[self.tab])' in ui
+    and 'self:selectForController(self.menu)' in ui,
+ "controller open back and reveal controls":'Enum.KeyCode.ButtonY' in ui
+    and 'Enum.KeyCode.ButtonB' in ui
+    and 'self.hatchDismiss()' in ui
+    and 'self:selectForController(equip)' in ui,
+ "visible selection and disabled-action skipping":'function W.focus(obj)' in widgets
+    and 'ring.Name="ControllerFocus"' in widgets
+    and 'obj.SelectionGained:Connect' in widgets
+    and 'b.Selectable=enabled~=false' in widgets
+    and 'W.focus(b)' in widgets,
  "no overlapping dock when modal opens":'self.dock.Visible=not open' in ui
     and 'self.objective.Visible=not open' in ui,
  "mobile panel bounds":'math.min(narrow and width-18 or 720,width-18)' in ui,

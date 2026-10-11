@@ -100,6 +100,14 @@ than the empty parent button. The 68-assertion onboarding suite proves ordering
 and state priority, but Studio is still required to verify scrolling, contrast,
 focus and text fit on target devices.
 
+The controller follow-up now uses the player's preferred input, assigns a valid
+selection when the collection or hatch UI opens, restores selection after live
+page reconstruction, skips disabled actions, and provides Y menu / B back
+controls plus a visible focus ring. Static contracts prove that these paths are
+wired but cannot execute Roblox GUI navigation. Run the Controller Emulator
+case in `UI_QA.md`; controller/device acceptance and the 30+ FPS gate remain
+open until real engine evidence exists.
+
 
 ## Companion art source milestone — engine acceptance pending
 
