@@ -18,6 +18,16 @@ function R.pet(p,id)
  for i,pet in ipairs(p.Pets) do if pet.id==id then return pet,i end end
 end
 function R.capacity(p) return math.min(40,3+(p.BaseLevel-1)*2) end
+function R.stats(pet)
+ local def=C.Species[pet.species]
+ if not def then return nil end
+ local tier=table.find(C.Rarities,pet.rarity) or 1
+ local level=math.clamp(pet.level,1,25)
+ local evolved=math.clamp(pet.evolved,0,2)
+ local scale=(1+(level-1)*0.1+evolved*0.25)*(1+(tier-1)*0.2)
+ return {hp=math.floor(def.hp*scale),attack=math.floor(def.attack*scale),
+  speed=def.speed+math.floor((level-1)*0.2),role=def.role}
+end
 function R.load(saved,now)
  local p=R.new(now)
  if type(saved)~="table" then return p end
@@ -127,10 +137,17 @@ end
 function R.gather(p,id)
  local node=C.Nodes[id]
  if not node then return false,"Unknown node" end
- R.add(p,{[node[1]]=node[2]});p.Coins+=id=="Wild" and 8 or 2;R.xp(p,5)
- R.quest(p,"Gatherer",node[2])
+ local active=R.pet(p,p.ActiveId)
+ local role=active and C.Species[active.species].role or nil
+ local extra=0
+ if role=="Miner" and (id=="Rock" or id=="Ore" or id=="Crystal") then extra=1 end
+ if role=="Support" and id=="Bush" then extra=1 end
+ if (role=="Assassin" or role=="Ranged" or role=="Tank") and id=="Wild" then extra=2 end
+ local amount=node[2]+extra
+ R.add(p,{[node[1]]=amount});p.Coins+=id=="Wild" and 8 or 2;R.xp(p,5)
+ R.quest(p,"Gatherer",amount)
  if id=="Wild" then R.quest(p,"Explorer",1) end
- return true,"Collected "..node[2].." "..node[1]
+ return true,"Collected "..amount.." "..node[1]
 end
 function R.expand(p)
  if p.BaseLevel>=8 then return false,"Maximum base level" end
