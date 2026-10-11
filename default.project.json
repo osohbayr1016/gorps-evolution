@@ -22,6 +22,58 @@
           "$path": "src/client"
         }
       }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "Baseplate": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": true,
+          "Locked": true,
+          "Position": [
+            0,
+            -3,
+            0
+          ],
+          "Size": [
+            700,
+            4,
+            700
+          ],
+          "Color": [
+            0.15,
+            0.27,
+            0.23
+          ]
+        }
+      },
+      "SafetySpawn": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "CanCollide": true,
+          "Locked": true,
+          "Enabled": true,
+          "Neutral": true,
+          "Duration": 5,
+          "Position": [
+            0,
+            2,
+            0
+          ],
+          "Size": [
+            18,
+            2,
+            18
+          ],
+          "Color": [
+            0.25,
+            0.68,
+            0.66
+          ]
+        }
+      }
     }
   }
 }

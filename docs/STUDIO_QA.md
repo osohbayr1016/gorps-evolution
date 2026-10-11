@@ -9,6 +9,16 @@
 - Run Test → 2 Players to validate material and creature trading. Test mobile screen sizes via Studio Device Emulator.
 - Set experience Max Players ≤ 12 until ranch plot allocation supports more.
 
+## First: infinite falling regression
+
+1. Open the **new** `GorpsEvolution.rbxlx` from the latest GitHub Actions build, not the old currently opened place.
+2. In Studio Edit mode, expand `Workspace` and confirm `Baseplate` and `SafetySpawn` exist before you press Play.
+3. Press **Play**: player should stand on the platform immediately even if DataStore calls take time; when profile loads, player should teleport to a ranch on the generated ground.
+4. In the **Server** Output, look for `[Gorps SpawnSafety] Static ground and neutral spawn are ready.` and check smoke test assertions.
+5. Confirm `Workspace > ChaosGalaxy > Ground` is anchored and collidable in Play mode.
+6. If character enters void below Y=-20 after teleport, it should be restored onto the safe platform within a second.
+7. Respawn your avatar using Studio's Reset Character command; it must not fall infinitely.
+
 ## Release-blocking acceptance checks
 
 | # | Case | Expected |

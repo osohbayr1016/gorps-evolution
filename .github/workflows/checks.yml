@@ -1,8 +1,7 @@
 name: Roblox validation
 on:
   push:
-    branches: [main, feat/phase1-phase2-core]
-  pull_request:
+    branches: [main]
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -13,6 +12,8 @@ jobs:
         run: selene src
       - name: Build Roblox place file
         run: rojo build default.project.json -o GorpsEvolution.rbxlx
+      - name: Validate baked ground and spawn
+        run: python3 scripts/verify_spawn.py default.project.json GorpsEvolution.rbxlx
       - name: Upload Studio build
         uses: actions/upload-artifact@v4
         with:

@@ -6,11 +6,25 @@ local R=require(ReplicatedStorage.Shared.Rules)
 local E=require(ReplicatedStorage.Shared.Economy)
 local C=require(ReplicatedStorage.Shared.Config)
 local checks=0
+-- The place must be safe before Main.server.lua loads player profiles or generates the planet.
+local baseplate=workspace:FindFirstChild("Baseplate")
+local safeSpawn=workspace:FindFirstChild("SafetySpawn")
+assert(baseplate and baseplate:IsA("BasePart") and baseplate.Anchored and baseplate.CanCollide, "[Gorps Smoke] Missing static baseplate")
+assert(safeSpawn and safeSpawn:IsA("SpawnLocation") and safeSpawn.Anchored and safeSpawn.CanCollide
+ and safeSpawn.Enabled and safeSpawn.Neutral, "[Gorps Smoke] Missing neutral safety spawn")
 local function check(value,message)
  checks+=1
  assert(value,"[Gorps Smoke] "..message)
 end
 local function fresh() return R.new(1800000000) end
+local planet=workspace:WaitForChild("ChaosGalaxy",10)
+local ground=planet and planet:FindFirstChild("Ground")
+check(ground and ground:IsA("BasePart") and ground.Anchored and ground.CanCollide,
+ "runtime planet ground must exist and be collidable")
+check(baseplate.Size.X>=650 and baseplate.Size.Z>=650,
+ "fallback baseplate covers every ranch")
+check(safeSpawn.Position.Y>baseplate.Position.Y+baseplate.Size.Y/2,
+ "safe spawn must sit above fallback ground")
 local p=fresh()
 check(p.Coins==250,"starter coin balance")
 check(#p.Pets==1 and p.Pets[1].species=="Gorp","starter creature")
