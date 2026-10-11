@@ -26,6 +26,14 @@ checks={
     'id = "Employer"','id = "Explorer"','id = "Expand"','id = "Explore"',
     'action = "CLAIM REWARD"'
  )) and 'Grow your ranch and explore' not in ui,
+ "mission priority and current-step highlight":'Onboarding.questOrder(p)' in pages
+    and 'objective.id==id or objective.id=="Claim"..id' in pages
+    and '(guided and "NEXT  ·  " or "")..labels[id]' in pages
+    and 'guided and C.gold or nil' in pages
+    and 'function Onboarding.questOrder(profile)' in onboarding,
+ "visible active tab state":'self.tabLabels[tab[1]]=tabName' in ui
+    and 'self.tabLabels[key].TextColor3=active and C.deep or C.light' in ui
+    and 'button.TextColor3=key==self.tab' not in ui,
  "no overlapping dock when modal opens":'self.dock.Visible=not open' in ui
     and 'self.objective.Visible=not open' in ui,
  "mobile panel bounds":'math.min(narrow and width-18 or 720,width-18)' in ui,

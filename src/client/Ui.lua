@@ -154,7 +154,7 @@ function UI.new(send)
  navLayout.FillDirection=Enum.FillDirection.Horizontal
  navLayout.SortOrder=Enum.SortOrder.LayoutOrder
  navLayout.Padding=UDim.new(0,7);navLayout.Parent=nav
- self.tabButtons={}
+ self.tabButtons={};self.tabLabels={}
  for index,tab in ipairs(TABS) do
   local b=Instance.new("TextButton")
   b.Name="Tab_"..tab[1]
@@ -170,6 +170,7 @@ function UI.new(send)
   tabName.Size=UDim2.new(1,-35,0,22)
   b.Activated:Connect(function() self:openTab(tab[1]) end)
   self.tabButtons[tab[1]]=b
+  self.tabLabels[tab[1]]=tabName
  end
  local content=Instance.new("ScrollingFrame")
  content.Name="Content";content.BackgroundTransparency=1
@@ -419,8 +420,9 @@ function UI:render()
  self.heading.Text=info[self.tab][1]
  self.hint.Text=info[self.tab][2]
  for key,button in pairs(self.tabButtons) do
-  button.BackgroundColor3=key==self.tab and C.gold or C.surface
-  button.TextColor3=key==self.tab and C.deep or C.light
+  local active=key==self.tab
+  button.BackgroundColor3=active and C.gold or C.surface
+  self.tabLabels[key].TextColor3=active and C.deep or C.light
  end
  local oldPosition=self.page.CanvasPosition
  self.page:SetAttribute("OrderCounter",0)

@@ -73,14 +73,14 @@ function W.button(parent,content,callback,enabled,accent)
  end
  return b
 end
-function W.card(parent,title,description)
+function W.card(parent,title,description,accent)
  local frame=Instance.new("Frame")
  frame.Name="Card"
  frame.Size=UDim2.new(1,-6,0,0)
  frame.AutomaticSize=Enum.AutomaticSize.Y
  frame.BackgroundColor3=W.colors.surface
  frame.BorderSizePixel=0;frame.Parent=parent
- W.order(parent,frame);W.round(frame,15);W.border(frame)
+ W.order(parent,frame);W.round(frame,15);W.border(frame,accent or W.colors.line,accent and 2 or 1)
  local pad=Instance.new("UIPadding")
  pad.PaddingTop=UDim.new(0,15);pad.PaddingBottom=UDim.new(0,15)
  pad.PaddingLeft=UDim.new(0,15);pad.PaddingRight=UDim.new(0,15);pad.Parent=frame

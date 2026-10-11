@@ -1,5 +1,6 @@
 local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
 local Rules=require(game:GetService("ReplicatedStorage").Shared.Rules)
+local Onboarding=require(game:GetService("ReplicatedStorage").Shared.Onboarding)
 local W=require(script.Parent.Widgets)
 local C=W.colors
 local Pages={}
@@ -225,13 +226,16 @@ local function quests(parent,p,send)
  heading(parent,"MISSIONS","Play your way and claim rewards when goals are complete.")
  local labels={Gatherer="Collect materials",Provider="Feed your Gorps",
   Maker="Craft equipment",Employer="Hire a ranch worker",Explorer="Hunt wild creatures"}
- for _,id in ipairs(keys(Config.Quests)) do
+ local objective=Onboarding.resolve(p)
+ for _,id in ipairs(Onboarding.questOrder(p)) do
   local q=Config.Quests[id]
-  local current=math.min(p.Quests[id] or 0,q.goal)
-  local card=W.card(parent,labels[id],"REWARD   ◆ "..q.reward.." coins")
+  local current=math.min((p.Quests and p.Quests[id]) or 0,q.goal)
+  local guided=objective.id==id or objective.id=="Claim"..id
+  local card=W.card(parent,(guided and "NEXT  ·  " or "")..labels[id],
+   "REWARD   ◆ "..q.reward.." coins",guided and C.gold or nil)
   textRow(card,current.." / "..q.goal.." completed")
   W.progress(card,current/q.goal)
-  if p.Claimed[id] then
+  if p.Claimed and p.Claimed[id] then
    descriptor(card,"✓  Reward claimed")
   else
    action(card,current>=q.goal and "CLAIM ◆ "..q.reward or "MISSION IN PROGRESS",

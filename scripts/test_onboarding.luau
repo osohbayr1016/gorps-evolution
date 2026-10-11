@@ -42,12 +42,22 @@ local function resolved(profile, id, tab, current, goal)
 	return objective
 end
 
+local function questOrder(profile, expected, message)
+	local actual = Onboarding.questOrder(profile)
+	equal(#actual, #expected, message .. " count")
+	for index, id in ipairs(expected) do
+		equal(actual[index], id, message .. " position " .. index)
+	end
+end
+
 local profile = Rules.new(1800000000)
+questOrder(profile, { "Gatherer", "Provider", "Maker", "Employer", "Explorer" }, "fresh curriculum order")
 resolved(profile, "Gatherer", "Quests", 0, Config.Quests.Gatherer.goal)
 profile.Quests.Gatherer = Config.Quests.Gatherer.goal
 local reward = resolved(profile, "ClaimGatherer", "Quests", 15, 15)
 equal(reward.action, "CLAIM REWARD", "completed quest exposes claim action")
 profile.Claimed.Gatherer = true
+questOrder(profile, { "Provider", "Maker", "Employer", "Explorer", "Gatherer" }, "claimed mission moves behind unfinished work")
 resolved(profile, "Hatch", "Eggs", 1, 2)
 Rules.addPet(profile, "Mole")
 resolved(profile, "Provider", "Creatures", 0, Config.Quests.Provider.goal)
@@ -69,6 +79,7 @@ equal(complete.complete, true, "finished journey marks free exploration")
 
 -- Claim-ready rewards always outrank later guidance, even on migrated profiles.
 profile.Claimed.Maker = false
+questOrder(profile, { "Maker", "Gatherer", "Provider", "Employer", "Explorer" }, "claim-ready reward moves first")
 resolved(profile, "ClaimMaker", "Quests", 2, 2)
 
 -- Malformed or missing client snapshots must stay bounded and never crash the HUD.

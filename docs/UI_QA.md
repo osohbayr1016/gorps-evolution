@@ -8,6 +8,7 @@ Inspired by the clarity of collection-based Roblox games rather than copying the
 
 - **In world**: small GORPS brand chip at the upper left, coin and level chip at the upper right, short next-quest tracker below the brand. No full-width opaque header.
 - **Actionable objective rail**: the left card covers the complete starter journey instead of stopping after two counters. It prioritizes unclaimed rewards, then guides collect, hatch, feed, craft, hire, hunt and ranch expansion. Its button opens the matching trusted screen; it never performs a purchase or reward action by itself.
+- **Readable mission priority**: QUESTS puts claim-ready rewards first, unfinished missions next in the intended Gatherer → Provider → Maker → Employer → Explorer curriculum, and claimed cards last. The current card has a gold border and `NEXT` marker. The selected top navigation label changes with its tab instead of recoloring an invisible parent caption.
 - **Quick access**: five large labeled buttons on a bottom dock: EGGS, PETS, BAG, QUESTS, RANCH. Also bound to keyboard 1–5.
 - **Collection window**: opens on demand; it uses centered layout, dark blue game colors, gold/mint accents and an explicit close button. The bottom dock and quest tracker hide while this window is visible. Keyboard G toggles the window.
 - **Collection-focused cards**: real 3D creature previews from the same CreatureFactory as in-world pets; egg previews, rarity accents, clearly displayed egg probabilities, visual growth bars, and readable requirements.
@@ -20,7 +21,7 @@ Inspired by the clarity of collection-based Roblox games rather than copying the
 Use your existing Rojo GitHub-to-Studio sync. Wait until the terminal pulls the new main commit, stop Play, then restart.
 
 1. **Play without opening anything**: only small top chips, a left objective, and the bottom dock should overlay the game. The viewport must NOT be covered by a large right sidebar.
-2. Follow the objective card through a fresh profile: collect → claim → hatch → feed → claim → craft → claim → hire → claim → hunt → claim → ranch level 2. At every state its button must open the relevant QUESTS, EGGS, PETS, CRAFTING, WORKERS or RANCH screen. It must never grant a reward or spend resources until that screen's explicit server action is pressed.
+2. Follow the objective card through a fresh profile: collect → claim → hatch → feed → claim → craft → claim → hire → claim → hunt → claim → ranch level 2. At every state its button must open the relevant QUESTS, EGGS, PETS, CRAFTING, WORKERS or RANCH screen. QUESTS must put the current/claimable card first with a visible gold `NEXT` treatment, move claimed cards below unfinished work, and show the selected QUESTS tab label in dark text on gold. Opening the card must never grant a reward or spend resources until that screen's explicit server action is pressed.
 3. Press **EGGS**: the dock hides and a centered window shows 3D egg previews and odds. Confirm the close X works, then hatch a Meadow Egg for 100 coins.
 4. After hatching, the reveal shows the creature in a 3D viewport with rarity and an EQUIP button. Press EQUIP: active companion updates and collection window changes to PETS.
 5. Open **PETS**: each creature appears in its own 3D preview with level, rarity, growth and feed/evolve/selection buttons in the correct order.

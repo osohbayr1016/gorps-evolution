@@ -91,6 +91,15 @@ snapshots and bounded progress. This does not prove player comprehension,
 touch-control clearance, gamepad focus or real Studio updates; run the fresh
 profile journey in `UI_QA.md` before accepting the onboarding gate.
 
+The mission screen follow-up now shares the onboarding curriculum instead of
+alphabetically placing Employer/Explorer before the starter Gatherer mission.
+Claim-ready cards move first, unfinished curriculum follows, claimed cards move
+last, and the exact current objective receives a visible gold treatment. The
+selected top-tab label now changes contrast on the actual child label rather
+than the empty parent button. The 68-assertion onboarding suite proves ordering
+and state priority, but Studio is still required to verify scrolling, contrast,
+focus and text fit on target devices.
+
 
 ## Companion art source milestone — engine acceptance pending
 

@@ -10,6 +10,11 @@ local QUEST_STEPS = {
 	{ id = "Explorer", title = "Hunt five wild creatures", detail = "Wildlife waits beyond the village", action = "VIEW QUEST", tab = "Quests" },
 }
 
+local QUEST_RANK = {}
+for index, step in ipairs(QUEST_STEPS) do
+	QUEST_RANK[step.id] = index
+end
+
 local function safeTable(value)
 	return type(value) == "table" and value or {}
 end
@@ -41,6 +46,35 @@ local function questDescriptor(step, value)
 		goal = definition.goal,
 		progress = ratio,
 	}
+end
+
+function Onboarding.questOrder(profile)
+	profile = safeTable(profile)
+	local quests = safeTable(profile.Quests)
+	local claimed = safeTable(profile.Claimed)
+	local ordered = {}
+	for _, step in ipairs(QUEST_STEPS) do
+		table.insert(ordered, step.id)
+	end
+	table.sort(ordered, function(left, right)
+		local function priority(id)
+			local definition = Config.Quests[id]
+			local current = math.max(0, tonumber(quests[id]) or 0)
+			if current >= definition.goal and claimed[id] ~= true then
+				return 1 -- A reward ready now must never be buried.
+			elseif claimed[id] == true then
+				return 3 -- Finished cards remain available but move out of the way.
+			end
+			return 2
+		end
+		local leftPriority = priority(left)
+		local rightPriority = priority(right)
+		if leftPriority ~= rightPriority then
+			return leftPriority < rightPriority
+		end
+		return QUEST_RANK[left] < QUEST_RANK[right]
+	end)
+	return ordered
 end
 
 function Onboarding.resolve(profile)
