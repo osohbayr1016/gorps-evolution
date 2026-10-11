@@ -25,7 +25,7 @@ local function button(parent,text,fn)
  return b
 end
 function UI.new(send)
- local self=setmetatable({send=send,tab="Ranch",profile=nil,trade={},message=nil},UI)
+ local self=setmetatable({send=send,tab="Ranch",profile=nil,trade={},rankings={},message=nil},UI)
  local gui=Instance.new("ScreenGui");gui.Name="GorpsHUD";gui.ResetOnSpawn=false
  gui.IgnoreGuiInset=true;gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
  self.gui=gui
@@ -43,7 +43,7 @@ function UI.new(send)
  nav.Size=UDim2.new(0,128,1,-95);nav.BackgroundTransparency=1;nav.ScrollBarThickness=2
  nav.AutomaticCanvasSize=Enum.AutomaticSize.Y;nav.CanvasSize=UDim2.new();nav.Parent=shell
  local nl=Instance.new("UIListLayout");nl.Padding=UDim.new(0,6);nl.Parent=nav
- for _,tab in ipairs({"Ranch","Creatures","Backpack","Crafting","Shop","Workers","Quests","Trade","Events"}) do
+ for _,tab in ipairs({"Ranch","Creatures","Backpack","Crafting","Shop","Workers","Quests","Trade","Events","Rankings"}) do
   button(nav,tab,function() self.tab=tab;self:render() end)
  end
  local page=Instance.new("ScrollingFrame");page.Name="Content"
@@ -72,9 +72,10 @@ function UI:toastMessage(message)
  self.currentToast=token
  task.delay(3,function() if self.currentToast==token then self.toast.Visible=false end end)
 end
-function UI:update(profile,trade,message)
+function UI:update(profile,trade,message,rankings)
  if profile then self.profile=profile end
  if trade then self.trade=trade end
+ if rankings then self.rankings=rankings end
  if message then self:toastMessage(message) end
  self:render()
 end
@@ -86,6 +87,6 @@ function UI:render()
  for _,child in ipairs(self.page:GetChildren()) do
   if not child:IsA("UIListLayout") then child:Destroy() end
  end
- Pages.render(self.page,self.tab,p,self.trade,self.send,label,button)
+ Pages.render(self.page,self.tab,p,self.trade,self.send,label,button,self.rankings)
 end
 return UI
