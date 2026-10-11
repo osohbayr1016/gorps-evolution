@@ -18,7 +18,7 @@ This checklist is a **shipping contract**, not a feature advertisement. A green 
 - Resource node E interaction works; quest and inventory update
 - Hunting a wild creature produces a combat message, with meat/coins only on victory
 - Feed, evolve prerequisites, buy, craft, sell, hire, collect and quest-claim rules
-- Two-player pet and resource trade confirmation/cancellation
+- Two-player pet and resource trade confirmation/cancellation, including fully occupied ranches and asset overflow
 - Mobile and controller input, consistent 30+ FPS on target hardware
 - Persistence and reconnect tested **in a private published experience** (studio profile is intentionally temporary)
 
@@ -65,3 +65,9 @@ The HUD should be visible immediately. If server connectivity fails, it should s
 Studio test progress is intentionally discarded to keep isolated, unpublished testing safe. Test persistence separately in a private **published** Roblox experience with real DataStores.
 
 For bugs, send the first red Output error, plus a screenshot showing the current game and Explorer > ServerScriptService tree.
+
+## Trade integrity follow-up
+
+The settlement engine now stages both sides before applying pet or material changes, so a full-capacity 1-for-1 pet swap does not remove one creature prematurely. Rejected transfers must preserve each player's creatures, rarity, level, XP, evolution and inventory. Studio smoke assertions test these transitions.
+
+**Still release-blocking:** each player's profile persists separately. A Roblox server crash, write failure, or process shutdown between the two DataStore writes can leave cross-player trade balances inconsistent. A transaction receipt/escrow-and-recovery protocol must be implemented and crash-tested before public trading is enabled in a production experience. The current fix addresses atomicity only within a live server process.

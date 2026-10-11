@@ -5,6 +5,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local R=require(ReplicatedStorage.Shared.Rules)
 local Adventure=require(ReplicatedStorage.Shared.Adventure)
 local Data=require(script.Parent.Data)
+local TradeRules=require(ReplicatedStorage.Shared.TradeRules)
 local E=require(ReplicatedStorage.Shared.Economy)
 local C=require(ReplicatedStorage.Shared.Config)
 local checks=0
@@ -81,4 +82,49 @@ check(details and details.victory,"battle result includes victory details")
 check((hunting.Inventory.Meat or 0)>5,"successful hunt rewards meat")
 check((hunting.Quests.Explorer or 0)==1,"successful hunt progresses quest")
 check(not Adventure.hunt(hunting,0),"invalid enemy level rejected")
+-- Full ranches must exchange creatures without destroying either offered pet.
+local left=fresh()
+local right=fresh()
+check(R.addPet(left,"Shade"),"left ranch receives trade candidate")
+check(R.addPet(left,"Mole"),"left ranch reaches full capacity")
+check(R.addPet(right,"Boulder"),"right ranch receives trade candidate")
+check(R.addPet(right,"Dart"),"right ranch reaches full capacity")
+left.Pets[2].level=7;left.Pets[2].xp=23;left.Pets[2].evolved=1
+right.Pets[3].level=9;right.Pets[3].xp=44
+local swapped,swapMessage=TradeRules.exchange(left,right,{kind="Pet",id=2},{kind="Pet",id=3})
+check(swapped,"full ranch pet-for-pet swap succeeds: "..tostring(swapMessage))
+check(#left.Pets==3 and #right.Pets==3,"full ranches retain all three pets")
+check(left.Pets[3].species=="Dart" and left.Pets[3].level==9 and left.Pets[3].xp==44,
+ "received right pet preserves species, level and experience")
+check(right.Pets[3].species=="Shade" and right.Pets[3].level==7 and right.Pets[3].evolved==1,
+ "received left pet preserves evolution and level")
+check(left.Pets[3].id==4 and right.Pets[3].id==4,
+ "traded pets receive unique IDs in recipient ranches")
+check(left.NextId==5 and right.NextId==5,"trade increments recipient pet ID counters")
+local copyLeft=R.copy(left)
+local copyRight=R.copy(right)
+check(not TradeRules.exchange(left,right,{kind="Pet",id=1},{kind="Material",id="Wood",amount=1}),
+ "active pet cannot be traded")
+check(left.NextId==copyLeft.NextId and #left.Pets==#copyLeft.Pets and #right.Pets==#copyRight.Pets,
+ "rejected active pet trade preserves pet inventories")
+check(not TradeRules.exchange(left,right,{kind="Material",id="Iron",amount=1},
+ {kind="Material",id="Stone",amount=1}),"insufficient resources block trade")
+check(left.Inventory.Wood==copyLeft.Inventory.Wood and right.Inventory.Stone==copyRight.Inventory.Stone,
+ "rejected material trade preserves balances")
+local materialLeft=fresh()
+local materialRight=fresh()
+local transfer=TradeRules.exchange(materialLeft,materialRight,
+ {kind="Material",id="Wood",amount=4},{kind="Material",id="Stone",amount=3})
+check(transfer,"two-way material trade succeeds")
+check(materialLeft.Inventory.Wood==8 and materialLeft.Inventory.Stone==11,
+ "left receives stone and spends wood exactly once")
+check(materialRight.Inventory.Wood==16 and materialRight.Inventory.Stone==5,
+ "right receives wood and spends stone exactly once")
+local overflowLeft=fresh()
+local overflowRight=fresh()
+overflowRight.Inventory.Wood=999999
+check(not TradeRules.exchange(overflowLeft,overflowRight,{kind="Material",id="Wood",amount=4},
+ {kind="Material",id="Stone",amount=2}),"material overflow is rejected")
+check(overflowLeft.Inventory.Wood==12 and overflowRight.Inventory.Wood==999999,
+ "overflow rejection keeps both inventories unchanged")
 print("[Gorps Smoke] "..checks.." domain assertions passed (Studio only).")

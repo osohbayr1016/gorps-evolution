@@ -2,14 +2,12 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
 local R=require(ReplicatedStorage.Shared.Rules)
+local TradeRules=require(ReplicatedStorage.Shared.TradeRules)
 local Trade={}
 local sessions={}
 local pending={}
 local function uid(player) return player.UserId end
 local function other(session,player) return session.a==player and session.b or session.a end
-local function notify(session,callback)
- callback(session.a);callback(session.b)
-end
 function Trade.status(player)
  local s=sessions[uid(player)]
  if not s then return {pendingFrom=pending[uid(player)] and pending[uid(player)].Name or nil} end
@@ -25,29 +23,6 @@ function Trade.disconnect(player,emit)
  sessions[uid(s.a)]=nil;sessions[uid(s.b)]=nil
  local partner=other(s,player)
  if partner.Parent==Players then emit(partner,"Trade cancelled") end
-end
-local function checkOffer(p,offer)
- if not offer then return true end
- if offer.kind=="Material" then
-  return C.Resources[offer.id]~=nil and R.has(p,{[offer.id]=offer.amount})
- elseif offer.kind=="Pet" then
-  local pet=R.pet(p,offer.id)
-  return pet~=nil and pet.id~=p.ActiveId and #p.Pets>1
- end
- return false
-end
-local function exchange(p,target,offer)
- if not offer then return end
- if offer.kind=="Material" then
-  R.spend(p,{[offer.id]=offer.amount});R.add(target,{[offer.id]=offer.amount})
- else
-  local pet,i=R.pet(p,offer.id)
-  table.remove(p.Pets,i)
-  local success=R.addPet(target,pet.species,pet.rarity)
-  assert(success,"validated creature trade failed")
-  local received=target.Pets[#target.Pets]
-  received.level=pet.level;received.xp=pet.xp;received.evolved=pet.evolved
- end
 end
 function Trade.action(player,action,payload,get,changed,emit)
  local id=uid(player)
@@ -85,18 +60,15 @@ function Trade.action(player,action,payload,get,changed,emit)
   local otherPlayer=other(s,player)
   if s.accepted[uid(otherPlayer)] then
    local p1,p2=get(s.a),get(s.b)
-   if not p1 or not p2 or not s.offers[uid(s.a)] or not s.offers[uid(s.b)]
-    or not checkOffer(p1,s.offers[uid(s.a)]) or not checkOffer(p2,s.offers[uid(s.b)]) then
-    s.accepted={};return false,"Trade assets changed. Review offers again"
+   if not p1 or not p2 or not s.offers[uid(s.a)] or not s.offers[uid(s.b)] then
+    s.accepted={}
+    return false,"Both players must offer assets"
    end
-   local a=s.offers[uid(s.a)];local b=s.offers[uid(s.b)]
-   local after1=#p1.Pets+(b.kind=="Pet" and 1 or 0)-(a.kind=="Pet" and 1 or 0)
-   local after2=#p2.Pets+(a.kind=="Pet" and 1 or 0)-(b.kind=="Pet" and 1 or 0)
-   if after1>R.capacity(p1) or after2>R.capacity(p2) then
-    s.accepted={};return false,"Creature capacity exceeded"
+   local settled,message=TradeRules.exchange(p1,p2,s.offers[uid(s.a)],s.offers[uid(s.b)])
+   if not settled then
+    s.accepted={}
+    return false,message
    end
-   -- Non-yielding transfer; complete validation of both sides before mutation.
-   exchange(p1,p2,a);exchange(p2,p1,b)
    changed(s.a);changed(s.b)
    sessions[uid(s.a)]=nil;sessions[uid(s.b)]=nil
    emit(otherPlayer,"Trade completed")
