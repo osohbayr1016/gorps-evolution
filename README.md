@@ -12,18 +12,19 @@ The recurring implementation backlog, verified changes and next action are track
 
 **One-time step after this update:** in the Terminal running `studio-live-sync.sh`, press Ctrl+C and run `bash scripts/studio-live-sync.sh` again. The updated script automatically generates the `.rbxmx` world and launches Rojo. In Studio Edit mode, Rojo syncs `PlanetVerdant` into Workspace. You can continue using this setup for future pushes; no more manual place downloads.
 
-Play-mode additions: compact branded HUD, dynamic quest hint, companion class silhouettes and follow/bob animation, world interaction and market prompts, a more detailed ranch, and warm daytime atmosphere.
+Play-mode additions: compact branded HUD, dynamic quest hint, seven species with distinct proportions, Motor6D creature rigs and local idle/walk/feed/harvest/hunt/evolution reactions, world interaction and market prompts, a more detailed ranch, and warm daytime atmosphere.
 
-Design references: Grow a Garden (personal plot and harvest → upgrades), Pet Simulator 99 (visible creature and egg progression), and Creatures of Sonaria (creature roles, recognizable biomes). Our models and world geometry are original procedural prototypes. More polished skinned meshes and skeletal animation require a later asset import pass.
+Design references: Grow a Garden (personal plot and harvest → upgrades), Pet Simulator 99 (visible creature and egg progression), and Creatures of Sonaria (creature roles, recognizable biomes). Our models and world geometry are original procedural prototypes. Editable original native-Part rigs are exported to `ServerStorage > CreatureRigs` for Studio art/animation work. Sculpted/skinned mesh art and authored animation clips still need a later asset pass. See [creature art and runtime QA](docs/CREATURE_ART.md).
 
 ## Recommended: live Studio sync on macOS (setup once, then no more place downloads)
 
-Run the following **once** in macOS Terminal. If already connected from an earlier build, restart the script once after this update so it generates the new authored map:
+Install [Aftman](https://github.com/LPGhatguy/aftman) first; the repository pins free Lune for editable rig generation. Run the following **once** in macOS Terminal. If already connected from an earlier build, restart the script once after this update so it generates the new authored map:
 
 ```bash
 brew install rojo
 git clone https://github.com/osohbayr1016/gorps-evolution.git
 cd gorps-evolution
+aftman install
 rojo plugin install
 bash scripts/studio-live-sync.sh
 ```
@@ -38,7 +39,7 @@ This is local live sync, **not remote control of your Mac from ChatGPT**; GitHub
 
 1. Install [Roblox Studio](https://create.roblox.com/docs/studio/setup), [Aftman](https://github.com/LPGhatguy/aftman) and [Rojo](https://rojo.space/).
 2. Clone the repository and use the `main` branch.
-3. Run `aftman install`, then `rojo build default.project.json -o GorpsEvolution.rbxlx`.
+3. Run `aftman install`, `python3 scripts/build_world.py`, `lune run scripts/export_creatures.luau`, then `rojo build default.project.json -o GorpsEvolution.rbxlx`.
 4. Open the **newly downloaded** `GorpsEvolution.rbxlx` in Studio as a **new place** (do not press Play in an already-open old build). Press **Play**. The permanent Baseplate + SafetySpawn keep characters safe even while the planet and profile are loading.
 5. For hot-reload development, run `rojo serve` and connect the Rojo Studio plugin.
 6. **Publish a private test experience before relying on persistence.** In Studio, enable access to API Services for test DataStores, and avoid pointing Studio test sessions at a production datastore. Studio **always uses isolated unsaved test profiles**, regardless of API access. Private published experiences are required for persistence QA.
@@ -69,7 +70,7 @@ The GitHub Actions pipeline generates a `GorpsEvolution.rbxlx` artifact on every
 
 ## Important scope boundaries
 
-**Not included yet:** inter-planet flight, real PvP/ranked wins, wagers, monetized Robux pet IDs, sculpted/skinned production art, animated skeletons, complete creature combat AI, multi-server trades, or production-scale concurrency guarantees. Procedural creatures are Roblox Part assemblies with scripted floating/follow animation, not imported professional-grade rigs.
+**Not included yet:** inter-planet flight, real PvP/ranked wins, wagers, monetized Robux pet IDs, sculpted/skinned production art, authored animation clips, complete creature combat AI, multi-server trades, or production-scale concurrency guarantees. Creatures are original jointed native-Part assemblies with procedural action poses; visual quality, joint motion and device performance still require Studio approval.
 
 Do not introduce wagered-value PvP. Skill-based ranked modes and game-funded rewards can be built separately.
 
@@ -88,7 +89,7 @@ Do not introduce wagered-value PvP. Skill-based ranked modes and game-funded rew
 
 ## Testing and release
 
-`selene src` lints Luau; `rojo build default.project.json -o GorpsEvolution.rbxlx` validates packaging. In Studio **Play**, check the Output panel for `[Gorps Smoke]`; then follow [QA checklist](docs/STUDIO_QA.md), including two-client trading and reconnect persistence.
+`lune run scripts/test_creature_rigs.luau` inspects actual rig geometry and pose math; `lune run scripts/export_creatures.luau` generates editable rigs. `selene src` lints Luau; `rojo build default.project.json -o GorpsEvolution.rbxlx` validates packaging. In Studio **Play**, check the Output panel for `[Gorps Smoke]`; then follow [QA checklist](docs/STUDIO_QA.md), including two-client trading and reconnect persistence.
 
 After `aftman install`, run `lune run scripts/test_worker_payroll.luau` for executable worker payroll regressions against the actual shared Luau sources. These run in CI alongside lint and packaging; they do not substitute for Studio or persistence QA.
 

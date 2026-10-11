@@ -350,7 +350,6 @@ function UI:showHatch(pet)
  equip.Activated:Connect(function()
   overlay:Destroy()
   self.send("SelectPet",{id=pet.id})
-  self:openTab("Creatures")
  end)
  local dismiss=Instance.new("TextButton")
  dismiss.Name="Dismiss"
@@ -423,3 +422,4 @@ function UI:render()
  self.page.CanvasPosition=oldPosition
 end
 return UI
+

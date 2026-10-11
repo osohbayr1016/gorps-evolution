@@ -10,6 +10,10 @@ if ! command -v rojo >/dev/null 2>&1; then
  echo "Rojo CLI not found. Install with: brew install rojo"
  exit 1
 fi
+if ! command -v lune >/dev/null 2>&1; then
+ echo "Lune is required to generate editable creature rigs. Install Aftman, then run: aftman install"
+ exit 1
+fi
 if ! command -v git >/dev/null 2>&1; then
  echo "Install Git before running live sync."
  exit 1
@@ -29,6 +33,7 @@ else
  echo "Local edits detected; skipping initial auto-pull to protect your files."
 fi
 python3 scripts/build_world.py
+lune run scripts/export_creatures.luau
 rojo serve default.project.json &
 rojo_pid=$!
 trap 'kill "$rojo_pid" 2>/dev/null || true' EXIT INT TERM
@@ -54,6 +59,10 @@ while kill -0 "$rojo_pid" 2>/dev/null; do
     echo "World generator failed! Keep the previous working Studio place; review Terminal errors."
     continue
    fi
+   if ! lune run scripts/export_creatures.luau; then
+    echo "Creature export failed! Review Terminal errors before restarting Studio Play."
+    continue
+   fi
    echo "GORPS: synced new GitHub version $latest to Rojo; Stop then Play to retest."
    last=""
   else
@@ -62,3 +71,4 @@ while kill -0 "$rojo_pid" 2>/dev/null; do
  fi
 done
 echo "Rojo stopped. Restart this script to reconnect."
+

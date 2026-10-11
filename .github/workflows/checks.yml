@@ -9,15 +9,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ok-nick/setup-aftman@v0.4.2
       - name: Lint Luau
-        run: selene src scripts/test_worker_payroll.luau
+        run: selene src scripts/test_worker_payroll.luau scripts/test_creature_rigs.luau scripts/export_creatures.luau
       - name: Run worker payroll regressions (headless Luau)
         run: lune run scripts/test_worker_payroll.luau
+      - name: Inspect creature rigs and animation pose regressions (headless)
+        run: lune run scripts/test_creature_rigs.luau
       - name: Validate first-session gameplay contracts
         run: python3 scripts/verify_gameplay_contract.py
       - name: Validate game HUD structure and routes
         run: python3 scripts/verify_ui_contract.py
       - name: Generate authored 3D world
         run: python3 scripts/build_world.py
+      - name: Export original editable creature rigs
+        run: lune run scripts/export_creatures.luau
       - name: Build Roblox place file
         run: rojo build default.project.json -o GorpsEvolution.rbxlx
       - name: Verify authored planet model

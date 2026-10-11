@@ -1,4 +1,4 @@
-local Players=game:GetService("Players")
+local CollectionService=game:GetService("CollectionService")
 local RunService=game:GetService("RunService")
 local TweenService=game:GetService("TweenService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
@@ -11,24 +11,6 @@ local gatherHandler=nil
 local spots={}
 local assigned={}
 local companions={}
-local animationElapsed=0
-RunService.Heartbeat:Connect(function(dt)
- animationElapsed+=dt
- if animationElapsed<0.08 then return end
- animationElapsed=0
- for player,entry in pairs(companions) do
-  local model=entry.model
-  if model and model.Parent then
-   local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-   local target=entry.home+Vector3.new(0,4,2)
-   if root then target=root.Position-root.CFrame.LookVector*4+root.CFrame.RightVector*3+Vector3.new(0,1,0) end
-   entry.current=entry.current:Lerp(target,0.2)
-   local bob=math.sin(os.clock()*3+player.UserId)*0.35
-   local tilt=math.sin(os.clock()*2+player.UserId)*0.08
-   model:PivotTo(CFrame.new(entry.current+Vector3.new(0,bob,0))*CFrame.Angles(0,tilt,tilt*0.3))
-  end
- end
-end)
 local function part(parent,name,size,cf,color,material,shape)
  local p=Instance.new("Part")
  p.Name=name;p.Anchored=true;p.CanCollide=true;p.Size=size;p.CFrame=cf
@@ -198,6 +180,21 @@ end
 function World.update(player,profile)
  local assignedSpot=assigned[player]
  if not assignedSpot then return end
+ local active
+ for _,pet in ipairs(profile.Pets) do if pet.id==profile.ActiveId then active=pet;break end end
+ local workers={}
+ for id,worker in pairs(profile.Workers) do table.insert(workers,id..":"..worker.count) end
+ table.sort(workers)
+ local signature=tostring(profile.BaseLevel).."/"..table.concat(workers,",").."/"
+  ..(active and (active.id..":"..(active.evolved or 0)..":"..active.rarity) or "none")
+ if assignedSpot.model and assignedSpot.signature==signature then
+  local entry=companions[player]
+  local gui=entry and entry.model:FindFirstChild("CreatureName")
+  local text=gui and gui:FindFirstChildOfClass("TextLabel")
+  if text and active then text.Text=active.species.."  Lv."..active.level end
+  return
+ end
+ assignedSpot.signature=signature
  if assignedSpot.model then assignedSpot.model:Destroy() end
  companions[player]=nil
  local base=Instance.new("Model");base.Name="Base_"..player.UserId;base.Parent=folder
@@ -261,9 +258,20 @@ function World.update(player,profile)
   local origin=pos+Vector3.new(0,5,2)
   local model=CreatureFactory.create(petData,origin,base)
   if model then
-   companions[player]={model=model,home=pos,current=origin}
+   model:SetAttribute("OwnerUserId",player.UserId)
+   CollectionService:AddTag(model,"GorpsCompanion")
+   companions[player]={model=model}
   end
  end
+end
+-- Called only after server gameplay validation. Invalid actions have no success pose.
+function World.react(player,action,petId,target)
+ local entry=companions[player]
+ if not entry or not entry.model.Parent then return end
+ if petId and entry.model:GetAttribute("PetId")~=petId then return end
+ entry.model:SetAttribute("PetActionTarget",target)
+ entry.model:SetAttribute("PetAction",action)
+ entry.model:SetAttribute("PetActionStarted",workspace:GetServerTimeNow())
 end
 function World.assign(player,p)
  local used={}
@@ -294,3 +302,4 @@ function World.release(player)
  companions[player]=nil
 end
 return World
+

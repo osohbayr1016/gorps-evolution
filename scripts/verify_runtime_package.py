@@ -35,6 +35,9 @@ required={
  "ServerScriptService/GorpsServer/WorldBootstrap":"Script",
  "ServerScriptService/GorpsServer/SpawnSafety":"Script",
  "ReplicatedStorage/Shared/Config":"ModuleScript",
+ "ReplicatedStorage/Shared/CreatureFactory":"ModuleScript",
+ "ReplicatedStorage/Shared/CreaturePose":"ModuleScript",
+ "StarterPlayer/StarterPlayerScripts/GorpsClient/Companions":"LocalScript",
  "ReplicatedStorage/Shared/Rules":"ModuleScript",
  "ReplicatedStorage/Shared/Economy":"ModuleScript",
  "StarterPlayer/StarterPlayerScripts/GorpsClient/Icons":"ModuleScript",
@@ -57,4 +60,13 @@ for path,kind in required.items():
   if p.attrib.get("name")=="Enabled":
    assert p.text!="false",f"Script not enabled: {path}"
  print(f"PASS: packaged {kind} {path} ({len(sources[0].text)} source chars)")
-print("PASS: all critical client/server/shared game scripts are built and enabled")
+assert found["ServerStorage/CreatureRigs"][0]=="Folder", "missing editable rig shelf"
+for species in ("Gorp","Shade","Boulder","Bloom","Carrier","Mole","Dart"):
+ prefix="ServerStorage/CreatureRigs/"+species
+ assert found[prefix][0]=="Model", "missing editable species rig: "+species
+ motors=[kind for path,(kind,_) in found.items() if path.startswith(prefix+"/") and kind=="Motor6D"]
+ assert len(motors)>=6, "missing packaged creature joints: "+species
+ assert found[prefix+"/AnimationController"][0]=="AnimationController", "missing authoring controller"
+ print("PASS: packaged editable rig",species,"with",len(motors),"joints")
+print("PASS: all critical scripts and original editable creature rigs are packaged (not Studio execution)")
+

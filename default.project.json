@@ -85,6 +85,12 @@
         "ClockTime": 14,
         "ExposureCompensation": 0.1
       }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "CreatureRigs": {
+        "$path": "world/CreatureRigs.rbxmx"
+      }
     }
   }
 }

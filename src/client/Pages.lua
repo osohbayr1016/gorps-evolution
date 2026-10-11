@@ -1,4 +1,5 @@
 local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
+local Rules=require(game:GetService("ReplicatedStorage").Shared.Rules)
 local W=require(script.Parent.Widgets)
 local C=W.colors
 local Pages={}
@@ -105,7 +106,7 @@ local function pets(parent,p,send)
    level.Text="LEVEL "..pet.level.."  /  25"
    level.TextXAlignment=Enum.TextXAlignment.Left;level.Font=Enum.Font.GothamMedium
    level.TextSize=13;level.TextColor3=C.muted;level.Parent=row
-   local baseline=Config.Species[pet.species]
+   local baseline=Rules.stats(pet)
    textRow(card,"HP "..baseline.hp.."    ATK "..baseline.attack.."    SPD "..baseline.speed)
    W.progress(card,pet.xp/math.max(1,pet.level*45))
    descriptor(card,"Growth XP  "..pet.xp.." / "..tostring(pet.level*45).."  •  Evolution "..pet.evolved.."/2")
@@ -113,7 +114,7 @@ local function pets(parent,p,send)
     action(card,"EQUIP AS COMPANION",function() send("SelectPet",{id=pet.id}) end,true,C.gold)
    end
    local hasFood=(p.Inventory.Meat or 0)>0 and (p.Inventory.Berries or 0)>0
-   action(card,hasFood and "FEED  ·  1 MEAT + 1 BERRY" or "NEED MEAT + BERRIES TO FEED",
+   action(card,hasFood and ((active and "FEED & WATCH" or "FEED").."  ·  1 MEAT + 1 BERRY") or "NEED MEAT + BERRIES TO FEED",
     function() send("Feed",{id=pet.id}) end,hasFood,C.mint)
    local target=pet.evolved==0 and 5 or 12
    if pet.evolved<2 then
@@ -334,3 +335,4 @@ function Pages.render(parent,tab,p,tradeState,send,rankings)
  end
 end
 return Pages
+

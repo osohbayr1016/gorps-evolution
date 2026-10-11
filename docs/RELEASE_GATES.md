@@ -81,3 +81,8 @@ Studio QA still required: hatch coin pricing and odds, appearance/disappearance 
 ## Gameplay HUD v2
 
 The compact HUD, centered interactive collection window, deterministic card order and 3D creature/egg preview implementation is documented in [UI_QA.md](UI_QA.md). Studio rendering, mobile and controller QA remain mandatory.
+
+
+## Companion art source milestone — engine acceptance pending
+
+Jointed original native-Part creatures, action poses, editable rig exports and pet-screen feedback are now implemented. This does not close an art/animation release gate. Follow [CREATURE_ART.md](CREATURE_ART.md) for Studio, multiplayer and device evidence; sculpted/skinned art, authored clips, clean-map/full-UI approval and later phases remain outstanding.

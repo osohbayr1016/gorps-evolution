@@ -1,3 +1,6 @@
 
 # Generated authored world model; reproducible with python3 scripts/build_world.py
 world/PlanetVerdant.rbxmx
+
+
+world/CreatureRigs.rbxmx

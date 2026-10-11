@@ -60,6 +60,7 @@ local function gather(player,kind,worldPosition)
   if not ok then send(player,message);return false end
   changed(player,message,false)
  end
+ World.react(player,kind=="Wild" and "Hunt" or "Gather",nil,worldPosition)
  local earned=math.max(0,(p.Inventory[resource] or 0)-before)
  if earned>0 then
   notify:FireClient(player,{pickup={resource=resource,amount=earned,position=worldPosition}})
@@ -138,6 +139,9 @@ invoke.OnServerInvoke=function(player,action,payload)
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
    or action=="Feed" or action=="Evolve" or action=="Hire" or action=="Wheel" or action=="HatchEgg"
   changed(player,message,visual)
+  if action=="Feed" or action=="Evolve" or action=="SelectPet" then
+   World.react(player,action,type(payload)=="table" and payload.id or nil)
+  end
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
  return {ok=ok,message=message,profile=Data.get(player),trade=Trade.status(player),
@@ -171,3 +175,4 @@ Players.PlayerRemoving:Connect(function(player)
  cooldown[player]=nil
  wildCooldown[player]=nil
 end)
+

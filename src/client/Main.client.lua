@@ -17,6 +17,9 @@ local function send(name,args)
   return
  end
  ui:update(result.profile,result.trade,result.message,result.rankings)
+ -- Reveal the active companion's successful reaction instead of hiding it behind the menu.
+ if result.ok and result.profile and (name=="Feed" or name=="Evolve" or name=="SelectPet")
+  and args and args.id==result.profile.ActiveId then ui:setOpen(false) end
  if result.hatch then ui:showHatch(result.hatch) end
 end
 -- Render interface first. A server failure must never make the client appear empty.
@@ -53,3 +56,4 @@ task.spawn(function()
  end
  ui:toastMessage("Profile couldn't load. Check Studio Server Output.")
 end)
+

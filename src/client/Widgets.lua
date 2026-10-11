@@ -137,18 +137,22 @@ function W.petPortrait(parent,species,rarity,pet)
  W.round(preview,13);W.border(preview,W.rarityColor(rarity),1.5)
  local model=Instance.new("WorldModel")
  model.Name="PreviewWorld";model.Parent=preview
+ local center=Vector3.zero
+ local distance=19
  local definition=Config.Species[species]
  if definition then
   local previewPet=pet or {id=0,species=species,rarity=rarity,level=1,evolved=0}
   local creature=CreatureFactory.create(previewPet,Vector3.zero,model)
   if creature then
+   local bounds,size=creature:GetBoundingBox()
+   center=bounds.Position;distance=math.max(8,size.Magnitude*1.3)
    for _,descendant in ipairs(creature:GetDescendants()) do
     if descendant:IsA("BillboardGui") then descendant:Destroy() end
    end
   end
  end
  local camera=Instance.new("Camera");camera.FieldOfView=43
- camera.CFrame=CFrame.lookAt(Vector3.new(10,7,-15),Vector3.new(0,0,0))
+ camera.CFrame=CFrame.lookAt(center+Vector3.new(10,7,-15).Unit*distance,center)
  camera.Parent=preview;preview.CurrentCamera=camera
  return preview
 end
@@ -177,3 +181,4 @@ function W.eggPortrait(parent,rgb)
  return viewport
 end
 return W
+

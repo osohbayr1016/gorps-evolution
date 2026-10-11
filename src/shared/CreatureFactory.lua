@@ -1,5 +1,6 @@
 -- Distinct low-poly creature silhouettes made from real Roblox geometry.
--- These models are script-animated companions, not yet skinned/rigged MeshParts.
+-- Original native-Part rigs. Motor6D joints support client procedural animation.
+-- These are not imported/skinned MeshParts or published animation assets.
 local C=require(game:GetService("ReplicatedStorage").Shared.Config)
 local Factory={}
 local function piece(parent,name,size,offset,color,shape,material)
@@ -60,7 +61,7 @@ local function horns(model,color,scale,sx,mul)
    Vector3.new(sx*2.15*scale,4.4*scale,.5*scale),color)
  end
 end
-function Factory.create(pet,origin,parent)
+function Factory.build(pet)
  local def=C.Species[pet.species]
  if not def then return nil end
  local tier=table.find(C.Rarities,pet.rarity) or 1
@@ -70,7 +71,11 @@ function Factory.create(pet,origin,parent)
  local dark=base:Lerp(Color3.fromRGB(35,50,64),.3)
  local model=Instance.new("Model")
  model.Name="Gorp_"..pet.species.."_"..pet.id
- local body=sphere(model,"Body",Vector3.new(4.9,4.3,5.1)*scale,
+ local proportions=({Gorp=Vector3.new(4.5,4.1,4.8),Bloom=Vector3.new(3.8,4.6,4.2),
+  Shade=Vector3.new(3.5,3.3,6.1),Boulder=Vector3.new(5.6,3.7,5.7),
+  Mole=Vector3.new(4.4,3.5,5.2),Carrier=Vector3.new(4.6,3.8,6.4),
+  Dart=Vector3.new(3.5,3.8,4.3)})[pet.species]
+ local body=sphere(model,"Body",proportions*scale,
   Vector3.new(0,0,0),base)
  model.PrimaryPart=body
  sphere(model,"FacePlate",Vector3.new(3.7,3.1,1.6)*scale,
@@ -79,7 +84,23 @@ function Factory.create(pet,origin,parent)
  sphere(model,"Nose",Vector3.new(.72,.45,.4)*scale,
   Vector3.new(0,-.55*scale,-2.75*scale),dark)
  feet(model,dark,scale,def.role=="Transport")
- if def.role=="Support" then
+ if pet.species=="Bloom" then
+  -- A flower rabbit: tall ears and a radial petal crown, distinct from Gorp.
+  for side=-1,1,2 do
+   sphere(model,"RabbitEar",Vector3.new(1.1,4.5,1)*scale,
+    Vector3.new(side*1.1*scale,3.3*scale,.2*scale),base)
+   sphere(model,"EarInset",Vector3.new(.55,3,.3)*scale,
+    Vector3.new(side*1.1*scale,3.4*scale,-.3*scale),light)
+  end
+  for i=1,6 do
+   local angle=i*math.pi/3
+   sphere(model,"Petal",Vector3.new(1.5,1.5,.8)*scale,
+    Vector3.new(math.cos(angle)*2.25*scale,math.sin(angle)*2.25*scale,-1.8*scale),
+    Color3.fromRGB(255,210,225))
+  end
+  sphere(model,"FlowerTail",Vector3.new(2,2,2)*scale,
+   Vector3.new(0,.2*scale,2.7*scale),light)
+ elseif def.role=="Support" then
   horns(model,light,scale,-1,true);horns(model,light,scale,1,true)
   sphere(model,"LeafTail",Vector3.new(1.5,2.5,2.9)*scale,
    Vector3.new(0,1.25*scale,3.1*scale),Color3.fromRGB(80,182,125))
@@ -98,6 +119,10 @@ function Factory.create(pet,origin,parent)
   end
  elseif def.role=="Assassin" then
   for side=-1,1,2 do
+   sphere(model,"FoxEar",Vector3.new(1.3,2.4,1)*scale,
+    Vector3.new(side*1.4*scale,2.5*scale,-.5*scale),dark)
+  end
+  for side=-1,1,2 do
    sphere(model,"BackFin",Vector3.new(.8,1.7,2.3)*scale,
     Vector3.new(side*2.05*scale,1.9*scale,1.4*scale),dark)
    cube(model,"Claw",Vector3.new(.4,1.7,.6)*scale,
@@ -107,6 +132,8 @@ function Factory.create(pet,origin,parent)
   sphere(model,"ShadowTail",Vector3.new(1.25,1.25,3.6)*scale,
    Vector3.new(0,.5*scale,3.5*scale),dark)
  elseif def.role=="Tank" then
+  sphere(model,"ArmoredTail",Vector3.new(1.5,1.3,3)*scale,
+   Vector3.new(0,-.1*scale,3.3*scale),dark)
   sphere(model,"Shell",Vector3.new(5.3,3.1,4.9)*scale,
    Vector3.new(0,1.5*scale,.75*scale),Color3.fromRGB(104,126,136))
   for i=-1,1 do
@@ -116,6 +143,8 @@ function Factory.create(pet,origin,parent)
   horns(model,Color3.fromRGB(222,187,131),scale,-1,true)
   horns(model,Color3.fromRGB(222,187,131),scale,1,true)
  elseif def.role=="Miner" then
+  sphere(model,"MoleTail",Vector3.new(.65,.65,3)*scale,
+   Vector3.new(0,-.6*scale,3*scale),light)
   sphere(model,"SafetyHat",Vector3.new(4.2,1.5,4.2)*scale,
    Vector3.new(0,2.25*scale,0),Color3.fromRGB(239,193,85))
   cube(model,"HatRim",Vector3.new(4.6,.45,3.5)*scale,
@@ -145,16 +174,53 @@ function Factory.create(pet,origin,parent)
     Vector3.new(i*1.5*scale,2.75*scale,1.4*scale),light)
   end
  end
- if pet.evolved>0 then
+ if (pet.evolved or 0)>0 then
   for side=-1,1,2 do
    sphere(model,"EvolutionGem",Vector3.new(.9,1.15,.65)*scale,
     Vector3.new(side*1.75*scale,1.45*scale,-1.6*scale),
     Color3.fromRGB(231,215,112),Enum.Material.Neon)
   end
  end
+ -- Each moving appendage has its own joint; face details follow the head.
+ local head=model:FindFirstChild("FacePlate")
+ local jointIndex=0
+ local headNames={EyeWhite=true,Pupil=true,EyeShine=true,Nose=true,Cheek=true,
+  RabbitEar=true,EarInset=true,Petal=true,FoxEar=true}
+ for _,item in ipairs(model:GetChildren()) do
+  if item:IsA("BasePart") and item~=body then
+   item.Anchored=false
+   local moving=item==head or item.Name=="Paw" or string.find(item.Name,"Tail")
+    or item.Name=="Wing" or item.Name=="SpeedWing"
+   local anchor=headNames[item.Name] and head or body
+   local joint=Instance.new(moving and "Motor6D" or "WeldConstraint")
+   joint.Part0=anchor;joint.Part1=item
+   if moving then
+    jointIndex+=1
+    joint.Name=item==head and "Head" or (item.Name..jointIndex)
+    joint.C0=anchor.CFrame:ToObjectSpace(item.CFrame)
+    joint.C1=CFrame.new()
+    joint:SetAttribute("PoseKind",item==head and "Head" or
+     (item.Name=="Paw" and "Paw" or (string.find(item.Name,"Tail") and "Tail" or "Wing")))
+    joint:SetAttribute("Side",item.CFrame.Position.X<0 and -1 or 1)
+    joint:SetAttribute("Front",item.CFrame.Position.Z<0 and 1 or -1)
+    item.Name=joint.Name
+   else joint.Name="DetailWeld" end
+   joint.Parent=item
+  end
+ end
+ model:SetAttribute("CreatureRig",true)
+ model:SetAttribute("Species",pet.species)
+ model:SetAttribute("PetId",pet.id)
+ model:SetAttribute("RigScale",scale)
  label(model,body,pet.species,pet)
+ return model
+end
+function Factory.create(pet,origin,parent)
+ local model=Factory.build(pet)
+ if not model then return nil end
  model.Parent=parent or workspace:WaitForChild("ChaosGalaxy")
  model:PivotTo(CFrame.new(origin))
  return model
 end
 return Factory
+

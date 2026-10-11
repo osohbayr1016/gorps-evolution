@@ -57,7 +57,7 @@
 
 ## Known QA gaps / priorities
 - Studio host is not accessible through the current chat: no actual frame-rate, memory, reconnect, or UI device evidence yet.
-- Procedural creature Part assemblies have movement/bob animation but are not skinned skeletal animation assets.
+- Native-Part Motor6D rigs and procedural action poses are implemented; visible joint motion, collision behavior, Animation Editor compatibility and mobile performance remain unverified. Run [CREATURE_ART.md](CREATURE_ART.md) before accepting the art milestone.
 - Live PvP, interplanetary travel, premium Robux purchases, and matchmaking are out of scope for this initial Phase 1–2 branch.
 - Trades are server-local and not durable multi-player database transactions; a server crash during a trade can cause cross-profile persistence disagreement. Consider escrow plus idempotency before opening the trading system to large public audiences.
 - OrderedDataStore requests require production permissions and are rate limited. Verify ranking update frequency.
@@ -92,3 +92,7 @@ If the editor still looks empty after the initial map update, stop the live-sync
 
 In Studio Play, hire a Farmer and use Workers > Collect around the timestamps in case 14a. Use the hire time as zero, allow for real click latency, and check the resulting wallet and inventory. StudioSmoke repeats the exact simulated timestamps automatically. With no wage funds, completed work is forfeited rather than accumulated as debt; production resumes after a newly funded minute. Additional hires currently reset that group's timer (GE-WORK-02), so do not hire a second worker during this timing test.
 
+
+## Creature reaction milestone
+
+Run every case in [CREATURE_ART.md](CREATURE_ART.md), including active/inactive and rejected feeding, all seven rigs, two observers, respawn and evolved portrait framing. Source/headless passes are not a substitute for these tests.

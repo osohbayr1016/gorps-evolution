@@ -8,6 +8,8 @@ local Data=require(script.Parent.Data)
 local TradeRules=require(ReplicatedStorage.Shared.TradeRules)
 local E=require(ReplicatedStorage.Shared.Economy)
 local C=require(ReplicatedStorage.Shared.Config)
+local CreatureFactory=require(ReplicatedStorage.Shared.CreatureFactory)
+local CreaturePose=require(ReplicatedStorage.Shared.CreaturePose)
 local checks=0
 -- The place must be safe before Main.server.lua loads player profiles or generates the planet.
 local baseplate=workspace:FindFirstChild("Baseplate")
@@ -34,6 +36,25 @@ check(baseplate.Size.X>=650 and baseplate.Size.Z>=650,
 check(safeSpawn.Position.Y>baseplate.Position.Y+baseplate.Size.Y/2,
  "safe spawn must sit above fallback ground")
 check(Data.isStudioTest(),"Studio must use isolated, unsaved local profiles")
+-- Engine construction check; action appearance still requires the manual client cases.
+local rigContainer=Instance.new("Folder")
+for index,species in ipairs(C.SpeciesOrder) do
+ local rig=CreatureFactory.create({id=index,species=species,rarity=C.Species[species].rarity,
+  level=1,evolved=0},Vector3.zero,rigContainer)
+ check(rig and rig.PrimaryPart.Anchored and rig:GetAttribute("CreatureRig"),"valid creature rig: "..species)
+ local motors=0
+ for _,item in ipairs(rig:GetDescendants()) do
+  if item:IsA("Motor6D") then
+   motors+=1
+   check(item.Part0 and item.Part1,"joint endpoints: "..species)
+  elseif item:IsA("BasePart") then
+   check(not item.CanCollide and (item==rig.PrimaryPart or not item.Anchored),"movable cosmetic parts")
+  end
+ end
+ check(motors>=6,"head, paws and appendage rig: "..species)
+end
+rigContainer:Destroy()
+check(CreaturePose.state("Feed",0)=="Feed" and CreaturePose.state("Feed",2.2)=="Idle","feeding cue duration")
 local p=fresh()
 check(p.Coins==250,"starter coin balance")
 check(#p.Pets==1 and p.Pets[1].species=="Gorp","starter creature")
