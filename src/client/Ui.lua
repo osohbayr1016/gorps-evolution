@@ -54,7 +54,7 @@ function UI.new(send)
  gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
  self.gui=gui
  local brand=framed(gui,"Brand",C.deep)
- brand.Position=UDim2.fromOffset(16,15)
+ brand.Position=UDim2.fromOffset(16,74)
  brand.Size=UDim2.fromOffset(220,51)
  local logo=absoluteText(brand,"GORPS",23,C.gold)
  logo.Position=UDim2.fromOffset(15,5);logo.Size=UDim2.fromOffset(100,29)
@@ -62,14 +62,14 @@ function UI.new(send)
  descriptor.Position=UDim2.fromOffset(15,31);descriptor.Size=UDim2.fromOffset(196,13)
  local wallet=framed(gui,"Wallet",C.deep)
  wallet.AnchorPoint=Vector2.new(1,0)
- wallet.Position=UDim2.new(1,-16,0,15);wallet.Size=UDim2.fromOffset(190,51)
+ wallet.Position=UDim2.new(1,-16,0,74);wallet.Size=UDim2.fromOffset(190,51)
  local coin=absoluteText(wallet,"◆  0",20,C.gold)
  coin.Position=UDim2.fromOffset(13,5);coin.Size=UDim2.fromOffset(165,25)
  local line=absoluteText(wallet,"LEVEL 1  ·  1/3 GORPS",11,C.muted)
  line.Position=UDim2.fromOffset(13,32);line.Size=UDim2.fromOffset(164,15)
  self.wallet=coin;self.levelLine=line;self.walletContainer=wallet
  local objective=framed(gui,"Mission",Color3.fromRGB(24,39,54))
- objective.Position=UDim2.fromOffset(16,78)
+ objective.Position=UDim2.fromOffset(16,137)
  objective.Size=UDim2.fromOffset(262,75)
  self.objective=objective
  local objectiveTitle=absoluteText(objective,"NEXT QUEST",12,C.gold)
@@ -231,18 +231,18 @@ function UI.new(send)
    math.min(height-70,narrow and 680 or 630))
   dock.Size=UDim2.fromOffset(math.min(510,width-24),narrow and 60 or 68)
   if narrow then
-   objective.Position=UDim2.fromOffset(9,75)
+   objective.Position=UDim2.fromOffset(9,124)
    objective.Size=UDim2.fromOffset(math.min(260,width-18),75)
-   brand.Position=UDim2.fromOffset(9,10);brand.Size=UDim2.fromOffset(137,49)
+   brand.Position=UDim2.fromOffset(9,63);brand.Size=UDim2.fromOffset(137,49)
    descriptor.Visible=false;logo.Text="GORPS"
-   wallet.Position=UDim2.new(1,-9,0,10);wallet.Size=UDim2.fromOffset(160,49)
+   wallet.Position=UDim2.new(1,-9,0,63);wallet.Size=UDim2.fromOffset(160,49)
    menu.Position=UDim2.new(1,-8,1,-89);menu.Size=UDim2.fromOffset(72,38)
    for _,button in pairs(self.quick) do button.TextSize=12 end
   else
-   objective.Position=UDim2.fromOffset(16,78);objective.Size=UDim2.fromOffset(262,75)
-   brand.Position=UDim2.fromOffset(16,15);brand.Size=UDim2.fromOffset(220,51)
+   objective.Position=UDim2.fromOffset(16,137);objective.Size=UDim2.fromOffset(262,75)
+   brand.Position=UDim2.fromOffset(16,74);brand.Size=UDim2.fromOffset(220,51)
    descriptor.Visible=true;logo.Text="GORPS"
-   wallet.Position=UDim2.new(1,-16,0,15);wallet.Size=UDim2.fromOffset(190,51)
+   wallet.Position=UDim2.new(1,-16,0,74);wallet.Size=UDim2.fromOffset(190,51)
    menu.Position=UDim2.new(1,-16,1,-24);menu.Size=UDim2.fromOffset(94,44)
    for _,button in pairs(self.quick) do button.TextSize=14 end
   end
