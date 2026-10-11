@@ -79,7 +79,14 @@ function E.wheel(p,now,roll)
  if roll==1 then p.Coins+=100
  elseif roll==2 then R.add(p,{Meat=6,Berries=8})
  elseif roll==3 then R.add(p,{Crystal=2})
- else p.Coins+=250 end
+ else
+  if #p.Pets<R.capacity(p) then
+   local species=C.SpeciesOrder[math.random(1,#C.SpeciesOrder)]
+   R.addPet(p,species)
+   return true,"Daily wheel pet: "..species
+  end
+  p.Coins+=250
+ end
  return true,({"100 coins!","Food bundle!","2 crystals!","250 coins!"})[roll]
 end
 function E.tradeUp(p,rarity,species)
