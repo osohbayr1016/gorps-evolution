@@ -78,7 +78,7 @@ function UI.new(send)
  gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
  self.gui=gui
  local top=labelContainer(gui)
- top.Name="StatusBar";top.Position=UDim2.new(0,16,0,15);top.Size=UDim2.new(1,-32,0,64)
+ top.Name="StatusBar";top.Position=UDim2.fromOffset(16,15);top.Size=UDim2.new(1,-32,0,64)
  self.top=top
  local mark=Instance.new("TextLabel")
  mark.Name="Brand";mark.Size=UDim2.fromOffset(225,48)
@@ -87,7 +87,7 @@ function UI.new(send)
  mark.TextColor3=COLORS.teal;mark.TextSize=19;mark.TextXAlignment=Enum.TextXAlignment.Left
  mark.Parent=top
  local status=Instance.new("TextLabel")
- status.Position=UDim2.new(0,245,0,10);status.Size=UDim2.new(1,-365,0,45)
+ status.Position=UDim2.fromOffset(245,10);status.Size=UDim2.new(1,-365,0,45)
  status.BackgroundTransparency=1;status.TextXAlignment=Enum.TextXAlignment.Left
  status.TextColor3=COLORS.cream;status.Font=Enum.Font.GothamMedium;status.TextSize=16
  status.Text="Entering Planet Verdant..."
@@ -153,7 +153,7 @@ function UI.new(send)
  self.page=page
  local guide=labelContainer(gui)
  guide.Name="Guide";guide.Position=UDim2.new(0,16,1,-97)
- guide.Size=UDim2.new(0,345,0,78)
+ guide.Size=UDim2.fromOffset(345,78)
  local guideTitle=text(guide,"FIRST MISSION",13,COLORS.gold,22)
  guideTitle.Font=Enum.Font.GothamBold;guideTitle.Position=UDim2.fromOffset(14,8)
  guideTitle.Size=UDim2.new(1,-28,0,22)
@@ -163,7 +163,7 @@ function UI.new(send)
  local toast=labelContainer(gui)
  toast.Name="Toast";toast.AnchorPoint=Vector2.new(.5,0)
  toast.Position=UDim2.new(.5,0,0,90)
- toast.Size=UDim2.new(0,380,0,53)
+ toast.Size=UDim2.fromOffset(380,53)
  toast.Visible=false
  local toastLabel=text(toast,"",15,COLORS.cream,52)
  toastLabel.TextXAlignment=Enum.TextXAlignment.Center
