@@ -108,7 +108,7 @@ local function pets(parent,p,send)
    local baseline=Config.Species[pet.species]
    textRow(card,"HP "..baseline.hp.."    ATK "..baseline.attack.."    SPD "..baseline.speed)
    W.progress(card,pet.xp/math.max(1,pet.level*45))
-   descriptor(card,"Growth XP  "..pet.xp.." / "..pet.level*45.."  •  Evolution "..pet.evolved.."/2")
+   descriptor(card,"Growth XP  "..pet.xp.." / "..tostring(pet.level*45).."  •  Evolution "..pet.evolved.."/2")
    if not active then
     action(card,"EQUIP AS COMPANION",function() send("SelectPet",{id=pet.id}) end,true,C.gold)
    end
@@ -135,7 +135,7 @@ local function ranch(parent,p,send)
   if (p.Inventory[id] or 0)<n then affordable=false end
  end
  if p.BaseLevel<8 then
-  descriptor(card,"Next upgrade: ◆ "..p.BaseLevel*200.."  +  "..countCost(cost))
+  descriptor(card,"Next upgrade: ◆ "..tostring(p.BaseLevel*200).."  +  "..countCost(cost))
   action(card,affordable and "EXPAND RANCH  →" or "COLLECT MATERIALS TO UPGRADE",
    function() send("Expand",{}) end,affordable,C.gold)
  else
