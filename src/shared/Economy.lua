@@ -57,8 +57,14 @@ function E.tick(p,now)
       end
      end
     end
-    -- Advance even if unpaid to avoid accumulating imaginary debt.
-    w.last=now
+    -- Paid collections retain the sub-minute work already completed.
+    -- Unpaid whole minutes (including over-cap work) expire without debt.
+    -- A fully unpaid collection restarts work from now, as before.
+    if payable>0 then
+     w.last=now-(math.max(0,now-w.last)%60)
+    else
+     w.last=now
+    end
    end
   end
  end
@@ -105,3 +111,4 @@ function E.tradeUp(p,rarity,species)
  return R.addPet(p,species,C.Rarities[tier+1])
 end
 return E
+

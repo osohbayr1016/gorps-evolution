@@ -62,6 +62,27 @@ local money=p.Coins
 check(E.tick(p,1800000060)==1,"worker produces after one minute")
 check(p.Coins==money-C.Workers.Farmer.wage,"worker wages debited")
 check(E.tick(p,1800000060)==0,"no duplicate worker collection")
+-- Off-minute claims must not erase paid work or create duplicate wages.
+local timed=fresh()
+check(E.hire(timed,"Farmer",1800000000),"hire worker for payroll regression")
+local initialWorkerCoins=timed.Coins
+local initialWorkerBerries=timed.Inventory.Berries
+check(E.tick(timed,1800000059)==0,"worker cannot produce before one full minute")
+check(E.tick(timed,1800000119)==1,"worker first off-minute delivery")
+check(E.tick(timed,1800000119)==0,"worker repeated collection cannot double-pay")
+check(E.tick(timed,1800000120)==1,"worker keeps 59 worked seconds across collection")
+check(E.tick(timed,1800000179)==0,"worker cannot produce next minute early")
+check(E.tick(timed,1800000180)==1,"worker completes third funded minute")
+check(timed.Coins==initialWorkerCoins-C.Workers.Farmer.wage*3,"exactly three wages charged")
+check(timed.Inventory.Berries==initialWorkerBerries+12,"exactly three worker outputs granted")
+local unpaid=fresh()
+check(E.hire(unpaid,"Farmer",1800000000),"hire for unpaid-work regression")
+unpaid.Coins=0
+check(E.tick(unpaid,1800000119)==0,"unpaid work produces nothing")
+unpaid.Coins=100
+check(E.tick(unpaid,1800000120)==0,"new coins cannot revive expired unpaid work")
+check(E.tick(unpaid,1800000179)==1,"funded worker resumes after one new minute")
+check(unpaid.Coins==100-C.Workers.Farmer.wage,"resumed work charges exactly one wage")
 check(not E.claim(p,"Maker"),"mission cannot be claimed early")
 R.quest(p,"Maker",1)
 check(E.claim(p,"Maker"),"mission claim succeeds after completion")
@@ -150,3 +171,4 @@ wildEgg.Coins=500
 local wildOk,_,rarePet=R.hatchEgg(wildEgg,"Wild",100)
 check(wildOk and rarePet and rarePet.species=="Bloom","rare last-ticket roll awarded correctly")
 print("[Gorps Smoke] "..checks.." domain assertions passed (Studio only).")
+

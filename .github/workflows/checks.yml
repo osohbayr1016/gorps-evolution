@@ -9,7 +9,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ok-nick/setup-aftman@v0.4.2
       - name: Lint Luau
-        run: selene src
+        run: selene src scripts/test_worker_payroll.luau
+      - name: Run worker payroll regressions (headless Luau)
+        run: lune run scripts/test_worker_payroll.luau
       - name: Validate first-session gameplay contracts
         run: python3 scripts/verify_gameplay_contract.py
       - name: Validate game HUD structure and routes
@@ -31,3 +33,4 @@ jobs:
         with:
           name: GorpsEvolution-place
           path: GorpsEvolution.rbxlx
+

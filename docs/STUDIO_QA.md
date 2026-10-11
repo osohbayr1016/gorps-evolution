@@ -37,6 +37,7 @@
 | 12 | Craft FeedPack and Alloy | Costs and crafting XP tracked |
 | 13 | Hire Farmer then collect before 60s | No free output or missing wages |
 | 14 | Collect after 60s | Output and wage deduction occur once |
+| 14a | Hire one Farmer; collect around 59s, 119s, 120s, 179s, 180s | 0, 1, 1, 0, 1 batches; each batch costs 8 coins and grants 4 berries + 1 meat |
 | 15 | Hire Caretaker and wait | Pet auto-feeding consumes supplied feed ingredients |
 | 16 | Claim unfinished quest | Rejected |
 | 17 | Claim finished quest twice | Only first claim produces coins |
@@ -84,3 +85,10 @@
 - New CI assertions must confirm 350+ baked 3D parts, 70 nodes, and 12 ranch plots in the generated place before upload.
 
 If the editor still looks empty after the initial map update, stop the live-sync Terminal process and relaunch `bash scripts/studio-live-sync.sh`, then reconnect the Rojo Studio plugin. Do not download a new .rbxlx.
+
+## Worker payroll regression
+
+`lune run scripts/test_worker_payroll.luau` executes the actual shared modules outside Roblox and checks collection timing, wages, output, caps, insufficient funds, all worker types and profile hydration. The suite is also run by GitHub Actions. This does not verify real DataStores, UI input or Roblox scheduling.
+
+In Studio Play, hire a Farmer and use Workers > Collect around the timestamps in case 14a. Use the hire time as zero, allow for real click latency, and check the resulting wallet and inventory. StudioSmoke repeats the exact simulated timestamps automatically. With no wage funds, completed work is forfeited rather than accumulated as debt; production resumes after a newly funded minute. Additional hires currently reset that group's timer (GE-WORK-02), so do not hire a second worker during this timing test.
+
