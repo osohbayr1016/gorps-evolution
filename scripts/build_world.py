@@ -288,16 +288,19 @@ for row in range(2):
         index=row*6+col+1
         x=(col-2.5)*89
         z=-210+row*93
+        front=1 if row==0 else -1
         plot=group(ranches, f"RanchPlot_{index:02d}")
         block(plot,"Land", (x,1.1,z),(55,.35,55),(103,153,110),material="Grass")
-        block(plot,"Foundation",(x,1.5,z-10),(18,1,15),(187,158,122),material="Wood")
-        block(plot,"PlotMarker",(x,3.3,z+18),(7,3,3),(244,207,112),solid=False)
-        for side in (-1,1):
-            for step in (-27,-18,-9,0,9,18,27):
-                block(plot,"FencePost",(x+step,3,z+side*27),(1.1,4,1.1),
-                      (159,124,89),material="Wood")
-                block(plot,"FencePost",(x+side*27,3,z+step),(1.1,4,1.1),
-                      (159,124,89),material="Wood")
+        # Empty plots remain intentionally quiet. Runtime ranches supply their
+        # own expandable perimeter and homestead; duplicated authored fences
+        # previously intersected levelled ranch fences and inflated part count.
+        block(plot,"HomesteadPad",(x,1.35,z-front*10),(20,.5,16),(166,139,103),
+              material="Wood",solid=False)
+        block(plot,"ArrivalPath",(x,1.31,z+front*30),(9,.18,9),(153,147,126),
+              material="Ground",solid=False)
+        for sx,sz in ((-1,-1),(-1,1),(1,-1),(1,1)):
+            block(plot,"PlotCorner",(x+sx*26,1.7,z+sz*26),(2.5,1.2,2.5),
+                  (132,126,111),material="Slate",solid=False)
 
 forest=group(world,"ForestsAndWildlife")
 starter_positions=[

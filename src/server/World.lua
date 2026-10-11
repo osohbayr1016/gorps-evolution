@@ -18,6 +18,11 @@ local function part(parent,name,size,cf,color,material,shape)
  if shape then p.Shape=shape end
  p.Parent=parent;return p
 end
+local function decor(parent,name,size,cf,color,material,shape)
+ local p=part(parent,name,size,cf,color,material,shape)
+ p.CanCollide=false;p.CanTouch=false;p.CanQuery=false
+ return p
+end
 local function sign(parent,anchor,words)
  local gui=Instance.new("BillboardGui")
  gui.Size=UDim2.fromOffset(180,50);gui.StudsOffsetWorldSpace=Vector3.new(0,4,0)
@@ -200,54 +205,124 @@ function World.update(player,profile)
  local base=Instance.new("Model");base.Name="Base_"..player.UserId;base.Parent=folder
  assignedSpot.model=base
  local pos=assignedSpot.pos
- local half=20+profile.BaseLevel*3
- part(base,"Land",Vector3.new(half*2,0.7,half*2),CFrame.new(pos.X,1.5,pos.Z),Color3.fromRGB(99,133,101),Enum.Material.Grass)
+ local front=assignedSpot.front
+ local level=profile.BaseLevel
+ local half=20+level*3
+ local houseWidth=14+level*2
+ part(base,"RanchGround",Vector3.new(half*2,0.7,half*2),CFrame.new(pos.X,1.5,pos.Z),
+  Color3.fromRGB(104,143,105),Enum.Material.Grass)
+
+ -- A real perimeter with a wide gate makes the ranch readable without trapping
+ -- the avatar. Both rows mirror toward the shared ranch path.
  for _,side in ipairs({-1,1}) do
-  for step=-half,half,8 do
+  for step=-half,half,10 do
    local offset=math.clamp(step,-half,half)
-   part(base,"Fence",Vector3.new(2,6,2),CFrame.new(pos.X+offset,3,pos.Z+side*half),
-    Color3.fromRGB(187,143,101),Enum.Material.Wood)
-   part(base,"Fence",Vector3.new(2,6,2),CFrame.new(pos.X+side*half,3,pos.Z+offset),
-    Color3.fromRGB(187,143,101),Enum.Material.Wood)
+   part(base,"FencePost",Vector3.new(1.35,5.4,1.35),CFrame.new(pos.X+offset,3,pos.Z+side*half),
+    Color3.fromRGB(153,111,75),Enum.Material.Wood)
+   part(base,"FencePost",Vector3.new(1.35,5.4,1.35),CFrame.new(pos.X+side*half,3,pos.Z+offset),
+    Color3.fromRGB(153,111,75),Enum.Material.Wood)
   end
  end
- part(base,"House",Vector3.new(14+profile.BaseLevel*2,10,12),CFrame.new(pos.X,5,pos.Z-10),
-  Color3.fromRGB(206,194,167),Enum.Material.WoodPlanks)
- part(base,"Roof",Vector3.new(18+profile.BaseLevel*2,2,15),CFrame.new(pos.X,11,pos.Z-10),
-  Color3.fromRGB(78,96,115),Enum.Material.Slate)
- part(base,"Door",Vector3.new(4,6,.45),CFrame.new(pos.X,3.5,pos.Z-16.2),
-  Color3.fromRGB(91,116,118),Enum.Material.Wood)
+ part(base,"FenceRailBack",Vector3.new(half*2,0.75,0.8),CFrame.new(pos.X,3.2,pos.Z-front*half),
+  Color3.fromRGB(173,132,90),Enum.Material.Wood)
  for _,side in ipairs({-1,1}) do
-  part(base,"Window",Vector3.new(3.5,3,.5),CFrame.new(pos.X+side*5.8,6,pos.Z-16.3),
-   Color3.fromRGB(126,218,229),Enum.Material.Glass)
-  part(base,"Lantern",Vector3.new(1.5,2,1.5),CFrame.new(pos.X+side*7.3,5.8,pos.Z-16.8),
-   Color3.fromRGB(242,209,130),Enum.Material.Neon,Enum.PartType.Ball)
+  part(base,"FenceRailSide",Vector3.new(0.8,0.75,half*2),CFrame.new(pos.X+side*half,3.2,pos.Z),
+   Color3.fromRGB(173,132,90),Enum.Material.Wood)
+  part(base,"FenceRailFront",Vector3.new(half-5,0.75,0.8),
+   CFrame.new(pos.X+side*(half+5)/2,3.2,pos.Z+front*half),Color3.fromRGB(173,132,90),Enum.Material.Wood)
+  part(base,"GatePost",Vector3.new(1.7,6.7,1.7),CFrame.new(pos.X+side*5,3.5,pos.Z+front*half),
+   Color3.fromRGB(126,91,65),Enum.Material.Wood)
+  decor(base,"GateBanner",Vector3.new(3.2,4.4,0.35),
+   CFrame.new(pos.X+side*5,6.6,pos.Z+front*(half-.5)),
+   side==-1 and Color3.fromRGB(107,171,129) or Color3.fromRGB(224,179,103),Enum.Material.Fabric)
  end
+
+ -- Verdant homestead: a pitched roof, porch and path-facing facade replace the
+ -- old box with a flat slab roof whose door faced away from arriving players.
+ part(base,"HouseFrame",Vector3.new(houseWidth,10,12),CFrame.new(pos.X,5,pos.Z-front*10),
+  Color3.fromRGB(211,196,165),Enum.Material.WoodPlanks)
+ for _,side in ipairs({-1,1}) do
+  part(base,"RoofPanel",Vector3.new(houseWidth/2+1.8,1.1,15),
+   CFrame.new(pos.X+side*houseWidth/4,11.15,pos.Z-front*10)*CFrame.Angles(0,0,side*math.rad(23)),
+   Color3.fromRGB(73,91,87),Enum.Material.Slate)
+ end
+ decor(base,"RoofRidge",Vector3.new(1.2,1.2,15.4),CFrame.new(pos.X,12.7,pos.Z-front*10),
+  Color3.fromRGB(114,91,68),Enum.Material.Wood)
+ part(base,"FrontPorch",Vector3.new(houseWidth+3,0.7,4.2),CFrame.new(pos.X,1.65,pos.Z-front*1.8),
+  Color3.fromRGB(154,116,78),Enum.Material.WoodPlanks)
+ part(base,"PorchStep",Vector3.new(7,0.7,2),CFrame.new(pos.X,1.25,pos.Z+front*1.1),
+  Color3.fromRGB(177,139,96),Enum.Material.WoodPlanks)
+ part(base,"Door",Vector3.new(4,6,0.45),CFrame.new(pos.X,4.1,pos.Z-front*3.8),
+  Color3.fromRGB(82,112,103),Enum.Material.Wood)
+ decor(base,"RanchLevelCrest",Vector3.new(3.4,3.4,0.5),CFrame.new(pos.X,8.5,pos.Z-front*3.5),
+  level>=5 and Color3.fromRGB(206,151,236) or Color3.fromRGB(226,190,103),Enum.Material.Wood,
+  Enum.PartType.Ball)
+ for _,side in ipairs({-1,1}) do
+  decor(base,"Window",Vector3.new(3.5,3,0.5),
+   CFrame.new(pos.X+side*(houseWidth/2-2.4),6,pos.Z-front*3.7),
+   Color3.fromRGB(132,203,210),Enum.Material.Glass)
+  decor(base,"Lantern",Vector3.new(1.3,1.7,1.3),
+   CFrame.new(pos.X+side*(houseWidth/2+.2),5.7,pos.Z-front*3.3),Color3.fromRGB(244,204,119),
+   Enum.Material.Neon,Enum.PartType.Ball)
+ end
+
+ -- Farming stays on the west side; workers use a separate east-side yard, so
+ -- hiring the first worker can no longer place them inside a crop bed.
+ local cropColors={Color3.fromRGB(96,184,111),Color3.fromRGB(226,174,83),Color3.fromRGB(153,116,205)}
  for i=1,3 do
-  part(base,"CropBed",Vector3.new(8,.55,3.1),CFrame.new(pos.X-12,1.5,pos.Z+2+i*4),
-   Color3.fromRGB(120,90,74),Enum.Material.Ground)
-  for j=1,4 do
-   part(base,"Sprout",Vector3.new(1.1,2,1.1),CFrame.new(pos.X-15+j*1.7,2.5,pos.Z+2+i*4),
-    Color3.fromRGB(89,189,121),Enum.Material.Grass,Enum.PartType.Ball)
+  local rowZ=pos.Z+front*(3+i*4)
+  part(base,"CropBed_"..i,Vector3.new(9,0.55,3.1),CFrame.new(pos.X-12,1.5,rowZ),
+   Color3.fromRGB(116,83,65),Enum.Material.Ground)
+  decor(base,"SoilFurrow_"..i,Vector3.new(8.2,0.18,1.7),CFrame.new(pos.X-12,1.88,rowZ),
+   Color3.fromRGB(86,62,52),Enum.Material.Ground)
+  for j=1,3 do
+   decor(base,"Crop_"..i.."_"..j,Vector3.new(1.2,1.7,1.2),
+    CFrame.new(pos.X-15.2+j*2.1,2.7,rowZ),cropColors[i],Enum.Material.Grass,Enum.PartType.Ball)
   end
  end
- part(base,"WaterBowl",Vector3.new(4,.8,4),CFrame.new(pos.X+9,1.5,pos.Z+7),
-  Color3.fromRGB(113,170,193),Enum.Material.Metal,Enum.PartType.Cylinder)
- part(base,"RanchStone",Vector3.new(8,1.2,4),CFrame.new(pos.X+9,1.4,pos.Z+13),
-  Color3.fromRGB(173,165,147),Enum.Material.Slate)
- local marker=part(base,"Name",Vector3.new(3,3,3),CFrame.new(pos.X,5,pos.Z+half-4),Color3.fromRGB(73,159,169))
+ decor(base,"IrrigationChannel",Vector3.new(0.9,0.3,14.5),CFrame.new(pos.X-6.7,1.75,pos.Z+front*11),
+  Color3.fromRGB(94,161,180),Enum.Material.Glass)
+ decor(base,"WaterBowl",Vector3.new(0.8,4.2,4.2),
+  CFrame.new(pos.X+2,1.65,pos.Z+front*15)*CFrame.Angles(0,0,math.rad(90)),
+  Color3.fromRGB(105,157,177),Enum.Material.Metal,Enum.PartType.Cylinder)
+ part(base,"FeedCrate",Vector3.new(5.5,2.2,3.7),CFrame.new(pos.X+2,2.3,pos.Z+front*19),
+  Color3.fromRGB(164,123,79),Enum.Material.WoodPlanks)
+
+ if level>=2 then
+  part(base,"StorageSilo",Vector3.new(8,6.5,6.5),
+   CFrame.new(pos.X+houseWidth/2+5,5,pos.Z-front*10)*CFrame.Angles(0,0,math.rad(90)),
+   Color3.fromRGB(168,176,157),Enum.Material.Metal,Enum.PartType.Cylinder)
+  decor(base,"SiloCap",Vector3.new(1.2,7.1,7.1),
+   CFrame.new(pos.X+houseWidth/2+5,9.3,pos.Z-front*10)*CFrame.Angles(0,0,math.rad(90)),
+   Color3.fromRGB(83,101,96),Enum.Material.Slate,Enum.PartType.Cylinder)
+ end
+ if level>=4 then
+  local greenhouseX=pos.X-houseWidth/2-6
+  for _,side in ipairs({-1,1}) do
+   decor(base,"GreenhousePost",Vector3.new(0.7,6,0.7),
+    CFrame.new(greenhouseX+side*5,4,pos.Z-front*8),Color3.fromRGB(109,129,115),Enum.Material.Metal)
+  end
+  decor(base,"GreenhouseCanopy",Vector3.new(11,0.55,7),CFrame.new(greenhouseX,7,pos.Z-front*8),
+   Color3.fromRGB(158,211,196),Enum.Material.Glass)
+ end
+ if level>=6 then
+  decor(base,"RanchBeacon",Vector3.new(2.6,2.6,2.6),CFrame.new(pos.X,15.2,pos.Z-front*10),
+   Color3.fromRGB(213,161,237),Enum.Material.Neon,Enum.PartType.Ball)
+ end
+ local marker=part(base,"Name",Vector3.new(3,3,3),
+  CFrame.new(pos.X,5,pos.Z+front*(half-4)),Color3.fromRGB(73,159,169))
  marker.Transparency=1;marker.CanCollide=false
  sign(base,marker,player.DisplayName.."'s Ranch")
  local workerOffset=0
  for id,worker in pairs(profile.Workers) do
   for _=1,math.min(worker.count,5) do
    workerOffset+=1
-   local wx=pos.X-half+6+(workerOffset%6)*5
-   local wz=pos.Z+8+math.floor(workerOffset/6)*5
+   local wx=pos.X+6+((workerOffset-1)%3)*5
+   local wz=pos.Z+front*(2+math.floor((workerOffset-1)/3)*4.5)
    local suit=id=="Farmer" and Color3.fromRGB(125,185,120)
     or (id=="Miner" and Color3.fromRGB(113,154,207) or Color3.fromRGB(207,156,112))
    part(base,id.."Body",Vector3.new(2.2,3,1.8),CFrame.new(wx,3,wz),suit,Enum.Material.Fabric)
-   local head=part(base,id.."Head",Vector3.new(2.1,2.1,2.1),CFrame.new(wx,5.5,wz),
+   local head=decor(base,id.."Head",Vector3.new(2.1,2.1,2.1),CFrame.new(wx,5.5,wz),
     Color3.fromRGB(225,195,157),Enum.Material.SmoothPlastic,Enum.PartType.Ball)
    sign(base,head,id)
   end
@@ -255,7 +330,7 @@ function World.update(player,profile)
  local petData
  for _,pet in ipairs(profile.Pets) do if pet.id==profile.ActiveId then petData=pet;break end end
  if petData then
-  local origin=pos+Vector3.new(0,5,2)
+  local origin=pos+Vector3.new(0,5,front*2)
   local model=CreatureFactory.create(petData,origin,base)
   if model then
    model:SetAttribute("OwnerUserId",player.UserId)
@@ -281,7 +356,7 @@ function World.assign(player,p)
   if not used[i] then index=i;break end
  end
  if not index then return false end
- assigned[player]={index=index,pos=spots[index]}
+ assigned[player]={index=index,pos=spots[index],front=index<=6 and 1 or -1}
  World.update(player,p)
  return true
 end
@@ -290,8 +365,8 @@ function World.spawn(player,character)
  if slot then
   local root=character:WaitForChild("HumanoidRootPart",10)
   if root then
-   local start=slot.pos+Vector3.new(0,6,15)
-   character:PivotTo(CFrame.lookAt(start,Vector3.new(0,6,0)))
+   local start=slot.pos+Vector3.new(0,6,slot.front*15)
+   character:PivotTo(CFrame.lookAt(start,slot.pos+Vector3.new(0,5,0)))
   end
  end
 end

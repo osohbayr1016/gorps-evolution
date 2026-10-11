@@ -103,3 +103,11 @@ forest props, and reduces broad Neon glowcap density. Follow
 [BIOME_ART.md](BIOME_ART.md) for the required overview, collision, profiler and
 device tests. The native-Part library is still an intermediate art system, not
 final MeshPart/PBR production quality.
+
+The runtime ranch follow-up turns the path-facing side into a gated homestead,
+separates crop and worker coordinates, removes duplicate authored/runtime
+fences, and adds visible silo, greenhouse and beacon expansion tiers. Follow
+[RANCH_ART.md](RANCH_ART.md) for the required arrival, worker placement,
+collision and level-silhouette Studio test. CI source/package contracts do not
+prove real ranch physics, multiplayer placement, mobile FPS or final art
+quality.
