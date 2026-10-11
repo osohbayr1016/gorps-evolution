@@ -14,11 +14,11 @@ local function send(name,args)
   ui:toastMessage("Connection issue. Please try again.")
   return
  end
- ui:update(result.profile,result.trade,result.message)
+ ui:update(result.profile,result.trade,result.message,result.rankings)
 end
 ui=UI.new(send)
 update.OnClientEvent:Connect(function(data)
- if type(data)=="table" then ui:update(data.profile,data.trade,data.message) end
+ if type(data)=="table" then ui:update(data.profile,data.trade,data.message,data.rankings) end
 end)
 task.spawn(function()
  for attempt=1,25 do
