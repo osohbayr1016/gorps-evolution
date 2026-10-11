@@ -19,7 +19,7 @@ local function input(parent,hint)
  local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,8);c.Parent=t
  return t
 end
-function Pages.render(parent,tab,p,trade,send,label,button)
+function Pages.render(parent,tab,p,trade,send,label,button,rankings)
  local function heading(text) local t=label(parent,text,20,Color3.fromRGB(139,225,187),35);t.Font=Enum.Font.GothamBold end
  local function line(text) label(parent,text,14,Color3.fromRGB(198,214,211),35) end
  local function action(text,code,data) button(parent,text,function() send(code,data or {}) end) end
@@ -112,6 +112,17 @@ function Pages.render(parent,tab,p,trade,send,label,button)
     action("Join trade","Join")
    end
   end
+ elseif tab=="Rankings" then
+  line("Global rankings are updated periodically. PvP wins start once ranked combat launches.")
+  for _,stat in ipairs({"Coins","Wins","Minutes"}) do
+   heading(({Coins="Richest players",Wins="Most PvP wins",Minutes="Most time played"})[stat])
+   local entries=rankings and rankings[stat] or {}
+   if #entries==0 then line("No ranked entries available yet") end
+   for _,entry in ipairs(entries) do
+    line("#"..entry.rank.."  "..entry.name.."  •  "..entry.score)
+   end
+  end
+  action("Refresh leaderboard","Rankings")
  elseif tab=="Events" then
   line("Daily wheel: one free spin every 24 hours.")
   local left=86400-(os.time()-p.LastWheel)
