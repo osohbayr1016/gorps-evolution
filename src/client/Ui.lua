@@ -1,322 +1,349 @@
 local Players=game:GetService("Players")
 local TweenService=game:GetService("TweenService")
 local UserInputService=game:GetService("UserInputService")
+local W=require(script.Parent.Widgets)
 local Pages=require(script.Parent.Pages)
+local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
 
 local UI={}
 UI.__index=UI
-local COLORS={
- ink=Color3.fromRGB(23,33,39),
- surface=Color3.fromRGB(31,44,51),
- surface2=Color3.fromRGB(42,60,66),
- teal=Color3.fromRGB(88,210,170),
- cream=Color3.fromRGB(238,241,225),
- muted=Color3.fromRGB(168,192,189),
- stroke=Color3.fromRGB(83,112,112),
- gold=Color3.fromRGB(246,201,115),
+local C=W.colors
+local TABS={
+ {"Ranch","HOME"},{"Eggs","EGGS"},{"Creatures","PETS"},{"Backpack","BAG"},
+ {"Crafting","CRAFT"},{"Shop","SHOP"},{"Workers","CREW"},
+ {"Quests","QUESTS"},{"Trade","TRADE"},{"Events","EVENTS"},{"Rankings","RANKS"},
 }
-local function radius(object,size)
- local c=Instance.new("UICorner")
- c.CornerRadius=UDim.new(0,size)
- c.Parent=object
+local SHORTCUTS={{"EGGS","Eggs","1"},{"PETS","Creatures","2"},
+ {"BAG","Backpack","3"},{"QUESTS","Quests","4"},{"RANCH","Ranch","5"}}
+local function framed(parent,name,background)
+ local frame=Instance.new("Frame")
+ frame.Name=name;frame.BackgroundColor3=background or C.deep
+ frame.BorderSizePixel=0;frame.Parent=parent
+ W.round(frame,14);W.border(frame)
+ return frame
 end
-local function stroke(object,alpha)
- local s=Instance.new("UIStroke")
- s.Thickness=1;s.Transparency=alpha or .45;s.Color=COLORS.stroke;s.Parent=object
+local function absoluteText(parent,text,size,color)
+ local t=Instance.new("TextLabel")
+ t.BackgroundTransparency=1;t.Text=text;t.TextColor3=color or C.light
+ t.Font=Enum.Font.GothamBold;t.TextSize=size;t.TextXAlignment=Enum.TextXAlignment.Left
+ t.TextTruncate=Enum.TextTruncate.AtEnd;t.Parent=parent
+ return t
 end
-local function text(parent,content,size,color,height)
- local lbl=Instance.new("TextLabel")
- lbl.Name="Text"
- lbl.Size=UDim2.new(1,-8,0,height or 28)
- lbl.Text=content
- lbl.TextColor3=color or COLORS.cream
- lbl.TextSize=size or 15
- lbl.Font=Enum.Font.Gotham
- lbl.TextWrapped=true
- lbl.TextXAlignment=Enum.TextXAlignment.Left
- lbl.BackgroundTransparency=1
- lbl.Parent=parent
- return lbl
-end
-local function action(parent,title,callback)
- local b=Instance.new("TextButton")
- b.Name="Action"
- b.Size=UDim2.new(1,-8,0,43)
- b.BackgroundColor3=COLORS.surface2
- b.TextColor3=COLORS.cream
- b.TextSize=14
- b.TextWrapped=true
- b.Font=Enum.Font.GothamMedium
- b.Text=title
- b.AutoButtonColor=false
- b.Parent=parent
- radius(b,8)
- b.MouseEnter:Connect(function()
-  TweenService:Create(b,TweenInfo.new(.12),{BackgroundColor3=Color3.fromRGB(59,94,96)}):Play()
- end)
- b.MouseLeave:Connect(function()
-  TweenService:Create(b,TweenInfo.new(.12),{BackgroundColor3=COLORS.surface2}):Play()
- end)
- b.Activated:Connect(callback)
- return b
-end
-local function labelContainer(parent)
- local bg=Instance.new("Frame")
- bg.BackgroundColor3=COLORS.ink
- bg.BackgroundTransparency=.08
- bg.BorderSizePixel=0
- bg.Parent=parent
- radius(bg,12)
- stroke(bg,.55)
- return bg
+local function noWorldBlocking(gui)
+ local overlay=Instance.new("Frame")
+ overlay.Name="DimWorld"
+ overlay.Size=UDim2.fromScale(1,1)
+ overlay.BackgroundColor3=Color3.fromRGB(7,14,25)
+ overlay.BackgroundTransparency=.46
+ overlay.BorderSizePixel=0
+ overlay.Visible=false
+ overlay.Parent=gui
+ return overlay
 end
 function UI.new(send)
- local self=setmetatable({send=send,tab="Ranch",profile=nil,trade={},rankings={},open=false},UI)
+ local self=setmetatable({
+  send=send,tab="Ranch",open=false,profile=nil,trade={},rankings={},
+  toastSerial=0,viewportWidth=1200
+ },UI)
  local gui=Instance.new("ScreenGui")
- gui.Name="GorpsHUD";gui.IgnoreGuiInset=false;gui.ResetOnSpawn=false;gui.DisplayOrder=10
+ gui.Name="GorpsHUD"
+ gui.IgnoreGuiInset=false
+ gui.ResetOnSpawn=false
+ gui.DisplayOrder=12
  gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
  gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
  self.gui=gui
- local top=labelContainer(gui)
- top.Name="StatusBar";top.Position=UDim2.fromOffset(16,15);top.Size=UDim2.new(1,-32,0,64)
- self.top=top
- local mark=Instance.new("TextLabel")
- mark.Name="Brand";mark.Size=UDim2.fromOffset(225,48)
- mark.Position=UDim2.fromOffset(17,7);mark.BackgroundTransparency=1
- mark.Text="GORPS  /  EVOLUTION";mark.Font=Enum.Font.GothamBold
- mark.TextColor3=COLORS.teal;mark.TextSize=19;mark.TextXAlignment=Enum.TextXAlignment.Left
- mark.Parent=top
- local status=Instance.new("TextLabel")
- status.Position=UDim2.fromOffset(245,10);status.Size=UDim2.new(1,-365,0,45)
- status.BackgroundTransparency=1;status.TextXAlignment=Enum.TextXAlignment.Left
- status.TextColor3=COLORS.cream;status.Font=Enum.Font.GothamMedium;status.TextSize=16
- status.Text="Entering Planet Verdant..."
- status.TextTruncate=Enum.TextTruncate.AtEnd;status.Parent=top
- self.status=status
- local open=Instance.new("TextButton")
- open.Size=UDim2.fromOffset(98,40);open.Position=UDim2.new(1,-108,0,12)
- open.Text="MENU  [G]";open.TextColor3=COLORS.ink
- open.TextSize=13;open.Font=Enum.Font.GothamBold
- open.BackgroundColor3=COLORS.teal;open.Parent=top
- radius(open,8)
- self.menuButton=open
- local panel=labelContainer(gui)
- panel.Name="GamePanel"
- panel.AnchorPoint=Vector2.new(1,0)
- panel.Position=UDim2.new(1,-16,0,90)
- panel.Size=UDim2.fromOffset(420,620)
- self.panel=panel
+ local brand=framed(gui,"Brand",C.deep)
+ brand.Position=UDim2.fromOffset(16,15)
+ brand.Size=UDim2.fromOffset(220,51)
+ local logo=absoluteText(brand,"GORPS",23,C.gold)
+ logo.Position=UDim2.fromOffset(15,5);logo.Size=UDim2.fromOffset(100,29)
+ local descriptor=absoluteText(brand,"EVOLUTION  /  VERDANT",10,C.muted)
+ descriptor.Position=UDim2.fromOffset(15,31);descriptor.Size=UDim2.fromOffset(196,13)
+ local wallet=framed(gui,"Wallet",C.deep)
+ wallet.AnchorPoint=Vector2.new(1,0)
+ wallet.Position=UDim2.new(1,-16,0,15);wallet.Size=UDim2.fromOffset(190,51)
+ local coin=absoluteText(wallet,"◆  0",20,C.gold)
+ coin.Position=UDim2.fromOffset(13,5);coin.Size=UDim2.fromOffset(165,25)
+ local line=absoluteText(wallet,"LEVEL 1  ·  1/3 GORPS",11,C.muted)
+ line.Position=UDim2.fromOffset(13,32);line.Size=UDim2.fromOffset(164,15)
+ self.wallet=coin;self.levelLine=line;self.walletContainer=wallet
+ local objective=framed(gui,"Mission",Color3.fromRGB(24,39,54))
+ objective.Position=UDim2.fromOffset(16,78)
+ objective.Size=UDim2.fromOffset(262,75)
+ self.objective=objective
+ local objectiveTitle=absoluteText(objective,"NEXT QUEST",12,C.gold)
+ objectiveTitle.Position=UDim2.fromOffset(13,9);objectiveTitle.Size=UDim2.fromOffset(226,20)
+ local objectiveBody=absoluteText(objective,"Collect materials 0/15",14,C.light)
+ objectiveBody.Position=UDim2.fromOffset(13,33);objectiveBody.Size=UDim2.fromOffset(238,29)
+ self.objectiveBody=objectiveBody
+ local objectiveLine=Instance.new("Frame")
+ objectiveLine.Name="MissionProgress";objectiveLine.Position=UDim2.fromOffset(13,65)
+ objectiveLine.Size=UDim2.fromOffset(236,4);objectiveLine.BackgroundColor3=Color3.fromRGB(72,89,107)
+ objectiveLine.BorderSizePixel=0;objectiveLine.Parent=objective
+ W.round(objectiveLine,4)
+ local objectiveFill=Instance.new("Frame")
+ objectiveFill.BackgroundColor3=C.mint;objectiveFill.Size=UDim2.fromScale(0,1)
+ objectiveFill.BorderSizePixel=0;objectiveFill.Parent=objectiveLine
+ W.round(objectiveFill,4);self.objectiveFill=objectiveFill
+
+ local dim=noWorldBlocking(gui);self.dim=dim
+ local panel=framed(gui,"CollectionWindow",Color3.fromRGB(23,33,51))
+ panel.AnchorPoint=Vector2.new(.5,.5)
+ panel.Position=UDim2.fromScale(.5,.52)
+ panel.Size=UDim2.fromOffset(680,610)
  panel.Visible=false
- local heading=text(panel,"YOUR ADVENTURE",14,COLORS.teal,24)
- heading.Position=UDim2.fromOffset(16,14);heading.Size=UDim2.new(1,-32,0,24)
- heading.Font=Enum.Font.GothamBold
+ self.panel=panel
+ local accent=Instance.new("Frame")
+ accent.Name="AccentStripe"
+ accent.Size=UDim2.new(1,-4,0,6)
+ accent.Position=UDim2.fromOffset(2,2)
+ accent.BackgroundColor3=C.gold;accent.BorderSizePixel=0
+ accent.Parent=panel;W.round(accent,3)
+ local heading=absoluteText(panel,"MY RANCH",23,C.light)
+ heading.Position=UDim2.fromOffset(23,21);heading.Size=UDim2.new(1,-110,0,38)
+ self.heading=heading
+ local hint=absoluteText(panel,"Make the galaxy yours",13,C.muted)
+ hint.Position=UDim2.fromOffset(24,59);hint.Size=UDim2.new(1,-110,0,19)
+ self.hint=hint
+ local close=Instance.new("TextButton")
+ close.Name="CloseWindow"
+ close.Size=UDim2.fromOffset(48,43)
+ close.AnchorPoint=Vector2.new(1,0)
+ close.Position=UDim2.new(1,-20,0,24)
+ close.BackgroundColor3=Color3.fromRGB(66,81,104)
+ close.Text="X";close.TextSize=18;close.Font=Enum.Font.GothamBold
+ close.TextColor3=C.light;close.Parent=panel
+ W.round(close,11)
+ close.Activated:Connect(function() self:setOpen(false) end)
  local nav=Instance.new("ScrollingFrame")
- nav.Name="Navigation"
- nav.Position=UDim2.fromOffset(12,49);nav.Size=UDim2.new(1,-24,0,46)
- nav.CanvasSize=UDim2.new(0,0,0,0)
+ nav.Name="Tabs"
+ nav.Position=UDim2.fromOffset(20,96)
+ nav.Size=UDim2.new(1,-40,0,47)
+ nav.BackgroundTransparency=1
  nav.AutomaticCanvasSize=Enum.AutomaticSize.X
+ nav.CanvasSize=UDim2.fromOffset(0,0)
  nav.ScrollBarThickness=0
  nav.ScrollingDirection=Enum.ScrollingDirection.X
- nav.BackgroundTransparency=1;nav.Parent=panel
- local nl=Instance.new("UIListLayout");nl.FillDirection=Enum.FillDirection.Horizontal
- nl.Padding=UDim.new(0,6);nl.Parent=nav
+ nav.Parent=panel
+ local navLayout=Instance.new("UIListLayout")
+ navLayout.FillDirection=Enum.FillDirection.Horizontal
+ navLayout.SortOrder=Enum.SortOrder.LayoutOrder
+ navLayout.Padding=UDim.new(0,7);navLayout.Parent=nav
  self.tabButtons={}
- local tabs={"Ranch","Eggs","Creatures","Backpack","Crafting","Shop","Workers","Quests","Trade","Events","Rankings"}
- for _,tab in ipairs(tabs) do
-  local btn=Instance.new("TextButton")
-  btn.Name=tab;btn.Size=UDim2.fromOffset(math.max(80,#tab*9+24),38)
-  btn.BackgroundColor3=COLORS.surface2
-  btn.TextColor3=COLORS.cream
-  btn.TextSize=13;btn.Font=Enum.Font.GothamMedium
-  btn.Text=tab;btn.AutoButtonColor=false;btn.Parent=nav
-  radius(btn,7)
-  btn.Activated:Connect(function()
-   self.tab=tab;self:render()
-  end)
-  self.tabButtons[tab]=btn
+ for index,tab in ipairs(TABS) do
+  local b=Instance.new("TextButton")
+  b.Name="Tab_"..tab[1]
+  b.LayoutOrder=index
+  b.Size=UDim2.fromOffset(math.max(74,#tab[2]*11+18),38)
+  b.Text=tab[2];b.TextSize=12;b.Font=Enum.Font.GothamBold
+  b.TextColor3=C.light;b.AutoButtonColor=false
+  b.BackgroundColor3=C.surface
+  b.Parent=nav;W.round(b,9)
+  b.Activated:Connect(function() self:openTab(tab[1]) end)
+  self.tabButtons[tab[1]]=b
  end
- local separator=Instance.new("Frame")
- separator.Size=UDim2.new(1,-24,0,1);separator.Position=UDim2.fromOffset(12,102)
- separator.BackgroundColor3=COLORS.stroke;separator.BorderSizePixel=0;separator.Parent=panel
- local page=Instance.new("ScrollingFrame")
- page.Name="Content"
- page.BackgroundTransparency=1
- page.BorderSizePixel=0
- page.Position=UDim2.fromOffset(16,115)
- page.Size=UDim2.new(1,-32,1,-132)
- page.CanvasSize=UDim2.fromScale(0,0)
- page.AutomaticCanvasSize=Enum.AutomaticSize.Y
- page.ScrollBarThickness=4
- page.ScrollBarImageColor3=COLORS.teal
- page.Parent=panel
- local layout=Instance.new("UIListLayout")
- layout.Padding=UDim.new(0,9);layout.SortOrder=Enum.SortOrder.LayoutOrder;layout.Parent=page
- self.page=page
- local guide=labelContainer(gui)
- guide.Name="Guide";guide.Position=UDim2.new(0,16,1,-97)
- guide.Size=UDim2.fromOffset(345,78)
- local guideTitle=text(guide,"FIRST MISSION",13,COLORS.gold,22)
- guideTitle.Font=Enum.Font.GothamBold;guideTitle.Position=UDim2.fromOffset(14,8)
- guideTitle.Size=UDim2.new(1,-28,0,22)
- local guideText=text(guide,"Harvest trees, rocks or bushes with E. Feed your Gorp to grow stronger.",13,COLORS.cream,44)
- guideText.Position=UDim2.fromOffset(14,30);guideText.Size=UDim2.new(1,-28,0,42)
- self.guideText=guideText
- local dock=labelContainer(gui)
- dock.Name="QuickDock"
+ local content=Instance.new("ScrollingFrame")
+ content.Name="Content";content.BackgroundTransparency=1
+ content.Position=UDim2.fromOffset(24,153)
+ content.Size=UDim2.new(1,-48,1,-178)
+ content.ScrollBarThickness=5
+ content.ScrollBarImageColor3=C.gold
+ content.CanvasSize=UDim2.fromOffset(0,0)
+ content.AutomaticCanvasSize=Enum.AutomaticSize.Y
+ content.Parent=panel
+ W.stack(content,12)
+ self.page=content
+
+ local dock=framed(gui,"ActionDock",C.deep)
  dock.AnchorPoint=Vector2.new(.5,1)
- dock.Position=UDim2.new(.5,0,1,-15)
- dock.Size=UDim2.fromOffset(390,62)
- dock.BackgroundColor3=Color3.fromRGB(34,48,58)
+ dock.Position=UDim2.new(.5,0,1,-16)
+ dock.Size=UDim2.fromOffset(520,68)
  self.dock=dock
- local links={{"EGGS","Eggs"},{"PETS","Creatures"},{"RANCH","Ranch"},{"TASKS","Quests"}}
- for i,item in ipairs(links) do
-  local shortcut=Instance.new("TextButton")
-  shortcut.Name="Quick_"..item[2]
-  shortcut.Size=UDim2.new(.25,-8,1,-14)
-  shortcut.Position=UDim2.new((i-1)*.25,4,0,7)
-  shortcut.BackgroundColor3=i==1 and Color3.fromRGB(249,204,105) or Color3.fromRGB(60,86,96)
-  shortcut.TextColor3=i==1 and Color3.fromRGB(37,40,48) or COLORS.cream
-  shortcut.TextSize=14
-  shortcut.Font=Enum.Font.GothamBold
-  shortcut.Text=item[1]
-  shortcut.Parent=dock
-  radius(shortcut,9)
-  shortcut.Activated:Connect(function() self:openTab(item[2]) end)
+ local items=Instance.new("Frame")
+ items.BackgroundTransparency=1
+ items.Size=UDim2.new(1,-12,1,-12)
+ items.Position=UDim2.fromOffset(6,6);items.Parent=dock
+ local horizontal=Instance.new("UIListLayout")
+ horizontal.FillDirection=Enum.FillDirection.Horizontal
+ horizontal.HorizontalAlignment=Enum.HorizontalAlignment.Center
+ horizontal.VerticalAlignment=Enum.VerticalAlignment.Center
+ horizontal.Padding=UDim.new(0,6);horizontal.Parent=items
+ self.quick={}
+ for index,entry in ipairs(SHORTCUTS) do
+  local button=Instance.new("TextButton")
+  button.Name="Quick_"..entry[2]
+  button.LayoutOrder=index
+  button.Size=UDim2.new(.2,-9,1,-2)
+  button.BackgroundColor3=index==1 and C.gold or C.surface
+  button.TextColor3=index==1 and C.deep or C.light
+  button.Text=entry[1]
+  button.TextSize=14
+  button.Font=Enum.Font.GothamBold
+  button.AutoButtonColor=false
+  button.Parent=items
+  W.round(button,10)
+  button.Activated:Connect(function() self:openTab(entry[2]) end)
+  self.quick[entry[2]]=button
  end
- local toast=labelContainer(gui)
- toast.Name="Toast";toast.AnchorPoint=Vector2.new(.5,0)
- toast.Position=UDim2.new(.5,0,0,90)
- toast.Size=UDim2.fromOffset(380,53)
+
+ local menu=Instance.new("TextButton")
+ menu.Name="OpenMenu"
+ menu.AnchorPoint=Vector2.new(1,1)
+ menu.Position=UDim2.new(1,-16,1,-24)
+ menu.Size=UDim2.fromOffset(94,44)
+ menu.Text="MENU [G]"
+ menu.Font=Enum.Font.GothamBold;menu.TextSize=13
+ menu.TextColor3=C.light
+ menu.BackgroundColor3=C.deep
+ menu.Parent=gui
+ W.round(menu,13);W.border(menu)
+ self.menu=menu
+ menu.Activated:Connect(function() self:setOpen(not self.open) end)
+ local toast=framed(gui,"Toast",C.surface)
+ toast.AnchorPoint=Vector2.new(.5,0)
+ toast.Position=UDim2.new(.5,0,0,88)
+ toast.Size=UDim2.fromOffset(370,55)
  toast.Visible=false
- local toastLabel=text(toast,"",15,COLORS.cream,52)
- toastLabel.TextXAlignment=Enum.TextXAlignment.Center
- toastLabel.Position=UDim2.fromOffset(8,0)
- toastLabel.Size=UDim2.new(1,-16,1,0)
- self.toast=toast;self.toastLabel=toastLabel
- local camera=workspace.CurrentCamera
+ self.toast=toast
+ local toastText=absoluteText(toast,"",14,C.light)
+ toastText.TextXAlignment=Enum.TextXAlignment.Center
+ toastText.Size=UDim2.new(1,-20,1,0);toastText.Position=UDim2.fromOffset(10,0)
+ self.toastText=toastText
+ UserInputService.InputBegan:Connect(function(input,consumed)
+  if consumed or UserInputService:GetFocusedTextBox() then return end
+  if input.KeyCode==Enum.KeyCode.G then
+   self:setOpen(not self.open)
+  elseif input.KeyCode==Enum.KeyCode.One then self:openTab("Eggs")
+  elseif input.KeyCode==Enum.KeyCode.Two then self:openTab("Creatures")
+  elseif input.KeyCode==Enum.KeyCode.Three then self:openTab("Backpack")
+  elseif input.KeyCode==Enum.KeyCode.Four then self:openTab("Quests")
+  elseif input.KeyCode==Enum.KeyCode.Five then self:openTab("Ranch")
+  end
+ end)
  local function resize()
-  camera=workspace.CurrentCamera
+  local camera=workspace.CurrentCamera
   if not camera then return end
-  local sz=camera.ViewportSize
-  if sz.X<750 then
-   top.Size=UDim2.new(1,-20,0,58);top.Position=UDim2.fromOffset(10,8)
-   mark.Size=UDim2.fromOffset(132,40);mark.Text="GORPS";mark.TextSize=17
-   status.Position=UDim2.fromOffset(145,8);status.Size=UDim2.new(1,-235,0,40)
-   open.Size=UDim2.fromOffset(78,38);open.Position=UDim2.new(1,-85,0,10)
-   panel.Position=UDim2.new(1,-10,0,73)
-   panel.Size=UDim2.new(1,-20,1,-160)
-   guide.Position=UDim2.new(0,10,1,-165)
-   dock.Size=UDim2.new(1,-24,0,58)
-   guide.Size=UDim2.new(1,-20,0,75)
+  local width,height=camera.ViewportSize.X,camera.ViewportSize.Y
+  self.viewportWidth=width
+  local narrow=width<730
+  panel.Size=UDim2.fromOffset(math.min(narrow and width-18 or 720,width-18),
+   math.min(height-70,narrow and 680 or 630))
+  dock.Size=UDim2.fromOffset(math.min(510,width-24),narrow and 60 or 68)
+  if narrow then
+   objective.Position=UDim2.fromOffset(9,75)
+   objective.Size=UDim2.fromOffset(math.min(260,width-18),75)
+   brand.Position=UDim2.fromOffset(9,10);brand.Size=UDim2.fromOffset(137,49)
+   descriptor.Visible=false;logo.Text="GORPS"
+   wallet.Position=UDim2.new(1,-9,0,10);wallet.Size=UDim2.fromOffset(160,49)
+   menu.Position=UDim2.new(1,-8,1,-89);menu.Size=UDim2.fromOffset(72,38)
+   for _,button in pairs(self.quick) do button.TextSize=12 end
   else
-   top.Size=UDim2.new(1,-32,0,64);top.Position=UDim2.fromOffset(16,15)
-   mark.Size=UDim2.fromOffset(225,48);mark.Text="GORPS  /  EVOLUTION";mark.TextSize=19
-   status.Position=UDim2.fromOffset(245,10);status.Size=UDim2.new(1,-365,0,45)
-   open.Size=UDim2.fromOffset(98,40);open.Position=UDim2.new(1,-108,0,12)
-   panel.Position=UDim2.new(1,-16,0,90)
-   panel.Size=UDim2.fromOffset(math.min(440,math.floor(sz.X*.36)),math.min(650,sz.Y-140))
-   guide.Position=UDim2.new(0,16,1,-103)
-   dock.Size=UDim2.fromOffset(390,62)
-   guide.Size=UDim2.fromOffset(345,78)
+   objective.Position=UDim2.fromOffset(16,78);objective.Size=UDim2.fromOffset(262,75)
+   brand.Position=UDim2.fromOffset(16,15);brand.Size=UDim2.fromOffset(220,51)
+   descriptor.Visible=true;logo.Text="GORPS"
+   wallet.Position=UDim2.new(1,-16,0,15);wallet.Size=UDim2.fromOffset(190,51)
+   menu.Position=UDim2.new(1,-16,1,-24);menu.Size=UDim2.fromOffset(94,44)
+   for _,button in pairs(self.quick) do button.TextSize=14 end
   end
  end
+ self.resize=resize
+ local camera=workspace.CurrentCamera
  if camera then camera:GetPropertyChangedSignal("ViewportSize"):Connect(resize) end
+ workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(resize)
  resize()
- local function toggle()
-  self.open=not self.open
-  panel.Visible=self.open
-  open.Text=self.open and "CLOSE [G]" or "MENU [G]"
- end
- open.Activated:Connect(toggle)
- UserInputService.InputBegan:Connect(function(input,consumed)
-  if not consumed and input.KeyCode==Enum.KeyCode.G then toggle() end
- end)
  return self
+end
+function UI:setOpen(open)
+ self.open=open
+ self.dim.Visible=open
+ self.panel.Visible=open
+ self.dock.Visible=not open
+ self.objective.Visible=not open
+ self.menu.Visible=not open
+ if open then self:render() end
 end
 function UI:openTab(tab)
  if not self.tabButtons[tab] then return end
+ local switched=self.tab~=tab
  self.tab=tab
- self.open=true
- self.panel.Visible=true
- self.menuButton.Text="CLOSE [G]"
- self:render()
-end
-function UI:showPickup(reward)
- if type(reward)~="table" or type(reward.resource)~="string" then return end
- local amount=tonumber(reward.amount)
- if not amount or amount<=0 then return end
- local pill=labelContainer(self.gui)
- pill.Name="PickupFeedback"
- pill.AnchorPoint=Vector2.new(.5,.5)
- pill.Position=UDim2.fromScale(.5,.68)
- pill.Size=UDim2.fromOffset(230,46)
- pill.BackgroundColor3=Color3.fromRGB(39,102,81)
- local copy=text(pill,"+"..amount.." "..string.upper(reward.resource),19,Color3.fromRGB(251,246,224),46)
- copy.TextXAlignment=Enum.TextXAlignment.Center
- copy.Font=Enum.Font.GothamBold
- copy.Size=UDim2.fromScale(1,1)
- TweenService:Create(pill,TweenInfo.new(.7,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),
-  {Position=UDim2.fromScale(.5,.55),BackgroundTransparency=.38}):Play()
- task.delay(1.1,function()
-  if pill.Parent then
-   TweenService:Create(pill,TweenInfo.new(.2),{BackgroundTransparency=1}):Play()
-   TweenService:Create(copy,TweenInfo.new(.2),{TextTransparency=1}):Play()
-   task.delay(.25,function() pill:Destroy() end)
-  end
- end)
-end
-function UI:showHatch(pet)
- if type(pet)~="table" or type(pet.species)~="string" then return end
- local overlay=Instance.new("Frame")
- overlay.Name="HatchReveal"
- overlay.Size=UDim2.fromScale(1,1)
- overlay.BackgroundColor3=Color3.fromRGB(9,25,34)
- overlay.BackgroundTransparency=.2
- overlay.ZIndex=50
- overlay.Parent=self.gui
- local egg=Instance.new("Frame")
- egg.Name="HatchingEgg";egg.AnchorPoint=Vector2.new(.5,.5)
- egg.Position=UDim2.fromScale(.5,.45);egg.Size=UDim2.fromOffset(95,126)
- egg.BackgroundColor3=Color3.fromRGB(255,224,151)
- egg.ZIndex=51
- egg.Parent=overlay
- radius(egg,48)
- local shine=Instance.new("UIGradient")
- shine.Rotation=40
- shine.Color=ColorSequence.new(Color3.fromRGB(255,247,208),Color3.fromRGB(238,168,106))
- shine.Parent=egg
- local title=text(overlay,"HATCHING...",23,COLORS.cream,55)
- title.AnchorPoint=Vector2.new(.5,.5)
- title.Position=UDim2.fromScale(.5,.68)
- title.Size=UDim2.new(.8,0,0,55)
- title.TextXAlignment=Enum.TextXAlignment.Center
- title.Font=Enum.Font.GothamBold
- title.ZIndex=52
- TweenService:Create(egg,TweenInfo.new(.48,Enum.EasingStyle.Back,Enum.EasingDirection.Out),
-  {Size=UDim2.fromOffset(175,220),Rotation=10}):Play()
- task.delay(.55,function()
-  if not overlay.Parent then return end
-  egg.BackgroundColor3=Color3.fromRGB(106,224,170)
-  TweenService:Create(egg,TweenInfo.new(.25,Enum.EasingStyle.Back),
-   {Size=UDim2.fromOffset(235,235),Rotation=0}):Play()
-  title.Text=string.upper(pet.species).."  •  "..string.upper(pet.rarity or "COMMON")
- end)
- task.delay(2.7,function()
-  if overlay.Parent then
-   TweenService:Create(overlay,TweenInfo.new(.32),{BackgroundTransparency=1}):Play()
-   task.delay(.35,function() overlay:Destroy() end)
-  end
- end)
+ self:setOpen(true)
+ if switched then self.page.CanvasPosition=Vector2.zero end
 end
 function UI:toastMessage(message)
  if not message or message=="" then return end
- self.toastLabel.Text=tostring(message)
+ self.toastSerial+=1
+ local serial=self.toastSerial
+ self.toastText.Text=tostring(message)
  self.toast.Visible=true
- local token={}
- self.lastToast=token
- task.delay(3.2,function()
-  if self.lastToast==token then self.toast.Visible=false end
+ task.delay(2.8,function()
+  if self.toastSerial==serial then self.toast.Visible=false end
  end)
+end
+function UI:showPickup(reward)
+ if type(reward)~="table" or type(reward.resource)~="string" then return end
+ local number=tonumber(reward.amount)
+ if not number or number<=0 then return end
+ local notification=framed(self.gui,"Pickup",Color3.fromRGB(33,110,83))
+ notification.AnchorPoint=Vector2.new(.5,.5)
+ notification.Position=UDim2.fromScale(.5,.67)
+ notification.Size=UDim2.fromOffset(205,52)
+ local label=absoluteText(notification,"+ "..number.." "..string.upper(reward.resource),18,C.light)
+ label.Size=UDim2.fromScale(1,1);label.TextXAlignment=Enum.TextXAlignment.Center
+ TweenService:Create(notification,TweenInfo.new(.6,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),
+  {Position=UDim2.fromScale(.5,.56)}):Play()
+ task.delay(1,function()
+  if notification.Parent then notification:Destroy() end
+ end)
+end
+function UI:showHatch(pet)
+ if type(pet)~="table" or not Config.Species[pet.species] then return end
+ local overlay=Instance.new("Frame")
+ overlay.Name="HatchReveal"
+ overlay.Size=UDim2.fromScale(1,1);overlay.BorderSizePixel=0
+ overlay.BackgroundColor3=Color3.fromRGB(12,23,43)
+ overlay.BackgroundTransparency=.08
+ overlay.Parent=self.gui
+ local card=framed(overlay,"RewardCard",C.surface)
+ card.AnchorPoint=Vector2.new(.5,.5)
+ card.Position=UDim2.fromScale(.5,.48)
+ card.Size=UDim2.fromOffset(320,420)
+ local header=absoluteText(card,"NEW GORP DISCOVERED!",19,C.gold)
+ header.Size=UDim2.new(1,-24,0,36);header.Position=UDim2.fromOffset(20,21)
+ header.TextXAlignment=Enum.TextXAlignment.Center
+ local preview=W.petPortrait(card,pet.species,pet.rarity,pet)
+ preview.AnchorPoint=Vector2.new(.5,0)
+ preview.Position=UDim2.new(.5,0,0,76)
+ preview.Size=UDim2.fromOffset(205,205)
+ local name=absoluteText(card,string.upper(pet.species),26,W.rarityColor(pet.rarity))
+ name.Position=UDim2.fromOffset(18,300);name.Size=UDim2.new(1,-36,0,35)
+ name.TextXAlignment=Enum.TextXAlignment.Center
+ local rarity=absoluteText(card,string.upper(pet.rarity),15,C.light)
+ rarity.Position=UDim2.fromOffset(18,331);rarity.Size=UDim2.new(1,-36,0,20)
+ rarity.TextXAlignment=Enum.TextXAlignment.Center
+ local equip=Instance.new("TextButton")
+ equip.Name="EquipNow"
+ equip.Text="EQUIP & CONTINUE"
+ equip.TextSize=15;equip.Font=Enum.Font.GothamBold
+ equip.TextColor3=C.deep;equip.BackgroundColor3=C.gold
+ equip.Position=UDim2.fromOffset(20,366)
+ equip.Size=UDim2.new(1,-40,0,41)
+ equip.Parent=card;W.round(equip,10)
+ equip.Activated:Connect(function()
+  overlay:Destroy()
+  self.send("SelectPet",{id=pet.id})
+  self:openTab("Creatures")
+ end)
+ local dismiss=Instance.new("TextButton")
+ dismiss.Name="Dismiss"
+ dismiss.Text="X";dismiss.Font=Enum.Font.GothamBold;dismiss.TextSize=17
+ dismiss.TextColor3=C.light;dismiss.BackgroundColor3=C.deep
+ dismiss.Position=UDim2.new(1,-43,0,8);dismiss.Size=UDim2.fromOffset(34,33)
+ dismiss.Parent=card;W.round(dismiss,9)
+ dismiss.Activated:Connect(function() overlay:Destroy() end)
+ card.Size=UDim2.fromOffset(250,340)
+ TweenService:Create(card,TweenInfo.new(.4,Enum.EasingStyle.Back,Enum.EasingDirection.Out),
+  {Size=UDim2.fromOffset(320,420)}):Play()
 end
 function UI:update(profile,trade,message,rankings)
  if profile then self.profile=profile end
@@ -328,23 +355,53 @@ end
 function UI:render()
  local p=self.profile
  if not p then return end
- self.status.Text=string.format("◈ %s COINS   |   LV %d   |   %d PETS   |   RANCH %d",
-  tostring(p.Coins),p.Level,#p.Pets,p.BaseLevel)
- local goals={
-  "Go to a glowing resource and press E to collect it.",
-  "Feed your Gorp in the Creatures tab to increase its level.",
-  "Craft an item, hire a worker and grow your ranch.",
- }
- local count=p.Quests and (p.Quests.Gatherer or 0) or 0
- self.guideText.Text=count<5 and goals[1] or
-  ((p.Quests.Provider or 0)<1 and goals[2] or goals[3])
- for tab,b in pairs(self.tabButtons) do
-  b.BackgroundColor3=tab==self.tab and COLORS.teal or COLORS.surface2
-  b.TextColor3=tab==self.tab and COLORS.ink or COLORS.cream
+ self.wallet.Text="◆  "..tostring(p.Coins)
+ local capacity=math.min(40,3+(p.BaseLevel-1)*2)
+ self.levelLine.Text="LEVEL "..p.Level.."  ·  "..#p.Pets.."/"..capacity.." GORPS"
+ local gathered=(p.Quests and p.Quests.Gatherer) or 0
+ local fed=(p.Quests and p.Quests.Provider) or 0
+ if gathered<15 then
+  self.objectiveBody.Text="Collect resources  "..math.min(gathered,15).."/15"
+  self.objectiveFill.Size=UDim2.fromScale(math.clamp(gathered/15,0,1),1)
+ elseif fed<3 then
+  self.objectiveBody.Text="Feed a Gorp  "..math.min(fed,3).."/3"
+  self.objectiveFill.Size=UDim2.fromScale(math.clamp(fed/3,0,1),1)
+ else
+  self.objectiveBody.Text="Grow your ranch and explore"
+  self.objectiveFill.Size=UDim2.fromScale(1,1)
  end
+ if not self.open then return end
+ local info={
+  Ranch={"MY RANCH","Expand, manage your animals and complete quests"},
+  Eggs={"GORPS HATCHERY","Discover creatures and build your collection"},
+  Creatures={"MY CREATURES","Select a companion, feed and evolve"},
+  Backpack={"INVENTORY","Your resources, materials and equipment"},
+  Crafting={"CRAFTING","Turn your resources into equipment"},
+  Shop={"SHOP","Buy supplies with coins you earn"},
+  Workers={"RANCH CREW","Hire helpers who work while you explore"},
+  Quests={"MISSIONS","Follow clear goals and claim earned rewards"},
+  Trade={"PLAYER TRADING","Exchange items and creatures with other players"},
+  Events={"GALAXY EVENTS","Daily rewards and visiting UFO traders"},
+  Rankings={"LEADERBOARDS","The most accomplished explorers"}
+ }
+ self.heading.Text=info[self.tab][1]
+ self.hint.Text=info[self.tab][2]
+ for key,button in pairs(self.tabButtons) do
+  button.BackgroundColor3=key==self.tab and C.gold or C.surface
+  button.TextColor3=key==self.tab and C.deep or C.light
+ end
+ local oldPosition=self.page.CanvasPosition
+ self.page:SetAttribute("OrderCounter",0)
  for _,child in ipairs(self.page:GetChildren()) do
   if not child:IsA("UIListLayout") then child:Destroy() end
  end
- Pages.render(self.page,self.tab,p,self.trade,self.send,text,action,self.rankings)
+ Pages.render(self.page,self.tab,p,self.trade,function(action,args)
+  if action=="__openTab" then
+   self:openTab(args.id)
+  else
+   self.send(action,args)
+  end
+ end,self.rankings)
+ self.page.CanvasPosition=oldPosition
 end
 return UI

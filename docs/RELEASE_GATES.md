@@ -77,3 +77,7 @@ The settlement engine now stages both sides before applying pet or material chan
 Original implementation details and original Gorps designs are documented in [DESIGN_REFERENCES.md](DESIGN_REFERENCES.md). A server-owned coin egg hatch and visible gathering lifecycle have been added in source.
 
 Studio QA still required: hatch coin pricing and odds, appearance/disappearance of nodes for all players, cooldown/respawn, purchase fail cases, accessible mobile HUD, screen effects and pet proportions. No guarantee of zero runtime bugs until those cases pass on device.
+
+## Gameplay HUD v2
+
+The compact HUD, centered interactive collection window, deterministic card order and 3D creature/egg preview implementation is documented in [UI_QA.md](UI_QA.md). Studio rendering, mobile and controller QA remain mandatory.

@@ -1,209 +1,323 @@
-local C=require(game:GetService("ReplicatedStorage").Shared.Config)
+local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
+local W=require(script.Parent.Widgets)
+local C=W.colors
 local Pages={}
-local function sortedKeys(obj)
- local keys={}
- for id in pairs(obj) do table.insert(keys,id) end
- table.sort(keys);return keys
+
+local function keys(source)
+ local ids={}
+ for name in pairs(source) do table.insert(ids,name) end
+ table.sort(ids)
+ return ids
 end
-local function costText(cost)
- local items={}
- for _,id in ipairs(sortedKeys(cost)) do table.insert(items,id.." "..cost[id]) end
- return table.concat(items,"  •  ")
+local function countCost(cost)
+ local parts={}
+ for _,id in ipairs(keys(cost)) do
+  table.insert(parts,id.." x"..cost[id])
+ end
+ return table.concat(parts,"   +   ")
 end
-local function input(parent,hint)
- local t=Instance.new("TextBox")
- t.Size=UDim2.new(1,-4,0,38);t.BackgroundColor3=Color3.fromRGB(42,55,63)
- t.TextColor3=Color3.fromRGB(235,246,243);t.PlaceholderColor3=Color3.fromRGB(165,177,181)
- t.PlaceholderText=hint;t.Text="";t.Font=Enum.Font.Gotham;t.TextSize=14
- t.ClearTextOnFocus=false;t.Parent=parent
- local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,8);c.Parent=t
- return t
+local function fmt(value)
+ return tostring(math.floor(value))
 end
-function Pages.render(parent,tab,p,trade,send,label,button,rankings)
- local function heading(text) local t=label(parent,text,20,Color3.fromRGB(139,225,187),35);t.Font=Enum.Font.GothamBold end
- local function line(text) label(parent,text,14,Color3.fromRGB(198,214,211),35) end
- local function action(text,code,data) button(parent,text,function() send(code,data or {}) end) end
- local function card(name,detail)
-  local panel=Instance.new("Frame")
-  panel.Name="Card_"..name
-  panel.Size=UDim2.new(1,-8,0,0)
-  panel.AutomaticSize=Enum.AutomaticSize.Y
-  panel.BackgroundColor3=Color3.fromRGB(38,55,62)
-  panel.BorderSizePixel=0
-  panel.Parent=parent
-  local round=Instance.new("UICorner");round.CornerRadius=UDim.new(0,11);round.Parent=panel
-  local pad=Instance.new("UIPadding")
-  pad.PaddingLeft=UDim.new(0,12);pad.PaddingRight=UDim.new(0,12)
-  pad.PaddingTop=UDim.new(0,12);pad.PaddingBottom=UDim.new(0,12);pad.Parent=panel
-  local layout=Instance.new("UIListLayout")
-  layout.Padding=UDim.new(0,6);layout.Parent=panel
-  local title=label(panel,name,17,Color3.fromRGB(243,240,218),27)
-  title.Font=Enum.Font.GothamBold
-  if detail then label(panel,detail,13,Color3.fromRGB(183,204,201),35) end
-  return panel
+local function heading(parent,title,subtitle)
+ local t=W.label(parent,title,16,C.gold,29)
+ t.Font=Enum.Font.GothamBold
+ if subtitle then W.label(parent,subtitle,13,C.muted,34) end
+end
+local function textRow(parent,text)
+ return W.label(parent,text,14,C.light,27)
+end
+local function descriptor(parent,text)
+ return W.label(parent,text,13,C.muted,28)
+end
+local function action(parent,text,callback,canPress,color)
+ return W.button(parent,text,callback,canPress,color)
+end
+local function eggPanel(parent,eggId,profile,send)
+ local egg=Config.Eggs[eggId]
+ local owned=#profile.Pets
+ local capacity=math.min(40,3+(profile.BaseLevel-1)*2)
+ local card=W.card(parent,nil,nil)
+ local row=W.row(card,112)
+ local view=W.eggPortrait(row,eggId=="Meadow" and Color3.fromRGB(243,198,112)
+  or Color3.fromRGB(168,135,237))
+ view.Position=UDim2.fromOffset(2,2)
+ local title=Instance.new("TextLabel")
+ title.Name="EggTitle";title.BackgroundTransparency=1
+ title.Position=UDim2.fromOffset(119,7);title.Size=UDim2.new(1,-122,0,29)
+ title.Text=egg.title
+ title.TextColor3=C.light;title.TextSize=21;title.Font=Enum.Font.GothamBold
+ title.TextXAlignment=Enum.TextXAlignment.Left;title.Parent=row
+ local cost=Instance.new("TextLabel")
+ cost.Position=UDim2.fromOffset(119,43);cost.Size=UDim2.new(1,-124,0,27)
+ cost.BackgroundTransparency=1;cost.Text="◆ "..fmt(egg.price).." coins"
+ cost.TextColor3=C.gold;cost.Font=Enum.Font.GothamBold;cost.TextSize=18
+ cost.TextXAlignment=Enum.TextXAlignment.Left;cost.Parent=row
+ local description=Instance.new("TextLabel")
+ description.Position=UDim2.fromOffset(119,77)
+ description.Size=UDim2.new(1,-125,0,24)
+ description.BackgroundTransparency=1
+ description.Text=eggId=="Meadow" and "Great for new explorers" or "Stronger creatures await"
+ description.TextColor3=C.muted;description.Font=Enum.Font.Gotham
+ description.TextSize=12;description.TextXAlignment=Enum.TextXAlignment.Left
+ description.Parent=row
+ heading(card,"HATCH CHANCES","Each purchase reveals exactly one creature")
+ for _,entry in ipairs(egg.pool) do
+  local def=Config.Species[entry.species]
+  local label=W.label(card,entry.species.."   •   "..def.rarity.."    "..entry.weight.."%",13,
+   W.rarityColor(def.rarity),25)
+  label.Font=Enum.Font.GothamBold
+  local fill=W.progress(card,entry.weight/100)
+  fill.BackgroundColor3=W.rarityColor(def.rarity)
  end
- local function cardLine(where,what)
-  label(where,what,14,Color3.fromRGB(211,228,221),26)
+ local affordable=profile.Coins>=egg.price
+ local hasRoom=owned<capacity
+ action(card,not hasRoom and "RANCH FULL  •  EXPAND TO HATCH" or
+  not affordable and "NEED "..fmt(egg.price-profile.Coins).." MORE COINS" or
+  "HATCH 1 EGG  ·  ◆ "..fmt(egg.price),
+  function() send("HatchEgg",{id=eggId}) end,affordable and hasRoom,C.gold)
+end
+local function pets(parent,p,send)
+ heading(parent,"YOUR TEAM",#p.Pets.." / "..math.min(40,3+(p.BaseLevel-1)*2)..
+  " creature slots filled. Only your active companion follows you.")
+ for _,pet in ipairs(p.Pets) do
+  local def=Config.Species[pet.species]
+  if def then
+   local active=pet.id==p.ActiveId
+   local card=W.card(parent,nil,nil)
+   local row=W.row(card,112)
+   W.petPortrait(row,pet.species,pet.rarity,pet).Position=UDim2.fromOffset(0,3)
+   local header=Instance.new("TextLabel")
+   header.Name="PetName";header.BackgroundTransparency=1
+   header.Position=UDim2.fromOffset(120,5);header.Size=UDim2.new(1,-124,0,33)
+   header.Text=pet.species.."  "..(active and "✓" or "")
+   header.TextXAlignment=Enum.TextXAlignment.Left;header.Font=Enum.Font.GothamBold
+   header.TextSize=21;header.TextColor3=C.light;header.Parent=row
+   local rarity=Instance.new("TextLabel")
+   rarity.Name="Rarity";rarity.BackgroundTransparency=1
+   rarity.Position=UDim2.fromOffset(120,40);rarity.Size=UDim2.new(1,-124,0,27)
+   rarity.Text=string.upper(pet.rarity).."  ·  "..def.role
+   rarity.TextXAlignment=Enum.TextXAlignment.Left;rarity.Font=Enum.Font.GothamBold
+   rarity.TextSize=13;rarity.TextColor3=W.rarityColor(pet.rarity);rarity.Parent=row
+   local level=Instance.new("TextLabel")
+   level.Name="PetLevel";level.BackgroundTransparency=1
+   level.Position=UDim2.fromOffset(120,76);level.Size=UDim2.new(1,-124,0,25)
+   level.Text="LEVEL "..pet.level.."  /  25"
+   level.TextXAlignment=Enum.TextXAlignment.Left;level.Font=Enum.Font.GothamMedium
+   level.TextSize=13;level.TextColor3=C.muted;level.Parent=row
+   local baseline=Config.Species[pet.species]
+   textRow(card,"HP "..baseline.hp.."    ATK "..baseline.attack.."    SPD "..baseline.speed)
+   W.progress(card,pet.xp/math.max(1,pet.level*45))
+   descriptor(card,"Growth XP  "..pet.xp.." / "..pet.level*45.."  •  Evolution "..pet.evolved.."/2")
+   if not active then
+    action(card,"EQUIP AS COMPANION",function() send("SelectPet",{id=pet.id}) end,true,C.gold)
+   end
+   local hasFood=(p.Inventory.Meat or 0)>0 and (p.Inventory.Berries or 0)>0
+   action(card,hasFood and "FEED  ·  1 MEAT + 1 BERRY" or "NEED MEAT + BERRIES TO FEED",
+    function() send("Feed",{id=pet.id}) end,hasFood,C.mint)
+   local target=pet.evolved==0 and 5 or 12
+   if pet.evolved<2 then
+    action(card,"EVOLVE  ·  LEVEL "..target.."+",
+     function() send("Evolve",{id=pet.id}) end,pet.level>=target,C.blue)
+   end
+  end
  end
- local function cardAction(where,what,code,data)
-  button(where,what,function() send(code,data or {}) end)
+end
+local function ranch(parent,p,send)
+ local cap=math.min(40,3+(p.BaseLevel-1)*2)
+ local card=W.card(parent,"YOUR VERDANT RANCH",
+  "Raise your creatures, expand your land and unlock more space for new discoveries.")
+ textRow(card,"Ranch Level  "..p.BaseLevel.."/8   ·   Gorps  "..#p.Pets.."/"..cap)
+ W.progress(card,p.BaseLevel/8)
+ local cost={Wood=p.BaseLevel*10,Stone=p.BaseLevel*7}
+ local affordable=p.Coins>=p.BaseLevel*200
+ for id,n in pairs(cost) do
+  if (p.Inventory[id] or 0)<n then affordable=false end
  end
- local function progress(where,value,maxValue)
-  local bar=Instance.new("Frame")
-  bar.Size=UDim2.new(1,-10,0,8)
-  bar.BackgroundColor3=Color3.fromRGB(68,82,88)
-  bar.BorderSizePixel=0;bar.Parent=where
-  local arc=Instance.new("UICorner");arc.CornerRadius=UDim.new(1,0);arc.Parent=bar
-  local fill=Instance.new("Frame");fill.Size=UDim2.fromScale(math.clamp(value/math.max(1,maxValue),0,1),1)
-  fill.BackgroundColor3=Color3.fromRGB(111,212,177);fill.BorderSizePixel=0;fill.Parent=bar
-  local rounded=Instance.new("UICorner");rounded.CornerRadius=UDim.new(1,0);rounded.Parent=fill
+ if p.BaseLevel<8 then
+  descriptor(card,"Next upgrade: ◆ "..p.BaseLevel*200.."  +  "..countCost(cost))
+  action(card,affordable and "EXPAND RANCH  →" or "COLLECT MATERIALS TO UPGRADE",
+   function() send("Expand",{}) end,affordable,C.gold)
+ else
+  descriptor(card,"Maximum ranch level reached")
  end
- heading(tab)
- if tab=="Ranch" then
-  local first=card("WELCOME TO VERDANT","Explore the village, gather supplies and raise your first Gorp.")
-  cardLine(first,"Ranch  "..p.BaseLevel.." / 8     |     Creatures  "..#p.Pets.." / "..math.min(40,3+(p.BaseLevel-1)*2))
-  progress(first,p.BaseLevel,8)
-  cardAction(first,"EXPAND MY RANCH  •  "..tostring(p.BaseLevel*200).." coins","Expand")
-  local mission=card("YOUR NEXT MOVE","Your first adventure takes just a few minutes.")
-  local gatherCount=p.Quests and (p.Quests.Gatherer or 0) or 0
-  local fed=p.Quests and (p.Quests.Provider or 0) or 0
-  cardLine(mission,"01   Collect resources     "..math.min(15,gatherCount).."/15")
-  progress(mission,gatherCount,15)
-  cardLine(mission,"02   Feed your companion     "..math.min(3,fed).."/3")
-  progress(mission,fed,3)
-  cardLine(mission,"03   Craft items and hire a helper")
-  cardAction(mission,"COLLECT WORKER DELIVERIES","Collect")
-  local help=card("PLANET GUIDE","Walk toward glowing objects and press E to harvest. Hunt wild Gorps for meat.")
-  cardLine(help,"G  •  Show or hide game menu")
-  cardLine(help,"E  •  Interact with resources and shops")
-  cardLine(help,"First reward: +70 coins for harvesting 15 resources")
- elseif tab=="Eggs" then
-  local top=card("THE HATCHERY","Discover new Gorps. Every hatch costs earned coins, and odds are shown below.")
-  cardLine(top,"Ranch space: "..#p.Pets.." / "..math.min(40,3+(p.BaseLevel-1)*2))
-  for _,eggId in ipairs(C.EggOrder) do
-   local egg=C.Eggs[eggId]
-   local cardEgg=card(egg.title,"Cost: "..egg.price.." coins")
-   for _,entry in ipairs(egg.pool) do
-    cardLine(cardEgg,entry.species.."  •  "..entry.weight.."%")
-   end
-   cardAction(cardEgg,"HATCH "..string.upper(egg.title).."  |  "..egg.price.." COINS","HatchEgg",{id=eggId})
+ local path=W.card(parent,"STARTER ROADMAP","A clear path through your first five minutes.")
+ local gather=p.Quests.Gatherer or 0
+ local feed=p.Quests.Provider or 0
+ textRow(path,"01   Gather resources     "..math.min(15,gather).."/15")
+ W.progress(path,gather/15)
+ textRow(path,"02   Hatch a Meadow Egg  ·  ◆ 100")
+ textRow(path,"03   Feed your Gorp       "..math.min(feed,3).."/3")
+ W.progress(path,feed/3)
+ textRow(path,"04   Upgrade your ranch and hire a worker")
+ action(path,"VISIT THE HATCHERY",function() send("__openTab",{id="Eggs"}) end,true,C.gold)
+ local help=W.card(parent,"HOW TO PLAY","Explore the planet and approach glowing resources.")
+ textRow(help,"E  ·  Gather, hunt or open village stations")
+ textRow(help,"1–5  ·  Quick menu shortcuts")
+ textRow(help,"G  ·  Open or close your menu")
+end
+local function backpack(parent,p,send)
+ heading(parent,"YOUR MATERIALS","Collect resources around the world and sell extras for coins.")
+ for _,id in ipairs(keys(Config.Resources)) do
+  local count=p.Inventory[id] or 0
+  local card=W.card(parent,id.."  ·  "..fmt(count).." owned",
+   "Trade value: ◆ "..Config.Resources[id].." per item")
+  action(card,count>=5 and "SELL 5 FOR ◆ "..5*Config.Resources[id] or "COLLECT 5 TO SELL",
+   function() send("Sell",{id=id,amount=5}) end,count>=5,C.gold)
+ end
+ heading(parent,"CRAFTED INVENTORY")
+ if not next(p.Items) then descriptor(parent,"Your crafted equipment will appear here.") end
+ for _,id in ipairs(keys(p.Items)) do textRow(parent,id.."  x"..fmt(p.Items[id])) end
+end
+local function crafting(parent,p,send)
+ heading(parent,"WORKBENCH","Turn harvested materials into useful items.")
+ for _,id in ipairs(keys(Config.Recipes)) do
+  local recipe=Config.Recipes[id]
+  local card=W.card(parent,id,"Craft skill required: Lv."..recipe.level)
+  descriptor(card,"Materials:  "..countCost(recipe.cost))
+  local ready=p.CraftLevel>=recipe.level
+  for material,amount in pairs(recipe.cost) do
+   local stock=Config.Resources[material] and p.Inventory or p.Items
+   if (stock[material] or 0)<amount then ready=false end
   end
-  cardLine(top,"Hatch creatures, select one as companion, then use its abilities to gather faster.")
- elseif tab=="Creatures" then
-  local active=p.ActiveId
-  for _,pet in ipairs(p.Pets) do
-   local def=C.Species[pet.species]
-   local selected=active==pet.id and "  •  ACTIVE" or ""
-   local panel=card(pet.species.."  /  "..pet.rarity..selected,
-    def.role.."  •  Level "..pet.level.." / 25  •  Evolution "..pet.evolved.." / 2")
-   cardLine(panel,"Health "..def.hp.."    Attack "..def.attack.."    Speed "..def.speed)
-   cardLine(panel,"Growth to next level")
-   progress(panel,pet.xp,pet.level*45)
-   if active~=pet.id then cardAction(panel,"SELECT AS COMPANION","SelectPet",{id=pet.id}) end
-   cardAction(panel,"FEED  •  1 meat + 1 berry","Feed",{id=pet.id})
-   cardAction(panel,"EVOLVE  •  Requires rare minerals","Evolve",{id=pet.id})
-  end
-  local eggs=card("EGG LABORATORY","Craft an incubator, infuse minerals and discover new species.")
-  cardLine(eggs,"Infusion "..(p.EggInfusion or 0).." / 3")
-  progress(eggs,p.EggInfusion or 0,3)
-  cardAction(eggs,"INFUSE  •  3 iron + 2 crystals","InfuseEgg")
-  cardAction(eggs,"HATCH  •  Incubator + crystal","Hatch")
- elseif tab=="Backpack" then
-  line("Sell gathered materials for coins; resources can also be used to craft items.")
-  for _,id in ipairs(sortedKeys(C.Resources)) do
-   line(id.."  x"..(p.Inventory[id] or 0).."  •  "..C.Resources[id].." coins each")
-   action("Sell 5 "..id,"Sell",{id=id,amount=5})
-  end
-  for _,id in ipairs(sortedKeys(p.Items)) do line(id.." x"..(p.Items[id] or 0)) end
- elseif tab=="Crafting" then
-  line("New recipes unlock as your crafting level increases.")
-  for _,id in ipairs(sortedKeys(C.Recipes)) do
-   local recipe=C.Recipes[id]
-   line(id.."  [Craft Lv."..recipe.level.."]")
-   line("Requires "..costText(recipe.cost))
-   action("Craft "..id,"Craft",{id=id})
-  end
- elseif tab=="Shop" then
-  for _,id in ipairs(sortedKeys(C.Shop)) do
-   local item=C.Shop[id]
-   local entry=card(id,item.price.." coins  •  "..costText(item.grant))
-   cardAction(entry,"PURCHASE  •  "..item.price.." coins","Buy",{id=id})
-  end
- elseif tab=="Workers" then
-  local summary=card("RANCH CREW","Hire workers to harvest automatically. Wages are charged only for completed production.")
-  cardLine(summary,"One production cycle = 60 seconds")
-  cardAction(summary,"COLLECT DELIVERIES","Collect")
-  for _,id in ipairs(sortedKeys(C.Workers)) do
-   local worker=C.Workers[id]
-   local owned=p.Workers[id] and p.Workers[id].count or 0
-   local staff=card(id.."  •  "..owned.."/5 employed",
-    "Wage "..worker.wage.." coins / worker / minute")
-   cardLine(staff,"Production: "..costText(worker.grant))
-   cardAction(staff,"HIRE  •  "..worker.price.." coins","Hire",{id=id})
-  end
- elseif tab=="Quests" then
-  local missions={
-   Gatherer="Gather materials",Provider="Care for your companion",Maker="Craft useful equipment",
-   Employer="Build a ranch crew",Explorer="Hunt wild creatures"
-  }
-  for _,id in ipairs(sortedKeys(C.Quests)) do
-   local q=C.Quests[id]
-   local value=p.Quests[id] or 0
-   local entry=card(missions[id],"REWARD  +"..q.reward.." coins")
-   cardLine(entry,math.min(value,q.goal).." / "..q.goal)
-   progress(entry,value,q.goal)
-   if p.Claimed[id] then cardLine(entry,"COMPLETE  ✓")
-   else cardAction(entry,"CLAIM REWARD","Claim",{id=id}) end
-  end
- elseif tab=="Trade" then
-  line("Player trading is a mutual exchange. Both players must offer and confirm.")
-  if trade.partner then
-   line("Trading with "..trade.partner)
-   local function fmt(offer)
-    if not offer then return "Nothing offered" end
-    return offer.kind=="Material" and (offer.amount.." "..offer.id) or ("Pet #"..offer.id)
-   end
-   line("You: "..fmt(trade.mine).."  •  "..(trade.acceptedMine and "Ready" or "Review"))
-   line("Them: "..fmt(trade.theirs).."  •  "..(trade.acceptedTheirs and "Ready" or "Review"))
-   for _,id in ipairs(sortedKeys(C.Resources)) do
-    action("Offer 5 "..id,"OfferMaterial",{resource=id,amount=5})
-   end
-   for _,pet in ipairs(p.Pets) do
-    if pet.id~=p.ActiveId then action("Offer pet: "..pet.species.." #"..pet.id,"OfferPet",{id=pet.id}) end
-   end
-   action("Accept proposed exchange","Accept")
-   action("Cancel trade","Cancel")
+  action(card,ready and "CRAFT "..string.upper(id) or "LOCKED / NEED MATERIALS",
+   function() send("Craft",{id=id}) end,ready,C.blue)
+ end
+end
+local function shop(parent,p,send)
+ heading(parent,"VILLAGE SHOP","Useful supplies. All items use coins earned in game.")
+ for _,id in ipairs(keys(Config.Shop)) do
+  local item=Config.Shop[id]
+  local card=W.card(parent,id,"◆ "..item.price.." coins")
+  descriptor(card,"You receive:  "..countCost(item.grant))
+  action(card,p.Coins>=item.price and "BUY NOW" or "NOT ENOUGH COINS",
+   function() send("Buy",{id=id}) end,p.Coins>=item.price,C.gold)
+ end
+end
+local function workers(parent,p,send)
+ heading(parent,"RANCH CREW","Helpers produce resources each minute. Wages are charged per delivery.")
+ action(parent,"COLLECT WORKER DELIVERIES",function() send("Collect",{}) end,true,C.gold)
+ for _,id in ipairs(keys(Config.Workers)) do
+  local worker=Config.Workers[id]
+  local owned=p.Workers[id] and p.Workers[id].count or 0
+  local card=W.card(parent,id.."  ·  "..owned.."/5",
+   "Wage: ◆ "..worker.wage.." per worker / min")
+  descriptor(card,"Production:  "..countCost(worker.grant))
+  action(card,p.Coins>=worker.price and "HIRE FOR ◆ "..worker.price or "NEED ◆ "..worker.price,
+   function() send("Hire",{id=id}) end,p.Coins>=worker.price and owned<5,C.mint)
+ end
+end
+local function quests(parent,p,send)
+ heading(parent,"MISSIONS","Play your way and claim rewards when goals are complete.")
+ local labels={Gatherer="Collect materials",Provider="Feed your Gorps",
+  Maker="Craft equipment",Employer="Hire a ranch worker",Explorer="Hunt wild creatures"}
+ for _,id in ipairs(keys(Config.Quests)) do
+  local q=Config.Quests[id]
+  local current=math.min(p.Quests[id] or 0,q.goal)
+  local card=W.card(parent,labels[id],"REWARD   ◆ "..q.reward.." coins")
+  textRow(card,current.." / "..q.goal.." completed")
+  W.progress(card,current/q.goal)
+  if p.Claimed[id] then
+   descriptor(card,"✓  Reward claimed")
   else
-   local target=input(parent,"Other player's username")
-   button(parent,"Invite player",function() send("Invite",{target=target.Text}) end)
-   if trade.pendingFrom then
-    line("Invitation from "..trade.pendingFrom)
-    action("Join trade","Join")
+   action(card,current>=q.goal and "CLAIM ◆ "..q.reward or "MISSION IN PROGRESS",
+    function() send("Claim",{id=id}) end,current>=q.goal,C.gold)
+  end
+ end
+end
+local function trade(parent,p,tradeState,send)
+ heading(parent,"PLAYER TRADING","Only trade with another player in this server. Both sides must confirm.")
+ if tradeState.partner then
+  local offer=W.card(parent,"TRADE WITH "..tradeState.partner,"Review both offers before accepting.")
+  local function offerText(x)
+   if type(x)~="table" then return "Nothing offered" end
+   if x.kind=="Material" then return x.amount.." "..x.id end
+   return "Creature #"..tostring(x.id)
+  end
+  textRow(offer,"You: "..offerText(tradeState.mine))
+  textRow(offer,"Them: "..offerText(tradeState.theirs))
+  textRow(offer,"Your confirmation: "..(tradeState.acceptedMine and "READY" or "WAITING"))
+  textRow(offer,"Their confirmation: "..(tradeState.acceptedTheirs and "READY" or "WAITING"))
+  action(offer,"ACCEPT TRADE",function() send("Accept",{}) end,true,C.mint)
+  action(offer,"CANCEL",function() send("Cancel",{}) end,true,Color3.fromRGB(225,139,136))
+  heading(parent,"OFFER MATERIALS")
+  for _,id in ipairs(keys(Config.Resources)) do
+   if (p.Inventory[id] or 0)>=5 then
+    action(parent,"OFFER 5 "..string.upper(id),
+     function() send("OfferMaterial",{resource=id,amount=5}) end,true,C.blue)
    end
   end
- elseif tab=="Rankings" then
-  line("Global rankings are updated periodically. PvP wins start once ranked combat launches.")
-  for _,stat in ipairs({"Coins","Wins","Minutes"}) do
-   heading(({Coins="Richest players",Wins="Most PvP wins",Minutes="Most time played"})[stat])
-   local entries=rankings and rankings[stat] or {}
-   if #entries==0 then line("No ranked entries available yet") end
-   for _,entry in ipairs(entries) do
-    line("#"..entry.rank.."  "..entry.name.."  •  "..entry.score)
+  for _,pet in ipairs(p.Pets) do
+   if pet.id~=p.ActiveId then
+    action(parent,"OFFER "..pet.species.." #"..pet.id,
+     function() send("OfferPet",{id=pet.id}) end,true,C.blue)
    end
   end
-  action("Refresh leaderboard","Rankings")
- elseif tab=="Events" then
-  line("Daily wheel: one free spin every 24 hours. Win coins, materials, or a random creature.")
-  local left=86400-(os.time()-p.LastWheel)
-  line(left>0 and ("Next spin in "..math.ceil(left/3600).." hours") or "Spin ready!")
-  action("Spin free daily wheel","Wheel")
-  line("Weekend UFO trader  •  Saturday / Sunday UTC")
-  line("Trade 3 crystals + 5 iron for a rare creature")
-  action("Exchange with UFO","UFO")
-  line("Trade up: combine three non-active creatures of one rarity.")
-  for _,rarity in ipairs(C.Rarities) do
-   if rarity~="Legendary" then action("Trade up 3 "..rarity.." pets","TradeUp",{rarity=rarity}) end
+ else
+  local card=W.card(parent,"INVITE A PLAYER","Enter the exact Roblox username of a player in your server.")
+  local box=Instance.new("TextBox")
+  box.Name="PlayerName";box.Size=UDim2.new(1,-2,0,44)
+  box.BackgroundColor3=C.deep
+  box.TextColor3=C.light;box.PlaceholderColor3=C.muted
+  box.PlaceholderText="Roblox username";box.Text=""
+  box.Font=Enum.Font.GothamMedium;box.TextSize=15
+  box.ClearTextOnFocus=false;box.Parent=card;W.order(card,box)
+  W.round(box,10)
+  action(card,"SEND TRADE INVITE",function() send("Invite",{target=box.Text}) end,true,C.gold)
+  if tradeState.pendingFrom then
+   local incoming=W.card(parent,"TRADE INVITATION",
+    tradeState.pendingFrom.." wants to trade.")
+   action(incoming,"REVIEW TRADE",function() send("Join",{}) end,true,C.mint)
   end
+ end
+end
+local function events(parent,p,send)
+ local left=86400-(os.time()-p.LastWheel)
+ local wheel=W.card(parent,"DAILY REWARD","One free spin every 24 hours. Includes coins, food or a creature.")
+ action(wheel,left<=0 and "SPIN FREE WHEEL" or
+  "AVAILABLE IN "..math.ceil(left/3600).." HOURS",
+  function() send("Wheel",{}) end,left<=0,C.gold)
+ local ufo=W.card(parent,"WEEKEND UFO","Only on Saturdays and Sundays (UTC).")
+ descriptor(ufo,"Exchange 3 crystals + 5 iron for a rare Gorp.")
+ action(ufo,"VISIT THE UFO TRADER",function() send("UFO",{}) end,true,C.blue)
+ local upgrade=W.card(parent,"TRADE UP","Combine three inactive pets from the same rarity.")
+ for _,rarity in ipairs(Config.Rarities) do
+  if rarity~="Legendary" then
+   action(upgrade,"UPGRADE 3 "..string.upper(rarity),
+    function() send("TradeUp",{rarity=rarity}) end,true,C.mint)
+  end
+ end
+end
+local function renderRankings(parent,ranking,send)
+ heading(parent,"GALAXY LEADERS","Rankings update periodically after players join published servers.")
+ for _,id in ipairs({"Coins","Wins","Minutes"}) do
+  local title=({Coins="Richest explorers",Wins="Most PvP wins",Minutes="Longest adventures"})[id]
+  local card=W.card(parent,title,nil)
+  local records=ranking and ranking[id] or {}
+  if #records==0 then descriptor(card,"No ranked players yet") end
+  for _,row in ipairs(records) do
+   textRow(card,"#"..row.rank.."  "..row.name.."   •   "..row.score)
+  end
+ end
+ action(parent,"REFRESH LEADERBOARDS",function() send("Rankings",{}) end,true,C.blue)
+end
+function Pages.render(parent,tab,p,tradeState,send,rankings)
+ local function route(actionName,args)
+  send(actionName,args)
+ end
+ if tab=="Eggs" then
+  heading(parent,"COLLECT NEW GORPS","Buy eggs with coins earned while exploring. All odds are shown.")
+  for _,id in ipairs(Config.EggOrder) do eggPanel(parent,id,p,route) end
+ elseif tab=="Creatures" then pets(parent,p,route)
+ elseif tab=="Ranch" then ranch(parent,p,route)
+ elseif tab=="Backpack" then backpack(parent,p,route)
+ elseif tab=="Crafting" then crafting(parent,p,route)
+ elseif tab=="Shop" then shop(parent,p,route)
+ elseif tab=="Workers" then workers(parent,p,route)
+ elseif tab=="Quests" then quests(parent,p,route)
+ elseif tab=="Trade" then trade(parent,p,tradeState or {},route)
+ elseif tab=="Events" then events(parent,p,route)
+ elseif tab=="Rankings" then renderRankings(parent,rankings,route)
  end
 end
 return Pages

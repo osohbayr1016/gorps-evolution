@@ -20,7 +20,7 @@ contracts={
  "pickup feedback": "function UI:showPickup(reward)" in ui and "ui:showPickup(data.pickup)" in client,
  "failed hunt doesn't deplete node": "if not won then" in server and "return false" in server,
  "first session smoke tests": "Starter egg regression" in smoke and "full ranch blocks hatching" in smoke,
- "gameplay dock": 'dock.Name="QuickDock"' in ui,
+ "gameplay dock": 'framed(gui,"ActionDock"' in ui,
 }
 for label,ok in contracts.items():
  assert ok,f"FAILED gameplay contract: {label}"

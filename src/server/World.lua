@@ -3,7 +3,7 @@ local RunService=game:GetService("RunService")
 local TweenService=game:GetService("TweenService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
-local CreatureFactory=require(script.Parent.CreatureFactory)
+local CreatureFactory=require(ReplicatedStorage.Shared.CreatureFactory)
 local World={}
 local folder
 local worldReady=false
