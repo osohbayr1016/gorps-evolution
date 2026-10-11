@@ -12,7 +12,16 @@ Owner: TMT Core Studios. Updated: 2026-10-11. This is the cross-run implementati
 
 No paid dependencies, player-value wagers, live publishing or Robux changes. Phase 5 requires real Studio/private-experience evidence and user approval. The existing hourly automation resumes from this file; this document itself does not schedule execution.
 
-## Latest implemented milestone: GE-ART-01a — companion rigs and action feedback
+## Latest implemented milestone: GE-MAP-01a — readable starter resource circuit
+
+- Fresh baseline: [`c80d5c2`](https://github.com/osohbayr1016/gorps-evolution/commit/c80d5c207c7f360f15c10f563253412d8c535e31). Its exact push [Actions run 38134309847](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38134309847) completed successfully. No open PR was present at inspection.
+- Confirmed map defect: the resource spiral clamped many unrelated nodes to the same `z=37` line; random canopy and flowers had only small center exclusions; resource pairs had no minimum spacing. The main/forest/mine routes and landmark entrances were not protected. All village roofs were flat blocks, while the fountain, UFO and beacon used Roblox cylinders on their default horizontal X axis.
+- Implemented: a deterministic eight-node teaching circuit containing Tree, Bush, Fiber, Rock, Ore, Crystal and Wild; seeded rejection placement with at least 18 studs between all 70 interaction roots; reserved village, north-road, forest, mine, lagoon and quarry corridors; canopy/decor exclusions around routes and starter nodes; physical color-coded trailhead markers.
+- Silhouette repair: all four stations have two pitched planes and a ridge; fountain, UFO saucer and north beacon cylinders use vertical axes. Existing node rewards, cooldowns, 12 ranch plots and 70 modeled-resource contract are unchanged.
+- Regression: `scripts/verify_map_routes.py` checks exact starter locations, every-category coverage, resource spacing, the clear north route, route markers, roofs and cylinder orientation in both source `.rbxmx` and packaged `.rbxlx`. `MAP_QA.md` defines the remaining engine/device test.
+- Verification boundary: Python generation/static checks and Rojo package inspection do not prove that an avatar can navigate every collision, that markers are visually obvious, or that art/FPS is acceptable. Studio acceptance remains open.
+
+## Previous implemented milestone: GE-ART-01a — companion rigs and action feedback
 
 User feedback: the existing presentation is unacceptable; maps, UI and creature interaction need substantial original visual work. This entry addresses **one coherent companion milestone**, not the entire game or approved art quality. Do not describe Phase 5 or the game as finished.
 
@@ -70,7 +79,7 @@ Confirmed means supported by current source or an executed regression. Suspected
 | GE-MULTI-01 | P1 gate; pending Studio QA | Shared node depletion, plot allocation and server-local trades exist; no observed 2-client or 8–12-player runtime test. | Check unique ranches, shared cooldowns, no double rewards, late join, reset and disconnect; record client/server evidence. |
 | GE-PERF-01 | P2 gate; unmeasured | Companions now animate locally with distance culling; World still creates resource tweens and moves the UFO; authored map uses many Parts. No measured FPS, memory or network budget. | Profile 1/8/12 clients and target mobile devices; record actual timings/replication cost before changing architecture. |
 | GE-ART-01 | P1 visual milestone; source implemented / Studio pending | GE-ART-01a provides jointed native-Part rigs and action poses; no sculpted/skinned art or authored clips, and no engine visual approval. | Execute CREATURE_ART.md; repair the first visible/engine defect before accepting the companion milestone. Later commission/author original refined mesh art and clips. |
-| GE-MAP-01 | P1 next visual milestone; source-confirmed clutter risk | Generator scatters trees/resources with no full exclusion/spacing policy; repeated empty ranch posts and flat/solid hut shapes reduce spatial clarity. User reports unacceptable maps. | Author a coherent village/ranch/resource circuit with intentional spacing, open routes, readable landmarks, proper roofs and correctly oriented cylinders. Preserve node/plot gameplay contracts and test nearest starter routes. |
+| GE-MAP-01 | P1 visual milestone; source implemented / Studio pending | GE-MAP-01a removes the clamped-node wall, reserves primary routes, adds a teaching circuit/markers and repairs roof/cylinder silhouettes. No engine/device visual approval exists. | Execute `MAP_QA.md`; repair the first navigation, collision, visibility or art defect before accepting this milestone. |
 | GE-UI-02 | P1 next visual milestone; user-reported inadequate presentation | Eleven modal tabs and prototype cards lack a unified finished visual pass; onboarding has counters but no guided location workflow. | Apply one original ranch/galaxy art direction to HUD, menus and touch layouts; actionable goals and world guidance, then device/first-session QA. |
 | GE-PROG-01 | P2; confirmed incomplete long-term milestones | Quest counters, eggs and ranch expansion exist; public-release area progression and interplanetary goals are not implemented. | After core gates pass, specify clear next-goal/unlock feedback without copying competitors' assets. Test new-player comprehension. |
 | GE-PVP-01 | P2 Phase 3; missing | Release gates are unchecked; README declares no real PvP/ranked wins. | Server-authoritative non-wager arena, disconnect handling, readable abilities and fair reward tests. |
@@ -110,9 +119,9 @@ Research is translated into backlog/implementation decisions. It is not a reason
 
 ## NEXT ACTION
 
-1. Verify the exact main commit/Actions run for GE-ART-01a and record results when resuming. Repair a failing build or supplied first red Studio error before adding another milestone.
-2. If companion Studio feedback is supplied, fix the first confirmed rig/reaction defect. Otherwise continue the user-requested visual overhaul with GE-MAP-01 as one coherent authored-map milestone; keep clear first-ten-minute routes and the existing 12-plot/70-node gameplay contracts. GE-UI-02 follows as a coherent full interface/onboarding pass.
+1. Verify the exact main commit/Actions run for GE-MAP-01a and record results when resuming. Repair a failing build or supplied first red Studio error before adding another milestone.
+2. If map or companion Studio feedback is supplied, fix the first confirmed engine/visual defect. Otherwise continue the user-requested visual overhaul with GE-UI-02 as one coherent interface/onboarding milestone; keep the world visible, use actionable location guidance and verify small touch targets.
 3. GE-START-02 / GE-SAVE-02 remain suspected startup/lifecycle issues requiring reproduction, and GE-TRADE-01 / GE-SAVE-03 remain public-release blockers. Do not hide these behind art work or claim public readiness.
 4. After verified core/visual gates, progress to skill-based non-wager PvP, original refined assets/clips, genuine multi-planet craftable travel and seasonal content. No public publishing or Robux changes are authorized.
 
-Studio acceptance request: Stop/Play the newly synced build, feed the active starter Gorp and walk/harvest. Confirm the assembled pet moves its head, paws and tail; if it fails, supply the first red Server/Client Output error and a brief visual description/capture. Full device/multiplayer acceptance follows CREATURE_ART.md and RELEASE_GATES.md.
+Studio acceptance request: open the newest build and follow `MAP_QA.md` from a center ranch through the village to all seven starter resource types. Confirm the paths are unobstructed, shop roofs/fountain are oriented correctly and no node overlaps another; report the first red Output error or first impassable/misleading location. Companion/device acceptance remains in `CREATURE_ART.md` and `RELEASE_GATES.md`.

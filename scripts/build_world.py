@@ -108,16 +108,26 @@ for x, z, sx, sz in [(-185,130,75,65),(185,155,75,70),(-240,265,70,65),(246,265,
 
 hub = group(world, "VillageHub")
 block(hub, "WelcomePlatform", (0, 1.7, 8), (42, 1.3, 26), (218, 194, 149), material="Wood")
-block(hub, "FountainBasin", (0, 3.1, 4), (15, 2.3, 15), (127, 158, 167), shape="Cylinder", material="Slate")
-block(hub, "FountainWater", (0, 4.4, 4), (12, .6, 12), (87, 205, 212), shape="Cylinder", material="Neon")
-block(hub, "FountainColumn", (0, 7.5, 4), (2.6, 7, 2.6), (141, 173, 177), shape="Cylinder")
+block(hub, "FountainBasin", (0, 3.1, 4), (2.3, 15, 15), (127, 158, 167),
+      shape="Cylinder", material="Slate", rotation=(0, 0, 90))
+block(hub, "FountainWater", (0, 4.4, 4), (.6, 12, 12), (87, 205, 212),
+      shape="Cylinder", material="Neon", rotation=(0, 0, 90))
+block(hub, "FountainColumn", (0, 7.5, 4), (7, 2.6, 2.6), (141, 173, 177),
+      shape="Cylinder", rotation=(0, 0, 90))
 block(hub, "FountainTop", (0, 11.5, 4), (5, 2.5, 5), (112, 221, 227), shape="Ball", solid=False, material="Neon")
 
 def hut(parent, title, x, z, theme):
     h=group(parent,title)
     block(h, "Floor", (x, 2, z), (22, 2, 17), (161, 126, 98), material="Wood")
     block(h, "Walls", (x, 8, z), (19, 11, 15), theme, material="Wood")
-    block(h, "Roof", (x, 14.3, z), (24, 3, 19), (71, 91, 105), material="Slate")
+    # Two pitched roof planes create a readable village silhouette. The old
+    # single flat cuboid made every station look like an unfinished grey box.
+    block(h, "RoofLeft", (x, 14.9, z-4.4), (25, 1.6, 11), (71, 91, 105),
+          material="Slate", rotation=(24, 0, 0))
+    block(h, "RoofRight", (x, 14.9, z+4.4), (25, 1.6, 11), (71, 91, 105),
+          material="Slate", rotation=(-24, 0, 0))
+    block(h, "RoofRidge", (x, 17.0, z), (25.5, .8, 1.2), (56, 74, 88),
+          material="Slate")
     block(h, "Door", (x, 5.5, z-8), (5, 7, .5), (74, 83, 88), material="Wood")
     block(h, "DoorGlow", (x, 7, z-8.4), (1, 1, .4), (231, 203, 121), material="Neon")
     for dx in [-6,6]:
@@ -153,10 +163,31 @@ for row in range(2):
                       (159,124,89),material="Wood")
 
 forest=group(world,"ForestsAndWildlife")
+starter_positions=[
+    (-42,68),(42,68),(64,92),(92,122),
+    (-64,92),(-92,122),(-45,132),(55,155),
+]
+
+def reserved_route(x,z,padding=0):
+    """Keep authored movement corridors and landmarks visually readable."""
+    if abs(x)<14+padding and 35-padding<z<302: return True
+    if abs(x+125)<9+padding and 42-padding<z<221: return True
+    if abs(x-133)<9+padding and 42-padding<z<221: return True
+    if abs(x)<82+padding and -74-padding<z<52+padding: return True
+    if math.hypot(x+215,z-45)<52+padding: return True
+    if math.hypot(x-222,z-20)<54+padding: return True
+    return False
+
+canopy_positions=[]
 for i in range(85):
-    x=rng.uniform(-302,302);z=rng.uniform(48,301)
-    if abs(x)<33 or (-78<x<78 and z<94):
-        x+=90 if x>=0 else -90
+    for _ in range(200):
+        x=rng.uniform(-302,302);z=rng.uniform(48,301)
+        if reserved_route(x,z,6): continue
+        if any(math.hypot(x-sx,z-sz)<15 for sx,sz in starter_positions): continue
+        break
+    else:
+        raise RuntimeError("Could not place canopy tree outside a travel route")
+    canopy_positions.append((x,z))
     tree=group(forest,f"CanopyTree_{i:03d}")
     h=rng.uniform(9,17)
     block(tree,"Trunk",(x,h/2+1,z),(3,h,3),(115,86,68),material="Wood")
@@ -167,27 +198,55 @@ for i in range(85):
 
 nodes=group(world,"ResourceNodes")
 kinds=["Tree","Tree","Rock","Ore","Bush","Crystal","Fiber","Wild"]
+placed=[]
 for i in range(70):
     kind=kinds[i%len(kinds)]
-    angle=(i+1)*2.3999632
-    dist=85+(i%6)*29
-    x=math.cos(angle)*dist
-    z=min(286,max(37,math.sin(angle)*dist+156))
-    if abs(x)<25: x+=42 if x>=0 else -42
+    if i<len(starter_positions):
+        x,z=starter_positions[i]
+    else:
+        # Rejection sampling is seeded and deterministic. It prevents the old
+        # z=37 clamp from stacking many nodes in a wall across the trail.
+        for _ in range(500):
+            x=rng.uniform(-286,286);z=rng.uniform(62,286)
+            if reserved_route(x,z,5): continue
+            if any(math.hypot(x-px,z-pz)<18 for px,pz in placed): continue
+            if any(math.hypot(x-tx,z-tz)<9 for tx,tz in canopy_positions): continue
+            break
+        else:
+            raise RuntimeError("Could not place spaced resource node")
+    placed.append((x,z))
     node=group(nodes,f"{kind}_{i+1:03d}")
     build_resource(node,kind,x,z,block,rng)
 
+# The starter circuit is visible from the north village exit. Mint markers
+# point to food/wood; amber markers lead to stone/ore; violet marks hunting.
+trail=group(world,"StarterResourceTrail")
+block(trail,"TrailheadPad",(0,1.35,52),(34,.55,16),(203,188,149),material="Sand")
+for i,(x,z,marker_color,yaw) in enumerate([
+    (-18,61,(102,207,153),-35),(18,61,(236,186,111),35),
+    (-28,116,(102,207,153),-20),(31,119,(236,186,111),20),
+    (31,151,(184,142,224),18),
+]):
+    block(trail,f"TrailPost_{i+1}",(x,4.1,z),(1.1,6,1.1),(113,88,68),material="Wood")
+    block(trail,f"TrailArrow_{i+1}",(x,7.1,z),(5,2.4,1.2),marker_color,
+          solid=False,material="Neon",rotation=(0,yaw,0),part_class="WedgePart")
+for z in (72,94,116,138):
+    block(trail,"TrailStone",(-7,1.32,z),(5,.48,3.2),(177,171,153),
+          shape="Ball",material="Slate")
+    block(trail,"TrailStone",(7,1.32,z),(5,.48,3.2),(177,171,153),
+          shape="Ball",material="Slate")
+
 ufo=group(world,"UFO")
-block(ufo,"Saucer",(0,30,155),(22,4,22),(121,198,210),
-      shape="Cylinder",solid=False,material="Metal")
+block(ufo,"Saucer",(0,30,155),(4,22,22),(121,198,210),
+      shape="Cylinder",solid=False,material="Metal",rotation=(0,0,90))
 block(ufo,"Dome",(0,34,155),(12,8,12),(175,153,228),
       shape="Ball",solid=False,material="Neon")
 for i in range(8):
     a=math.tau*i/8
     block(ufo,"UfoLight",(math.cos(a)*9,30,155+math.sin(a)*9),
           (2.3,1.6,2.3),(255,203,117),shape="Ball",solid=False,material="Neon")
-block(world,"NorthBeacon",(0,11,296),(8,20,8),(99,221,204),
-      shape="Cylinder",solid=False,material="Neon")
+block(world,"NorthBeacon",(0,11,296),(20,8,8),(99,221,204),
+      shape="Cylinder",solid=False,material="Neon",rotation=(0,0,90))
 
 # Hand-designed readable biome landmarks instead of a featureless island.
 landmarks=group(world,"SignatureLandmarks")
@@ -251,16 +310,19 @@ for x,z,fabric_color in [(-37,27,(117,204,172)),(38,27,(233,180,130)),
               rng.choice([(97,198,142),(239,168,124),(161,132,215)]),
               shape="Ball",solid=False)
 scenery=group(world,"WorldDecor")
-for i in range(55):
+flowers=0
+while flowers<55:
     x=rng.uniform(-306,306)
     z=rng.uniform(-302,295)
-    if abs(x)<55 and abs(z)<42: continue
+    if reserved_route(x,z,2): continue
+    if any(math.hypot(x-sx,z-sz)<10 for sx,sz in starter_positions): continue
     size=rng.uniform(1.1,2.1)
     block(scenery,"WildflowerStem",(x,1.8,z),(.22,2,.22),
           (73,155,101),solid=False,material="Grass")
     block(scenery,"Wildflower",(x,2.9,z),(size,size/1.8,size),
           rng.choice([(246,189,163),(245,210,124),(168,169,235),(195,220,181)]),
           shape="Ball",solid=False)
+    flowers+=1
 for i in range(20):
     a=math.tau*i/20
     d=285+rng.uniform(-10,20)

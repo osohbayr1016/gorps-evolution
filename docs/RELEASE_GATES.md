@@ -86,3 +86,13 @@ The compact HUD, centered interactive collection window, deterministic card orde
 ## Companion art source milestone — engine acceptance pending
 
 Jointed original native-Part creatures, action poses, editable rig exports and pet-screen feedback are now implemented. This does not close an art/animation release gate. Follow [CREATURE_ART.md](CREATURE_ART.md) for Studio, multiplayer and device evidence; sculpted/skinned art, authored clips, clean-map/full-UI approval and later phases remain outstanding.
+
+## Planet Verdant route milestone — engine acceptance pending
+
+The generated map now preserves clear village/forest/mine corridors, teaches all
+seven harvest categories in an eight-node starter circuit, spaces all 70 nodes,
+adds physical route markers, and repairs pitched shop roofs plus sideways
+cylinders. CI validates the authored and packaged coordinates. Follow
+[MAP_QA.md](MAP_QA.md) for actual Studio navigation, collision, readability,
+device and visual-quality acceptance. Static geometry checks do not prove that
+the map is clean, fun, performant, or release-ready.
