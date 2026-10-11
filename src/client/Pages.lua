@@ -42,6 +42,8 @@ function Pages.render(parent,tab,p,trade,send,label,button,rankings)
    action("Evolve "..pet.species,"Evolve",{id=pet.id})
   end
   action("Hatch a creature • Incubator + crystal","Hatch")
+  line("Egg infusion "..(p.EggInfusion or 0).."/3: rare or epic hatch bonuses")
+  action("Infuse egg • 3 iron + 2 crystals","InfuseEgg")
   line("Evolve at creature levels 5 and 12 using iron and crystals.")
  elseif tab=="Backpack" then
   line("Sell gathered materials for coins; resources can also be used to craft items.")
@@ -124,7 +126,7 @@ function Pages.render(parent,tab,p,trade,send,label,button,rankings)
   end
   action("Refresh leaderboard","Rankings")
  elseif tab=="Events" then
-  line("Daily wheel: one free spin every 24 hours.")
+  line("Daily wheel: one free spin every 24 hours. Win coins, materials, or a random creature.")
   local left=86400-(os.time()-p.LastWheel)
   line(left>0 and ("Next spin in "..math.ceil(left/3600).." hours") or "Spin ready!")
   action("Spin free daily wheel","Wheel")
