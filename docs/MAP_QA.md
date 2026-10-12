@@ -83,6 +83,29 @@ entrance. Reject if the crest is hidden, terraces collapse into one flat mass,
 the avatar snags, an ore cluster covers a prompt, or Slate/Ground surfaces
 z-fight. Record the same phone FPS/memory sample used for the prior fork test.
 
+## GE-MAP-03c — layered Moonwater Lagoon
+
+The west lagoon no longer relies on one thin oval rim, ten equally spaced lily
+pairs and one flat bridge plank. Three raised, offset shore shoulders frame an
+open east entrance; an original four-piece Moonstone crescent anchors the west
+skyline; seven uniquely sized lily clusters use hand-authored, non-radial
+positions. The bridge now has three shallow deck modules and non-colliding
+rails. The change adds seven net BaseParts but no PointLight, particle, runtime
+loop, external asset, reward or harvest-node movement.
+
+`verify_map_routes.py` rejects a flat shore hierarchy, repeated/equiangular
+lilies, incomplete crescent, colliding Neon/water, excessive bridge step,
+lagoon-local lights or landmark pieces within 15 studs of any of the 70
+resource roots. These static contracts do not prove a safe Roblox water edge,
+avatar collision, visual quality, bloom readability or mobile performance.
+
+**One Studio test:** hold a shoulder-height camera while following the mint
+west route to the lagoon, cross all three bridge decks, circle the north and
+south banks, then continue toward Glowcap Grove. Reject for a snag, apparent
+walkable water, hidden Moonstone silhouette, z-fighting, blown-out Neon, covered
+resource prompt or unclear onward route; capture the same view and real-phone
+FPS/memory before approving.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 

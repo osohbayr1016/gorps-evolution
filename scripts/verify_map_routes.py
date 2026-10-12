@@ -148,6 +148,64 @@ def validate(path):
                 path, stone_name, resource_name, "landmark crowds resource prompt"
             )
 
+    lagoon_models = named.get("MoonwaterLagoon", [])
+    assert len(lagoon_models) == 1, (path, "missing lagoon destination")
+    lagoon = lagoon_models[0]
+    lagoon_parts = {value(child, "Name"): child for child in direct_children(lagoon)}
+    shore_names = ("LagoonRockRim", "NorthShore", "SouthShore", "WestShore")
+    assert all(name in lagoon_parts for name in shore_names), (
+        path, "lagoon is missing its layered shore"
+    )
+    assert max(elevation(lagoon_parts[name]) for name in shore_names[1:]) \
+        - elevation(lagoon_parts[shore_names[0]]) >= 1.7, (
+            path, "lagoon shore regressed to one flat oval"
+        )
+    water = lagoon_parts.get("GlowingWater")
+    assert water is not None and value(water, "Material") == "288", (
+        path, "lagoon water must retain its authored emissive cue"
+    )
+    assert value(water, "CanCollide") == "false", (
+        path, "lagoon water cue must not become a collision shelf"
+    )
+    lilies = [lagoon_parts[f"WaterLily_{index:02d}"] for index in range(1, 8)]
+    flowers = [lagoon_parts[f"LilyFlower_{index:02d}"] for index in range(1, 8)]
+    assert len({size(part) for part in lilies}) == 7, (
+        path, "lagoon regressed to repeated equal lily pads"
+    )
+    lily_angles = sorted(round(math.atan2(position(part)[1]-45,
+                                          position(part)[0]+215), 2)
+                         for part in lilies)
+    angle_gaps = [round(lily_angles[index+1]-lily_angles[index], 2)
+                  for index in range(len(lily_angles)-1)]
+    assert len(set(angle_gaps)) >= 4, (path, "lilies regressed to a radial grid")
+    assert all(value(part, "CanCollide") == "false" for part in lilies+flowers)
+    crescent_models = named.get("MoonstoneCrescent", [])
+    assert len(crescent_models) == 1, (path, "missing lagoon skyline landmark")
+    crescent_parts = {
+        value(child, "Name"): child for child in direct_children(crescent_models[0])
+    }
+    assert set(crescent_parts) == {
+        "CrescentBase", "CrescentSpire", "CrescentHorn", "MoonVein"
+    }
+    assert elevation(crescent_parts["CrescentSpire"]) \
+        > elevation(crescent_parts["CrescentHorn"]) \
+        > elevation(crescent_parts["CrescentBase"]), (
+            path, "moonstone silhouette must rise above the lagoon"
+        )
+    assert value(crescent_parts["MoonVein"], "Material") == "288"
+    assert value(crescent_parts["MoonVein"], "CanCollide") == "false"
+    decks = [lagoon_parts[f"ReedBridgeDeck_{index:02d}"] for index in range(1, 4)]
+    assert max(elevation(part) for part in decks) - min(elevation(part) for part in decks) <= .31
+    assert all(value(part, "CanCollide") == "true" for part in decks)
+    lagoon_lights = [item for item in lagoon.iter("Item") if item.get("class") == "PointLight"]
+    assert not lagoon_lights, (path, "lagoon milestone must not add local lights")
+    for part in list(crescent_parts.values()) + decks:
+        part_point = position(part)
+        for resource_name, resource_point in resources.items():
+            assert math.dist(part_point, resource_point) >= 15, (
+                path, resource_name, "lagoon landmark crowds resource", part_point
+            )
+
     quarry_models = named.get("SunstoneQuarry", [])
     assert len(quarry_models) == 1, (path, "missing quarry destination")
     quarry_parts = {value(child, "Name"): child for child in direct_children(quarry_models[0])}
@@ -204,7 +262,7 @@ def validate(path):
     print(
         f"PASS {path}: 8-node teaching circuit, 70 spaced resources, "
         "clear north route, two curved branches, paired waystones, five markers "
-        "and pitched village roofs plus a terraced quarry portal"
+        "and pitched village roofs plus distinct lagoon/quarry destinations"
     )
 
 

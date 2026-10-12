@@ -74,3 +74,25 @@ The repaired fallback uses 12 measured open pockets split evenly west/east. Each
 **Implementation:** an original 27-part quarry kit forms three offset tapering terraces, a framed portal, amber crest, nine varied ore clusters and a low approach. The kit stays inside the existing quarry reserve, adds one net BasePart and no light/particle/runtime cost category. It does not claim a modeled MeshPart, cave interior or voxel cliff.
 
 **Acceptance boundary:** XML/package tests prove hierarchy, naming, material/collision policy, cluster variation and 70-resource clearance. Studio must still prove the east vista, apparent scale, portal traversal, terrain/material joins, shadows and baseline-phone cost. Next art production should repair observed engine defects first; absent evidence, compose the west lagoon/Glowcap handoff with the same bounded approach.
+
+## GE-MAP-03c — Moonwater basin and west skyline
+
+**Verified design basis:** Roblox's environmental-art curriculum ties distinct
+area materials/assets to world information and requires later device profiling;
+official Fisch and Creatures of Sonaria descriptions confirm exploration around
+water/world resources, not a reusable map layout. The original Gorps response
+is a layered open-east lagoon with a Moonstone crescent, irregular lilies and a
+shallow modular bridge. No competitor geography or asset is copied.
+
+**Measured implementation:** the prior 29-part flat/radial kit is replaced by
+36 authored parts: one retained low rim, three raised shore shoulders, one
+non-colliding emissive water cue, four crescent pieces, seven two-part lily
+clusters, three shallow decks, eight posts and two non-colliding rails. No
+PointLight, particle, script or external asset is added; 12 ranch plots and 70
+resource identities remain fixed.
+
+**Evidence boundary and next step:** XML/package checks enforce hierarchy,
+irregularity, bridge rise, nonblocking emissive pieces, resource clearance and
+zero local lights. Studio must still validate water affordance, collision,
+seams, west-route/Glowcap continuity, prompt/UI contrast and actual phone
+frame-time/memory. The first recorded engine defect outranks another art pass.

@@ -510,20 +510,59 @@ landmarks=group(world,"SignatureLandmarks")
 lake=group(landmarks,"MoonwaterLagoon")
 block(lake,"LagoonRockRim",(-215,1.1,45),(66,1.7,65),(132,155,147),
       shape="Ball",material="Slate")
-block(lake,"GlowingWater",(-215,2.2,45),(59,.8,58),(83,190,195),
+# Offset shore shoulders turn the old paper-thin oval into an asymmetric basin
+# while leaving its east side open for a low, avatar-scale bridge approach.
+for name,pos,size,yaw in [
+    ("NorthShore",(-219,3.0,15),(49,4.0,14),-7),
+    ("SouthShore",(-218,2.8,74),(53,3.6,13),6),
+    ("WestShore",(-248,3.3,46),(14,4.6,45),-4),
+]:
+    block(lake,name,pos,size,(104,137,124),shape="Ball",material="Grass",
+          rotation=(0,yaw,0))
+block(lake,"GlowingWater",(-214,2.2,45),(58,.8,55),(83,190,195),
       shape="Ball",solid=False,material="Neon")
-for i in range(10):
-    a=math.tau*i/10
-    x=-215+math.cos(a)*24
-    z=45+math.sin(a)*24
-    block(lake,"WaterLily",(x,2.9,z),(5,.45,4),(95,171,128),
-          shape="Ball",solid=False,material="Grass")
-    block(lake,"Flower",(x,3.5,z),(1.5,.9,1.5),(247,194,211),
+
+# A small west-side crescent provides a destination silhouette without local
+# lights, particles, scripts or external assets. Its Neon vein is nonblocking.
+crescent=group(lake,"MoonstoneCrescent")
+block(crescent,"CrescentBase",(-244,6.0,21),(27,9,18),(96,112,116),
+      part_class="WedgePart",material="Slate",rotation=(0,15,0))
+block(crescent,"CrescentSpire",(-250,13.0,18),(8,19,9),(119,133,135),
+      part_class="WedgePart",material="Slate",rotation=(0,-8,0))
+block(crescent,"CrescentHorn",(-238,10.0,17),(7,14,7),(135,146,142),
+      part_class="WedgePart",material="Slate",rotation=(0,24,0))
+block(crescent,"MoonVein",(-246,15.0,16),(3,7,3),(132,226,224),
+      part_class="WedgePart",material="Neon",solid=False,rotation=(0,37,0))
+
+# Hand-placed clusters break the previous ten-point perfect circle. Fixed data
+# deliberately consumes no global RNG so authored resources remain identical.
+lagoon_lilies=[
+    (-228,35,5.5,3.8,-18,(247,194,211)),
+    (-210,31,4.0,3.2,21,(232,219,247)),
+    (-234,49,6.0,4.1,34,(247,194,211)),
+    (-214,53,4.6,3.6,-9,(255,225,171)),
+    (-201,42,5.2,3.4,17,(232,219,247)),
+    (-221,64,4.2,3.1,-31,(255,225,171)),
+    (-204,62,5.8,3.7,28,(247,194,211)),
+]
+for i,(x,z,sx,sz,yaw,flower_color) in enumerate(lagoon_lilies,1):
+    block(lake,f"WaterLily_{i:02d}",(x,2.9,z),(sx,.45,sz),(95,171,128),
+          shape="Ball",solid=False,material="Grass",rotation=(0,yaw,0))
+    block(lake,f"LilyFlower_{i:02d}",(x+.4,3.5,z-.2),(1.5,.9,1.5),flower_color,
           shape="Ball",solid=False)
-block(lake,"ReedBridge",(-175,4,45),(18,1,8),(184,149,113),material="Wood")
-for i in range(6):
-    block(lake,"BridgePost",(-182+i*3,5.6,41),(1,3.4,1),
-          (128,97,77),material="Wood")
+
+# Three shallow deck modules give the east entrance a readable cadence while
+# keeping the rise below a single stud. Rails are visual/non-colliding.
+for i,(x,y,yaw) in enumerate([(-188,4.0,-3),(-180,4.3,2),(-172,4.1,-2)],1):
+    block(lake,f"ReedBridgeDeck_{i:02d}",(x,y,45),(9,1,8),(184,149,113),
+          material="Wood",rotation=(0,yaw,0))
+for i,x in enumerate((-192,-184,-176,-168),1):
+    for side,z in (("North",41),("South",49)):
+        block(lake,f"BridgePost{side}_{i:02d}",(x,5.8,z),(1,3.6,1),
+              (128,97,77),material="Wood")
+for side,z in (("North",41),("South",49)):
+    block(lake,f"BridgeRail{side}",(-180,6.6,z),(27,1,1),(145,112,84),
+          material="Wood",solid=False)
 quarry=group(landmarks,"SunstoneQuarry")
 # A three-level asymmetric quarry replaces the old low sphere and 4x3 grid of
 # identical rocks. The taper creates a readable east-side destination from the
