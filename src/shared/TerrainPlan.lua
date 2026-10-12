@@ -2,7 +2,7 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_02"
+Plan.VERSION="VerdantVoxelRelief_03"
 Plan.MAX_WRITES=80
 Plan.MAX_INLAND_SITES=12
 
@@ -56,6 +56,22 @@ Plan.inlandCandidates={
  {name="WestGroveEdge",x=-180,z=284,radius=19},
  {name="EastGroveEdge",x=184,z=284,radius=19},
 }
+
+-- Ordered backup terraces for when the REAL 70 harvestables and 64 tree trunks
+-- occupy preferred art-director sites. Pair western forest / eastern quarry
+-- candidates within each z band to avoid clustering all relief on one side.
+-- All sites still pass the same protected-route and collision guards.
+for _,z in ipairs({90,132,174,216,258,298}) do
+ for _,absX in ipairs({90,126,162,198,234,270}) do
+  for _,sign in ipairs({-1,1}) do
+   local x=absX*sign
+   table.insert(Plan.inlandCandidates,{
+    name="BiomeTransition_"..tostring(z).."_"..tostring(x),
+    x=x,z=z,radius=17,
+   })
+  end
+ end
+end
 
 local protectedRects={
  {x=0,z=-164,halfX=277,halfZ=90},   -- 12 ranch plots + level-6 fences

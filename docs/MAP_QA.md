@@ -56,3 +56,8 @@ The runtime now calls the guarded server-side voxel builder on world bootstrap. 
 ## GE-MAP-02c — test new forest/quarry terrain transitions
 
 With synced main, Stop → Play and watch the server's `[Gorps World] Applied smooth voxel terrain` line. From the village north exit compare the west forest, east quarry, and distant edge as actual different-elevation landscapes. Walk to the nearest safe inland slope, approach harvest resources and check no buried interaction prompts. Phone Emulator: note frame rate and memory before and after the change, not estimated values. The generator still retains the original ground Part until engine testing proves the new walkable terrain is complete.
+
+
+## GE-MAP-02d real authored-map obstacle acceptance
+
+CI now extracts the exact resource/tree/handcrafted-knoll/Glowcap anchors from `world/PlanetVerdant.rbxmx`, not invented test positions, then invokes the actual pure Luau terrain planner and requires usable hills on both sides of the resource corridor. This verifies placement intent in source and packaging only. In Studio check the west and east forest/quarry contours have not buried a glowing mushroom or a harvest node, and compare phone FPS before accepting the shape changes.

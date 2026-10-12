@@ -28,6 +28,28 @@ local function obstaclesIn(planet)
    end
   end
  end
+ -- Avoid burying handcrafted non-resource set dressing as well:
+ -- rocky knoll walkable caps and the original Glowcap Grove mushrooms.
+ local relief=planet:FindFirstChild("WorldRelief")
+ if relief then
+  for _,knoll in ipairs(relief:GetChildren()) do
+   if knoll:IsA("Model") and string.sub(knoll.Name,1,13)=="TerrainKnoll_" then
+    local root=knoll:FindFirstChild("RisingSlope")
+    if root and root:IsA("BasePart") then
+     table.insert(obstacles,{x=root.Position.X,z=root.Position.Z,radius=13})
+    end
+   end
+  end
+ end
+ local landmarks=planet:FindFirstChild("SignatureLandmarks")
+ local grove=landmarks and landmarks:FindFirstChild("GlowcapGrove")
+ if grove then
+  for _,prop in ipairs(grove:GetChildren()) do
+   if prop:IsA("BasePart") and prop.Name=="MushroomStem" then
+    table.insert(obstacles,{x=prop.Position.X,z=prop.Position.Z,radius=4})
+   end
+  end
+ end
  return obstacles
 end
 

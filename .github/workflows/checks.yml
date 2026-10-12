@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ok-nick/setup-aftman@v0.4.2
       - name: Lint Luau
-        run: selene src scripts/test_worker_payroll.luau scripts/test_onboarding.luau scripts/test_trade_rules.luau scripts/test_trade_receipt_policy.luau scripts/test_trade_persistence.luau scripts/test_trade_settlement.luau scripts/test_creature_rigs.luau scripts/test_session_policy.luau scripts/test_terrain_plan.luau scripts/export_creatures.luau
+        run: selene src scripts/test_worker_payroll.luau scripts/test_onboarding.luau scripts/test_trade_rules.luau scripts/test_trade_receipt_policy.luau scripts/test_trade_persistence.luau scripts/test_trade_settlement.luau scripts/test_creature_rigs.luau scripts/test_session_policy.luau scripts/test_terrain_plan.luau scripts/test_terrain_real_world.luau scripts/export_creatures.luau
       - name: Run worker payroll regressions (headless Luau)
         run: lune run scripts/test_worker_payroll.luau
       - name: Run first-session objective regressions (headless Luau)
@@ -34,6 +34,10 @@ jobs:
         run: python3 scripts/verify_ui_contract.py
       - name: Generate authored 3D world
         run: python3 scripts/build_world.py
+      - name: Build actual-map terrain obstacle fixture
+        run: python3 scripts/extract_terrain_obstacles.py world/PlanetVerdant.rbxmx terrain_obstacles.json
+      - name: Validate real-map voxel terrain distribution
+        run: lune run scripts/test_terrain_real_world.luau
       - name: Export original editable creature rigs
         run: lune run scripts/export_creatures.luau
       - name: Build Roblox place file
