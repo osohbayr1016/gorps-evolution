@@ -96,3 +96,24 @@ irregularity, bridge rise, nonblocking emissive pieces, resource clearance and
 zero local lights. Studio must still validate water affordance, collision,
 seams, west-route/Glowcap continuity, prompt/UI contrast and actual phone
 frame-time/memory. The first recorded engine defect outranks another art pass.
+
+## GE-MAP-03d — preserve a primary lane, add two cross-lanes
+
+**Verified design basis:** Creator Hub's environment greybox guidance separates
+long primary lanes from cross-lanes and asks developers to test traversal before
+polish. Official Bee Swarm and PS99 pages establish chained resource/area
+progression, not a map template. Gorps' original response preserves
+`ForestPath` as the northbound spine and uses short lagoon/Glowcap cross-lanes.
+
+**Measured implementation:** four LagoonLink plus five GroveLink Ground
+segments and one four-piece non-colliding guide add 13 authored parts. The
+generated map measures at least 24.2 studs from each segment center to any of
+70 harvest roots; the final center sits within 15 studs of an authored Glowcap.
+There are no new lights, particles, scripts, rewards or changed RNG draws.
+
+**Evidence boundary and next step:** source/package tests prove topology,
+endpoints, material/collision policy, resource clearance, Glowcap reach and no
+local light. Studio must prove the route reads as one chain, sits on terrain,
+does not snag avatars or obscure prompts, and retains real-phone performance.
+If no engine defect is supplied, measure the grove's internal walkable clearing
+before any additional prop or effect density.

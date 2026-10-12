@@ -206,6 +206,54 @@ def validate(path):
                 path, resource_name, "lagoon landmark crowds resource", part_point
             )
 
+    handoff_models = named.get("MoonwaterGroveHandoff", [])
+    assert len(handoff_models) == 1, (path, "missing lagoon-to-grove handoff")
+    handoff = handoff_models[0]
+    link_contracts = {
+        "LagoonLink": (4, (-161.0, 49.0), (-129.5, 72.5), 1),
+        "GroveLink": (5, (-127.5, 188.5), (-172.5, 228.5), -1),
+    }
+    for prefix, (count, expected_start, expected_end, x_direction) in link_contracts.items():
+        segments = [named[f"{prefix}_{index:02d}"][0]
+                    for index in range(1, count+1)]
+        centers = [position(part) for part in segments]
+        assert all(part in list(handoff.iter("Item")) for part in segments)
+        assert all(value(part, "Material") == "1360" for part in segments)
+        assert all(value(part, "CanCollide") == "false" for part in segments)
+        assert math.dist(centers[0], expected_start) < .01
+        assert math.dist(centers[-1], expected_end) < .01
+        assert all(centers[index][1] < centers[index+1][1]
+                   for index in range(len(centers)-1)), (
+            path, prefix, "handoff must progress north"
+        )
+        assert all(x_direction*centers[index][0] < x_direction*centers[index+1][0]
+                   for index in range(len(centers)-1)), (
+            path, prefix, "handoff doubles back horizontally"
+        )
+        for center in centers:
+            for resource_name, resource_point in resources.items():
+                assert math.dist(center, resource_point) >= 20, (
+                    path, prefix, resource_name, "handoff crowds resource", center
+                )
+    glowcaps = named.get("Glowcap", [])
+    assert len(glowcaps) == 16
+    grove_end = position(named["GroveLink_05"][0])
+    assert min(math.dist(grove_end, position(cap)) for cap in glowcaps) <= 15, (
+        path, "grove handoff does not visually reach a Glowcap"
+    )
+    guide_models = named.get("GlowcapGuide", [])
+    assert len(guide_models) == 1, (path, "missing Glowcap turn guide")
+    guide_parts = {value(child, "Name"): child
+                   for child in direct_children(guide_models[0])}
+    assert set(guide_parts) == {"GuideFoot", "GuideStem", "GuideCap", "GuideRune"}
+    assert all(value(part, "CanCollide") == "false" for part in guide_parts.values())
+    assert value(guide_parts["GuideCap"], "Material") == "1568"
+    assert value(guide_parts["GuideRune"], "Material") == "288"
+    assert not [item for item in handoff.iter("Item")
+                if item.get("class") == "PointLight"], (
+        path, "handoff milestone must not add local lights"
+    )
+
     quarry_models = named.get("SunstoneQuarry", [])
     assert len(quarry_models) == 1, (path, "missing quarry destination")
     quarry_parts = {value(child, "Name"): child for child in direct_children(quarry_models[0])}
@@ -261,8 +309,8 @@ def validate(path):
 
     print(
         f"PASS {path}: 8-node teaching circuit, 70 spaced resources, "
-        "clear north route, two curved branches, paired waystones, five markers "
-        "and pitched village roofs plus distinct lagoon/quarry destinations"
+        "clear north route, two curved branches, paired waystones, five markers, "
+        "lagoon-to-grove handoff and distinct lagoon/quarry destinations"
     )
 
 

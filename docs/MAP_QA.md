@@ -106,6 +106,28 @@ walkable water, hidden Moonstone silhouette, z-fighting, blown-out Neon, covered
 resource prompt or unclear onward route; capture the same view and real-phone
 FPS/memory before approving.
 
+## GE-MAP-03d — lagoon-to-Glowcap cross-lanes
+
+The lagoon bridge now joins the existing `ForestPath` with four low Ground
+segments. Five more segments leave the north section of that primary lane and
+turn west to the first Glowcaps. This deliberately reuses the established road
+instead of shrinking the biome with a direct shortcut. A four-piece
+non-colliding Glass/Neon guide identifies the last turn. The milestone adds 13
+BaseParts and no PointLight, particle, runtime script, reward or moved node.
+
+`verify_map_routes.py` requires exact 4+5 monotonically progressing links,
+Ground material, no collision, correct endpoints, >=20 studs from all 70
+resource roots, a Grove endpoint within 15 studs of a Glowcap, the exact guide
+kit and zero handoff-local lights. The measured minimum segment-center resource
+clearance is 24.2 studs. Static geometry cannot prove player comprehension,
+terrain blending, collision feel, visual quality or real-device performance.
+
+**One Studio test:** cross Moonwater bridge, follow the first link onto
+`ForestPath`, go north, then take the Glass-cap guide west until the first
+Glowcap. Reject if any turn is visually lost, a segment z-fights or floats,
+the avatar snags, a prompt is covered, or the guide/Glowcaps bloom white; record
+the same camera path and real-phone FPS/memory.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 

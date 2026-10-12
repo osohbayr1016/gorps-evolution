@@ -563,6 +563,31 @@ for i,x in enumerate((-192,-184,-176,-168),1):
 for side,z in (("North",41),("South",49)):
     block(lake,f"BridgeRail{side}",(-180,6.6,z),(27,1,1),(145,112,84),
           material="Wood",solid=False)
+
+# Two low cross-lanes connect the lagoon bridge to the existing ForestPath,
+# then peel west toward the first Glowcaps. They preserve the established road
+# as the long northbound lane instead of drawing a redundant direct shortcut.
+# Fixed points consume no RNG and remain clear of every harvest interaction.
+handoff=group(landmarks,"MoonwaterGroveHandoff")
+trail_ribbon(handoff,"LagoonLink",[
+    (-167,45),(-155,53),(-144,61),(-134,69),(-125,76),
+],7.5,(120,154,139))
+trail_ribbon(handoff,"GroveLink",[
+    (-125,182),(-130,195),(-139,208),(-151,219),(-165,227),(-180,230),
+],7.5,(111,139,121))
+
+# One payload-free guide marks the final turn without a new PointLight or
+# collision obstacle. Its Glass cap echoes the grove rather than copying a
+# competitor icon or adding another global glow effect.
+grove_guide=group(handoff,"GlowcapGuide")
+block(grove_guide,"GuideFoot",(-146,1.8,226),(7,1.6,7),(116,126,113),
+      shape="Ball",material="Slate",solid=False)
+block(grove_guide,"GuideStem",(-146,5.0,226),(1.6,7,1.6),(215,205,186),
+      material="Wood",solid=False)
+block(grove_guide,"GuideCap",(-146,9.0,226),(6.5,2.2,5.5),(163,190,211),
+      shape="Ball",material="Glass",solid=False)
+block(grove_guide,"GuideRune",(-146,10.6,225.5),(1.2,2.5,1.0),(127,218,185),
+      part_class="WedgePart",material="Neon",solid=False,rotation=(0,-28,0))
 quarry=group(landmarks,"SunstoneQuarry")
 # A three-level asymmetric quarry replaces the old low sphere and 4x3 grid of
 # identical rocks. The taper creates a readable east-side destination from the
