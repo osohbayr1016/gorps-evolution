@@ -89,6 +89,15 @@ def group(parent, name):
     return item(parent, "Model", name)[0]
 
 
+def point_light(part, name, rgb, brightness=0.65, radius=20):
+    """Attach a bounded non-shadow-casting Roblox PointLight to a real Part."""
+    _, properties = item(part, "PointLight", name)
+    color(properties, rgb)
+    prop(properties, "float", "Brightness", brightness)
+    prop(properties, "float", "Range", radius)
+    prop(properties, "bool", "Shadows", False)
+
+
 world = group(document, "PlanetVerdant")
 terrain = group(world, "TerrainAndPaths")
 block(terrain, "Ground", (0, 0, 0), (648, 2, 648), (79, 129, 101), material="Grass")
@@ -279,8 +288,9 @@ for side in (-1, 1):
 
 for k, (x,z) in enumerate([(34,32),(-34,32),(34,-30),(-34,-30)]):
     block(hub,"LanternPost_%d"%k,(x,5,z),(.9,8,.9),(87,81,75),material="Wood")
-    block(hub,"LanternLight_%d"%k,(x,9.4,z),(3,3,3),(255,215,136),
+    lantern = block(hub,"LanternLight_%d"%k,(x,9.4,z),(3,3,3),(255,215,136),
           shape="Ball",solid=False,material="Neon")
+    point_light(lantern, "VillageLanternLight", (255, 208, 151), 0.48, 16)
 
 ranches=group(world,"RanchPlots")
 for row in range(2):
@@ -491,8 +501,10 @@ for i in range(16):
     block(mushrooms,"MushroomStem",(x,h/2+1,z),(1.9,h,1.9),
           (225,214,192),material="SmoothPlastic")
     cap_color=rng.choice([(210,131,199),(119,178,228),(239,166,152),(196,164,234)])
-    block(mushrooms,"Glowcap",(x,h+1,z),(rng.uniform(5,9),3.7,7),cap_color,
+    cap = block(mushrooms,"Glowcap",(x,h+1,z),(rng.uniform(5,9),3.7,7),cap_color,
           shape="Ball",solid=False,material="Glass")
+    if i % 4 == 0:
+        point_light(cap, "GroveLight", cap_color, 0.55, 18)
     for j in range(2):
         block(mushrooms,"GlowDot",(x+rng.uniform(-2,2),h+2.8,z+rng.uniform(-2,2)),
               (.6,.6,.6),(249,233,208),shape="Ball",solid=False,material="Neon")
@@ -532,6 +544,56 @@ for i in range(20):
     block(scenery,"OuterStone",(x,2.5,z),(rng.uniform(5,11),rng.uniform(5,10),rng.uniform(6,13)),
           (110,145,131),shape="Ball",material="Slate")
 
+
+
+# Sculpted solid outskirts and small playable-area knolls break the uniform
+# horizon without moving starter objectives, ranch pads, harvest IDs or roads.
+# The far escarpments are deliberately outside resource/plot corridors; the
+# smaller knolls must pass clearance checks against every harvest and tree root.
+relief = group(world, "WorldRelief")
+edge_ridges = [
+    (-320, 20, 37, 51), (-320, 92, 39, 56), (-319, 171, 37, 55),
+    (-320, 256, 40, 54), (320, 20, 37, 51), (320, 92, 39, 56),
+    (319, 171, 37, 55), (320, 256, 40, 54),
+    (-260, 320, 54, 37), (-175, 319, 57, 38), (-95, 320, 49, 38),
+    (95, 320, 49, 38), (175, 319, 57, 38), (260, 320, 54, 37),
+]
+for index, (x, z, sx, sz) in enumerate(edge_ridges):
+    ridge = group(relief, f"Escarpment_{index:02d}")
+    factor = 1.0 + (index % 4) * 0.11
+    block(ridge, "RockFoot", (x, 4.7, z), (sx * 1.18, 9.2, sz * 1.12),
+          (99, 115, 107), shape="Ball", material="Slate")
+    block(ridge, "CliffSlope", (x, 10.0 * factor, z), (sx * .9, 16 * factor, sz * .88),
+          (116, 126, 112), material="Slate", part_class="WedgePart",
+          rotation=(0, (index % 3 - 1) * 17, 0))
+    block(ridge, "StrataShelf", (x, 17.4 * factor, z), (sx * .8, 3.8, sz * .75),
+          (144, 149, 126), shape="Ball", material="Slate")
+    block(ridge, "GrassCrest", (x, 19.6 * factor, z), (sx * .67, 4.4, sz * .7),
+          (73, 118, 92), shape="Ball", material="Grass")
+
+knoll_centers = []
+for x in range(-258, 259, 43):
+    for z in (85, 128, 171, 214, 257):
+        if reserved_route(x, z, 22):
+            continue
+        if any(math.hypot(x - nx, z - nz) < 28 for nx, nz in placed):
+            continue
+        if any(math.hypot(x - tx, z - tz) < 23 for tx, tz in canopy_positions):
+            continue
+        if any(math.hypot(x - kx, z - kz) < 48 for kx, kz in knoll_centers):
+            continue
+        knoll_centers.append((x, z))
+        knoll = group(relief, f"TerrainKnoll_{len(knoll_centers):02d}")
+        block(knoll, "StoneRoot", (x, 2.1, z), (25, 4.6, 27),
+              (99, 118, 104), shape="Ball", material="Slate")
+        block(knoll, "RisingSlope", (x, 3.3, z), (22, 6.3, 24),
+              (74, 123, 91), shape="Ball", material="Grass")
+        block(knoll, "TurfCap", (x, 6.1, z), (13, 2.8, 15),
+              (90, 138, 98), shape="Ball", material="Grass", solid=False)
+        if len(knoll_centers) == 9:
+            break
+    if len(knoll_centers) == 9:
+        break
 
 # Asset regression contracts run each time the generator runs (including CI).
 # They check authored structure/route clearance, not Studio render quality.

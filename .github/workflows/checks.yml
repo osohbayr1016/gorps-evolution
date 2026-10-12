@@ -36,6 +36,8 @@ jobs:
         run: lune run scripts/export_creatures.luau
       - name: Build Roblox place file
         run: rojo build default.project.json -o GorpsEvolution.rbxlx
+      - name: Verify packaged fantasy lighting and art direction
+        run: python3 scripts/verify_environment_lighting.py default.project.json GorpsEvolution.rbxlx
       - name: Verify authored planet model
         run: python3 scripts/verify_world.py world/PlanetVerdant.rbxmx GorpsEvolution.rbxlx
       - name: Verify first-session map routes and silhouettes

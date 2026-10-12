@@ -100,6 +100,33 @@ def validate(path):
         path, "glowcaps must use Glass instead of broad Neon caps"
     )
 
+
+# Region-art regression: solid landforms add true elevation without putting
+# new parts onto the mandatory resource trail or overwriting ranch pads.
+    ridges = [item for item in root.iter("Item")
+              if item.get("class") == "Model" and value(item, "Name", "").startswith("Escarpment_")]
+    knolls = [item for item in root.iter("Item")
+              if item.get("class") == "Model" and value(item, "Name", "").startswith("TerrainKnoll_")]
+    assert len(ridges) == 14, (path, "missing tall outer escarpments", len(ridges))
+    assert len(knolls) >= 6, (path, "insufficient true 3D ground relief", len(knolls))
+    for ridge in ridges:
+        names = {value(p, "Name") for p in children(ridge)}
+        assert names == {"RockFoot", "CliffSlope", "StrataShelf", "GrassCrest"}
+        slope = next(p for p in children(ridge) if value(p, "Name") == "CliffSlope")
+        assert slope.get("class") == "WedgePart" and value(slope, "CanCollide") == "true"
+    resources = [item for item in root.iter("Item") if value(item, "Name") == "Interact"]
+    for knoll in knolls:
+        slope = next(p for p in children(knoll) if value(p, "Name") == "RisingSlope")
+        x, z = position(slope)
+        assert not (abs(x) < 36 and 20 < z < 308), (path, "knoll blocks north path", (x,z))
+        for node in resources:
+            assert math.dist((x,z), position(node)) >= 27.9, (path, "knoll overlaps harvest", (x,z))
+    lights = [item for item in root.iter("Item") if item.get("class") == "PointLight"]
+    assert len(lights) == 8, (path, "village and grove lights must be bounded", len(lights))
+    for light in lights:
+        assert float(value(light, "Range")) <= 20
+        assert value(light, "Shadows") == "false"
+
     base_parts = [item for item in root.iter("Item") if item.get("class") in {"Part", "WedgePart"}]
     assert len(base_parts) <= 2350, (path, "static BasePart budget exceeded", len(base_parts))
     print(

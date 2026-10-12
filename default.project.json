@@ -81,9 +81,59 @@
     "Lighting": {
       "$className": "Lighting",
       "$properties": {
-        "Brightness": 2.5,
-        "ClockTime": 14,
-        "ExposureCompensation": 0.1
+        "Brightness": 2.1,
+        "ClockTime": 15.25,
+        "ExposureCompensation": -0.07,
+        "ShadowSoftness": 0.22,
+        "EnvironmentDiffuseScale": 0.45,
+        "EnvironmentSpecularScale": 0.35
+      },
+      "VerdantAtmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.22,
+          "Offset": 0.03,
+          "Haze": 0.65,
+          "Glare": 0.07,
+          "Color": [
+            0.74,
+            0.84,
+            0.87
+          ],
+          "Decay": [
+            0.5,
+            0.65,
+            0.69
+          ]
+        }
+      },
+      "VerdantBloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.17,
+          "Size": 18,
+          "Threshold": 1.55
+        }
+      },
+      "VerdantColorGrade": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Brightness": 0.01,
+          "Contrast": 0.055,
+          "Saturation": 0.065,
+          "TintColor": [
+            1,
+            0.992,
+            0.975
+          ]
+        }
+      },
+      "VerdantSunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.025,
+          "Spread": 0.72
+        }
       }
     },
     "ServerStorage": {

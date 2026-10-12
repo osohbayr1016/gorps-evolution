@@ -41,3 +41,10 @@ readability, collision feel, visual polish, or device performance.
 
 Only human/engine evidence can close this visual milestone. A green workflow
 proves deterministic geometry and packaging, not that the map looks finished.
+
+
+## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
+
+The 2026-10-12 environment pass adds 14 peripheral escarpments, cleared solid knolls, four local village lantern PointLights, four Glowcap PointLights, and bounded Atmosphere/Bloom/ColorCorrection/SunRays in the Rojo Lighting tree. See [WORLD_ART_ROADMAP.md](WORLD_ART_ROADMAP.md) for reference links and acceptance. These do not constitute Roblox voxel Terrain.
+
+**One engine walkthrough:** stop/restart Play after Rojo sync, pan from spawn toward north ridge, walk forest and quarry and try the nearest knoll, then go to Glowcap Grove. Check that new solid terrain never obstructs resources or the main path and the glow is visible but never blows out signs/UI; capture Device Emulator FPS and any first Output error. Source/CI alone cannot approve this art.
