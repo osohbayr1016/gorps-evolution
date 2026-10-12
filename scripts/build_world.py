@@ -570,7 +570,7 @@ for side,z in (("North",41),("South",49)):
 # Fixed points consume no RNG and remain clear of every harvest interaction.
 handoff=group(landmarks,"MoonwaterGroveHandoff")
 trail_ribbon(handoff,"LagoonLink",[
-    (-167,45),(-155,53),(-144,61),(-134,69),(-125,76),
+    (-171,45),(-155,53),(-144,61),(-134,69),(-125,76),
 ],7.5,(120,154,139))
 trail_ribbon(handoff,"GroveLink",[
     (-125,182),(-130,195),(-139,208),(-151,219),(-165,227),(-180,230),

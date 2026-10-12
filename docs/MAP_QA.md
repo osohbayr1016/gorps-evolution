@@ -147,6 +147,26 @@ slowly across `GroveLink_05`→`GroveThreshold`→`GroveClearing`. Reject any ga
 z-fighting, float, abrupt material edge, avatar snag or covered prompt. Then
 record real-phone FPS/memory; Device Emulator is not real-device evidence.
 
+## GE-MAP-03g — continuous bridge-to-Grove camera chain
+
+The source-level camera audit found no unintended opaque part across the three
+fixed sightlines from lagoon to forest, forest to Glass guide, and Grove entry
+to north focal cap. It did expose a different geometric seam: the final bridge
+deck and first LagoonLink segment overlapped by only 4.99 stud². Moving that
+existing anchor four studs into the deck raises overlap to 31.37 stud² without
+adding a part, light, particle, script, reward or RNG draw.
+
+`verify_map_routes.py` now clips all five major route joints and rejects bridge,
+ForestPath or clearing joins below their explicit overlap budgets. It also
+casts shoulder-height 3D segments through authored oriented boxes to prevent
+foliage/structure regressions from hiding the link, guide or focal cap. These
+checks cannot prove Roblox camera projection, avatar physics or visual quality.
+
+**One Studio test:** walk slowly from `ReedBridgeDeck_03` onto
+`LagoonLink_01`, continue to the Glass guide and north focal cap without
+changing the shoulder-height camera. Reject any gap, z-fighting, float, snag,
+hidden cue or projected prompt overlap; record real-phone FPS/memory.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 

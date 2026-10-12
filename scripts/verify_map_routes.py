@@ -56,6 +56,15 @@ def elevation(item):
     return float(frame.find("Y").text)
 
 
+def position3(item):
+    props = properties(item)
+    entries = props if props is not None else []
+    frame = next((p for p in entries if p.get("name") == "CFrame"), None)
+    if frame is None:
+        raise AssertionError((value(item, "Name"), "missing CFrame"))
+    return tuple(float(frame.find(component).text) for component in "XYZ")
+
+
 def size(item):
     props = properties(item)
     entries = props if props is not None else []
@@ -138,6 +147,59 @@ def footprint_overlap(first, second):
                 subject.append(intersection(start, end))
             start = end
     return abs(signed_area(subject)) if subject else 0
+
+
+def segment_obb_interval(start, end, item):
+    """Return the normalized 3D segment interval inside an oriented box."""
+    props = properties(item)
+    entries = props if props is not None else []
+    frame = next((p for p in entries if p.get("name") == "CFrame"), None)
+    if frame is None:
+        return None
+    center = tuple(float(frame.find(component).text) for component in "XYZ")
+    rotation = tuple(
+        tuple(float(frame.find(f"R{row}{column}").text) for column in range(3))
+        for row in range(3)
+    )
+
+    def local(point):
+        offset = tuple(point[axis]-center[axis] for axis in range(3))
+        return tuple(
+            sum(rotation[row][column]*offset[row] for row in range(3))
+            for column in range(3)
+        )
+
+    local_start, local_end = local(start), local(end)
+    direction = tuple(local_end[axis]-local_start[axis] for axis in range(3))
+    half_size = tuple(component/2 for component in size(item))
+    lower, upper = 0.0, 1.0
+    for axis in range(3):
+        if abs(direction[axis]) < 1e-9:
+            if abs(local_start[axis]) > half_size[axis]:
+                return None
+            continue
+        first = (-half_size[axis]-local_start[axis]) / direction[axis]
+        second = (half_size[axis]-local_start[axis]) / direction[axis]
+        lower = max(lower, min(first, second))
+        upper = min(upper, max(first, second))
+        if lower > upper:
+            return None
+    return lower, upper
+
+
+def visual_blockers(root, start, end, ignored=()):
+    """Find opaque authored parts crossing a fixed shoulder-height sightline."""
+    ignored = set(ignored)
+    blockers = []
+    for item in root.iter("Item"):
+        if item in ignored or item.get("class") not in {"Part", "WedgePart", "MeshPart"}:
+            continue
+        if float(value(item, "Transparency", "0") or 0) >= .85:
+            continue
+        interval = segment_obb_interval(start, end, item)
+        if interval is not None and .02 < interval[0] < .98:
+            blockers.append((value(item, "Name"), position3(item), interval))
+    return blockers
 
 
 def direct_children(item):
@@ -285,7 +347,7 @@ def validate(path):
     assert len(handoff_models) == 1, (path, "missing lagoon-to-grove handoff")
     handoff = handoff_models[0]
     link_contracts = {
-        "LagoonLink": (4, (-161.0, 49.0), (-129.5, 72.5), 1),
+        "LagoonLink": (4, (-163.0, 49.0), (-129.5, 72.5), 1),
         "GroveLink": (5, (-127.5, 188.5), (-172.5, 228.5), -1),
     }
     for prefix, (count, expected_start, expected_end, x_direction) in link_contracts.items():
@@ -310,6 +372,17 @@ def validate(path):
                 assert math.dist(center, resource_point) >= 20, (
                     path, prefix, resource_name, "handoff crowds resource", center
                 )
+    surface_joints = (
+        (decks[-1], named["LagoonLink_01"][0], 25),
+        (named["LagoonLink_04"][0], named["ForestPath"][0], 40),
+        (named["ForestPath"][0], named["GroveLink_01"][0], 60),
+    )
+    for first, second, minimum_overlap in surface_joints:
+        overlap = footprint_overlap(first, second)
+        assert overlap >= minimum_overlap, (
+            path, value(first, "Name"), value(second, "Name"),
+            "insufficient route-surface overlap", overlap,
+        )
     assert len(named.get("Glowcap", [])) == 16
     grove_end_part = named["GroveLink_05"][0]
     grove_clearing = named.get("GroveClearing", [])
@@ -343,6 +416,17 @@ def validate(path):
                 if item.get("class") == "PointLight"], (
         path, "handoff milestone must not add local lights"
     )
+    focal_caps = [part for part in named["Glowcap"]
+                  if math.dist(position(part), (-219, 292)) < .01]
+    assert len(focal_caps) == 1, (path, "missing north Grove focal cap")
+    fixed_sightlines = (
+        ((-168, 6, 45), (-125, 6, 76), ()),
+        ((-125, 6, 182), position3(guide_parts["GuideCap"]), guide_parts.values()),
+        ((-183, 6, 230), position3(focal_caps[0]), (focal_caps[0],)),
+    )
+    for start, end, ignored in fixed_sightlines:
+        blockers = visual_blockers(root, start, end, ignored)
+        assert not blockers, (path, "fixed route sightline is occluded", start, end, blockers)
 
     quarry_models = named.get("SunstoneQuarry", [])
     assert len(quarry_models) == 1, (path, "missing quarry destination")

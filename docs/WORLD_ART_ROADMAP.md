@@ -159,3 +159,23 @@ surface overlap, material/collision policy and 70-root clearance only. Studio
 must still prove no gap, z-fighting, float, snag, prompt occlusion or phone
 regression. After that, measure the fixed entry camera's foliage/prompt corridor
 to the north focal cap before increasing glow or prop density.
+
+## GE-MAP-03g — close the bridge seam and protect the camera chain
+
+**Verified design basis:** Creator Hub treats connected lane traversal as a
+greybox requirement and expects final art to preserve that playable intent.
+Restaurant Tycoon 2's official page verifies build/visit activities only; its
+map, roads and assets are not evidence or templates for this Gorps correction.
+
+**Measured implementation:** three 3D CFrame/Size sightline casts reject the
+suspected opaque occlusion, but route footprint clipping finds only 4.986 stud²
+between `ReedBridgeDeck_03` and `LagoonLink_01`. Moving the existing first
+anchor four studs into the deck raises the joint to 31.374 stud². No geometry
+count, RNG draw, route destination, resource, ranch, light, particle or script
+changes.
+
+**Evidence boundary and next step:** source/package tests now protect five
+surface joints and three fixed camera lines. Studio must still verify rendered
+seams, perspective/UI prompt projection, avatar traversal and real-phone cost.
+If no engine evidence arrives, next measure the west/east background depth and
+repeated skyline modules before a bounded original composition pass.
