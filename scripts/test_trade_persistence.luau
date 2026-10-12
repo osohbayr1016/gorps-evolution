@@ -128,8 +128,8 @@ end
 
 local blocked=Store.new(values(),nil,keys.b.key)
 local blockedOk,blockedStatus=Adapter.execute(blocked,keys,receipt())
-equal(blockedOk,false,"permanent pre-write failure aborts")
-equal(blockedStatus,ReceiptPolicy.ABORTED,"pre-write failure has durable abort")
+equal(blockedOk,nil,"unobservable profile remains fail-closed")
+equal(blockedStatus,Adapter.PENDING,"unconfirmed abort cleanup requires recovery")
 equal(blocked.values[keys.receipt].state,ReceiptPolicy.ABORTED,"receipt records abort")
 equal(blocked.values[keys.a.key].Inventory.Wood,100,"abort preserves left assets")
 equal(blocked.values[keys.a.key]._trade,nil,"abort clears prepared left marker")
@@ -139,8 +139,8 @@ local staleValues=values()
 staleValues[keys.a.key]._session.id="session-other:333333333333"
 local stale=Store.new(staleValues)
 local staleOk,staleStatus=Adapter.execute(stale,keys,receipt())
-equal(staleOk,false,"stale session cannot prepare")
-equal(staleStatus,ReceiptPolicy.ABORTED,"stale session aborts before commit")
+equal(staleOk,nil,"stale session cannot confirm cleanup")
+equal(staleStatus,Adapter.PENDING,"stale session requires owned rejoin recovery")
 equal(stale.values[keys.a.key].Inventory.Wood,100,"stale session cannot debit profile")
 equal(stale.values[keys.b.key].Inventory.Stone,100,"stale session cannot credit peer")
 

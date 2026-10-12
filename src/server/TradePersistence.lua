@@ -69,6 +69,17 @@ local function resolveProfile(store,entry,receipt,role)
   return ReceiptPolicy.resolve(stored,receipt,role)
  end)
 end
+local function confirmAbortedProfile(store,entry,receipt,role)
+ return updateOwnedProfile(store,entry,function(stored)
+  if ReceiptPolicy.resolved(stored,receipt,role,ReceiptPolicy.ABORTED) then
+   return stored
+  end
+  -- The side may not have reached preparation. Reading it under the owned
+  -- session and observing no marker is the required durable confirmation.
+  if type(stored)=="table" and stored._trade==nil then return stored end
+  return ReceiptPolicy.resolve(stored,receipt,role)
+ end)
+end
 local function abortPrepared(store,keys,candidate)
  local receipt,reason=updateValue(store,keys.receipt,function(stored)
   if not sameTransaction(stored,candidate) then
@@ -85,10 +96,14 @@ local function abortPrepared(store,keys,candidate)
  if receipt.state~=ReceiptPolicy.ABORTED then
   return nil,Persistence.PENDING,"Commit decision requires recovery"
  end
- -- A side may not have reached preparation. Cleanup is therefore best-effort
- -- here; matching markers are idempotently cleared, absent markers are ignored.
- resolveProfile(store,keys.a,receipt,"a")
- resolveProfile(store,keys.b,receipt,"b")
+ -- Do not report a safe abort until both matching markers are cleared or their
+ -- absence is observed under the owned sessions. Otherwise live memory must
+ -- stay locked and rejoin recovery must decide what can resume.
+ local left,leftReason=confirmAbortedProfile(store,keys.a,receipt,"a")
+ local right,rightReason=confirmAbortedProfile(store,keys.b,receipt,"b")
+ if not left or not right then
+  return nil,Persistence.PENDING,leftReason or rightReason or "Abort cleanup unconfirmed"
+ end
  return false,ReceiptPolicy.ABORTED,receipt
 end
 

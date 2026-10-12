@@ -39,6 +39,7 @@ required={
  "ServerScriptService/GorpsServer/Trade":"ModuleScript",
  "ServerScriptService/GorpsServer/TradeReceiptPolicy":"ModuleScript",
  "ServerScriptService/GorpsServer/TradePersistence":"ModuleScript",
+ "ServerScriptService/GorpsServer/TradeSettlement":"ModuleScript",
  "ReplicatedStorage/Shared/Config":"ModuleScript",
  "ReplicatedStorage/Shared/TradeRules":"ModuleScript",
  "ReplicatedStorage/Shared/Onboarding":"ModuleScript",

@@ -115,6 +115,13 @@ then join once for PREPARING and once for COMMITTED:
   with the safe recovery message; it must never load defaults.
 - During a pending marker, autosave must log that it deferred. Leaving must
   release `_session` without deleting `_trade`.
+- With an instrumented private test build only, pause the coordinator after
+  COMMITTED, then attempt harvest/remote actions on both clients. Both must be
+  refused, both clients must be sent to rejoin recovery, and unload must release
+  ownership without writing either stale in-memory snapshot.
+- After a fully COMPLETE instrumented trade, both live HUD/profile snapshots
+  must exactly match the two persisted receipt `after` values once, with no
+  duplicate material or pet after reconnect.
 
 Do not run this against valuable player data. CI fake-store coverage is not
 evidence of Roblox DataStore timing, throttling or cross-server behavior.

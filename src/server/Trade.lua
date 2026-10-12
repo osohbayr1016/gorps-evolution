@@ -24,7 +24,7 @@ function Trade.disconnect(player,emit)
  local partner=other(s,player)
  if partner.Parent==Players then emit(partner,"Trade cancelled") end
 end
-function Trade.action(player,action,payload,get,changed,emit)
+function Trade.action(player,action,payload,get,changed,emit,settle)
  local id=uid(player)
  if action=="Invite" then
   if sessions[id] then return false,"Already trading" end
@@ -64,12 +64,17 @@ function Trade.action(player,action,payload,get,changed,emit)
     s.accepted={}
     return false,"Both players must offer assets"
    end
-   local settled,message=TradeRules.exchange(p1,p2,s.offers[uid(s.a)],s.offers[uid(s.b)])
+   local settled,message
+   if settle then
+    settled,message=settle(s.a,s.b,s.offers[uid(s.a)],s.offers[uid(s.b)])
+   else
+    settled,message=TradeRules.exchange(p1,p2,s.offers[uid(s.a)],s.offers[uid(s.b)])
+   end
    if not settled then
     s.accepted={}
     return false,message
    end
-   changed(s.a);changed(s.b)
+   if not settle then changed(s.a);changed(s.b) end
    sessions[uid(s.a)]=nil;sessions[uid(s.b)]=nil
    emit(otherPlayer,"Trade completed")
    return true,"Trade completed"

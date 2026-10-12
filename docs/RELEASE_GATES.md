@@ -95,9 +95,13 @@ and deliberately disconnected from live trade; see `TRADE_RECOVERY.md`.
 immutable receipt matching and seven-boundary lost-response fault injection.
 The published load path now resolves raw PREPARING/COMMITTED markers before
 `Rules.load`, and autosave/unload cannot erase pending recovery evidence.
-No live trade remote executes this path; the release flag remains false.
+`TradeSettlement.lua` and `Data.settleTrade` now provide the still-gated live
+bridge: both profiles are locked, exact preconditions are saved, ownership and
+versions are revalidated, and memory changes only from a matching COMPLETE
+receipt. Unknown outcomes force rejoin recovery and raw session release instead
+of a snapshot save. The release flag remains false.
 
-**Still release-blocking:** each player's profile persists separately. A server-owned settlement entry point must still synchronize durable outcomes with both live in-memory profiles. Receipt retention/diagnostics and crash tests against the concrete/private-published DataStore remain mandatory before changing the release flag. Required evidence includes failures before and after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets.
+**Still release-blocking:** each player's profile persists separately. Receipt retention/diagnostics and crash tests against the concrete/private-published DataStore remain mandatory before changing the release flag. Required evidence includes failures before and after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets. The 26-assertion synchronization suite is fake-store evidence, not Roblox runtime proof.
 
 ## First-session collection loop (Pet Simulator 99 / Steal An Egg inspired)
 

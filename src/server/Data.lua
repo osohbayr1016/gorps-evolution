@@ -9,6 +9,7 @@ local Rules=require(ReplicatedStorage.Shared.Rules)
 local Config=require(ReplicatedStorage.Shared.Config)
 local SessionPolicy=require(script.Parent.SessionPolicy)
 local TradePersistence=require(script.Parent.TradePersistence)
+local TradeSettlement=require(script.Parent.TradeSettlement)
 local Data={}
 local profiles={}
 local versions={}
@@ -16,6 +17,8 @@ local dirty={}
 local saving={}
 local sessions={}
 local unloading={}
+local settling={}
+local settlementFault={}
 local studio=RunService:IsStudio()
 local store=nil
 local function getStore()
@@ -98,6 +101,9 @@ function Data.supportsTrading()
  return studio or Config.DurableTrades==true
 end
 function Data.get(player) return profiles[player] end
+function Data.canMutate(player)
+ return profiles[player]~=nil and not unloading[player] and not settling[player]
+end
 function Data.load(player)
  if profiles[player] then return profiles[player] end
  local saved=nil
@@ -144,12 +150,13 @@ function Data.load(player)
  return p
 end
 function Data.change(player)
- if unloading[player] then return end
+ if unloading[player] or settling[player] then return false end
  local p=profiles[player]
- if not p then return end
+ if not p then return false end
  versions[player]=(versions[player] or 0)+1
  dirty[player]=true
  syncBoard(player,p)
+ return true
 end
 function Data.save(player,release)
  if studio then return true end
@@ -197,23 +204,110 @@ function Data.save(player,release)
  end
  return confirmed
 end
+local function waitForSave(player)
+ local deadline=os.clock()+20
+ while saving[player] and os.clock()<deadline do task.wait(.1) end
+ return not saving[player]
+end
+local function rawRelease(player)
+ local liveStore=getStore()
+ local token=sessions[player]
+ if not liveStore or not token then return false end
+ local ok=releaseClaim(liveStore,"player_"..player.UserId,token)
+ if ok then sessions[player]=nil end
+ return ok
+end
+local function settlementFailure(left,right,reason)
+ settlementFault[left]=true;settlementFault[right]=true
+ warn("[Gorps Data] Durable trade needs recovery:",left.UserId,right.UserId,reason)
+ for _,player in ipairs({left,right}) do
+  if player.Parent==Players then
+   player:Kick("Your trade is safely paused for recovery. Please rejoin.")
+  end
+ end
+end
+function Data.settleTrade(left,right,leftOffer,rightOffer)
+ if studio or Config.DurableTrades~=true then
+  return false,"Persistent player trading is not enabled"
+ end
+ if left==right or not Data.canMutate(left) or not Data.canMutate(right) then
+  return false,"A player profile is busy"
+ end
+ local leftProfile=profiles[left]
+ local rightProfile=profiles[right]
+ local leftVersion=versions[left]
+ local rightVersion=versions[right]
+ local leftToken=sessions[left]
+ local rightToken=sessions[right]
+ if not leftToken or not rightToken then return false,"Save ownership is unavailable" end
+ settling[left]=true;settling[right]=true
+ if not waitForSave(left) or not waitForSave(right) then
+  settlementFailure(left,right,"Timed out waiting for a profile save")
+  return nil,"Trade recovery required"
+ end
+ -- Persist the exact gameplay snapshots used as receipt preconditions. Normal
+ -- actions and the minute tick are blocked by settling[] throughout this span.
+ if not Data.save(left,false) or not Data.save(right,false) then
+  settlementFailure(left,right,"Could not establish durable preconditions")
+  return nil,"Trade recovery required"
+ end
+ if profiles[left]~=leftProfile or profiles[right]~=rightProfile
+  or versions[left]~=leftVersion or versions[right]~=rightVersion
+  or sessions[left]~=leftToken or sessions[right]~=rightToken then
+  settlementFailure(left,right,"Profile ownership changed during settlement")
+  return nil,"Trade recovery required"
+ end
+ local liveStore=getStore()
+ if not liveStore then
+  settlementFailure(left,right,"Persistent store unavailable")
+  return nil,"Trade recovery required"
+ end
+ local id=HttpService:GenerateGUID(false)
+ local keys={
+  receipt=TradePersistence.receiptKey(id),
+  a={key="player_"..left.UserId,token=leftToken},
+  b={key="player_"..right.UserId,token=rightToken},
+ }
+ local ok,status,snapshots,detail=TradeSettlement.execute(tradeStore(liveStore),keys,{
+  id=id,createdAt=os.time(),
+  a={userId=left.UserId,profile=leftProfile,offer=leftOffer},
+  b={userId=right.UserId,profile=rightProfile,offer=rightOffer},
+ })
+ if ok==true and snapshots then
+  profiles[left]=snapshots.a;profiles[right]=snapshots.b
+  versions[left]=(versions[left] or 0)+1;versions[right]=(versions[right] or 0)+1
+  dirty[left]=false;dirty[right]=false
+  settling[left]=nil;settling[right]=nil
+  syncBoard(left,snapshots.a);syncBoard(right,snapshots.b)
+  return true,"Trade completed"
+ end
+ if ok==false then
+  settling[left]=nil;settling[right]=nil
+  return false,type(detail)=="string" and detail or "Trade was cancelled safely"
+ end
+ settlementFailure(left,right,detail or status or "Unknown durable outcome")
+ return nil,"Trade recovery required"
+end
 function Data.unload(player)
  unloading[player]=true
  if not studio then
-  Data.save(player,true)
+  if settlementFault[player] or settling[player] then rawRelease(player)
+  else Data.save(player,true) end
  end
  profiles[player]=nil
  dirty[player]=nil
  versions[player]=nil
  saving[player]=nil
  sessions[player]=nil
+ settling[player]=nil
+ settlementFault[player]=nil
  unloading[player]=nil
 end
 function Data.start()
  task.spawn(function()
   while task.wait(60) do
    for player,p in pairs(profiles) do
-    if not unloading[player] then
+    if not unloading[player] and not settling[player] then
      p.Seconds+=60
      Data.change(player)
      if not studio then task.spawn(Data.save,player) end
@@ -228,7 +322,8 @@ function Data.start()
    jobs+=1
    task.spawn(function()
     unloading[player]=true
-    Data.save(player,true)
+    if settlementFault[player] or settling[player] then rawRelease(player)
+    else Data.save(player,true) end
     jobs-=1
    end)
   end

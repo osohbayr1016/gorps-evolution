@@ -13,6 +13,7 @@ local invoke=Instance.new("RemoteFunction");invoke.Name="Action";invoke.Parent=f
 local notify=Instance.new("RemoteEvent");notify.Name="Update";notify.Parent=folder
 local cooldown={}
 local wildCooldown={}
+local TRADE_OPS={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
 local function tradeState(player)
  local state=Trade.status(player)
  state.available=Data.supportsTrading()
@@ -42,7 +43,7 @@ local function movement(player)
 end
 local function gather(player,kind,worldPosition)
  local p=Data.get(player)
- if not p then return false end
+ if not p or not Data.canMutate(player) then return false end
  local resource=C.Nodes[kind] and C.Nodes[kind][1]
  if not resource then return false end
  local before=p.Inventory[resource] or 0
@@ -84,13 +85,14 @@ local function act(player,action,payload)
  if action=="State" then return true,"Ready" end
  if action=="Rankings" then return true,"Rankings refreshed",Leaderboards.top() end
  if type(payload)~="table" then return false,"Invalid request" end
- local tradeOps={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
- if tradeOps[action] then
+ if not Data.canMutate(player) then return false,"Profile is busy; please retry" end
+ if TRADE_OPS[action] then
   if not Data.supportsTrading() then
    return false,"Persistent player trading is temporarily closed to protect your inventory"
   end
+  local settle=Data.isStudioTest() and nil or Data.settleTrade
   return Trade.action(player,action,payload,Data.get,function(who) changed(who,nil,true) end,
-   function(who,msg) send(who,msg) end)
+   function(who,msg) send(who,msg) end,settle)
  end
  if action=="HatchEgg" then
   local egg=C.Eggs[payload.id]
@@ -143,7 +145,7 @@ invoke.OnServerInvoke=function(player,action,payload)
   warn("[Gorps] Action failed:",action,ok)
   return {ok=false,message="Could not complete that action"}
  end
- if ok and action~="State" and action~="Rankings" then
+ if ok and action~="State" and action~="Rankings" and not TRADE_OPS[action] then
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
    or action=="Feed" or action=="Evolve" or action=="Hire" or action=="Wheel" or action=="HatchEgg"
   changed(player,message,visual)

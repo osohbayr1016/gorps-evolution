@@ -14,6 +14,7 @@ sessions=Path("src/server/SessionPolicy.lua").read_text()
 trade=Path("src/server/Trade.lua").read_text()
 trade_receipts=Path("src/server/TradeReceiptPolicy.lua").read_text()
 trade_persistence=Path("src/server/TradePersistence.lua").read_text()
+trade_settlement=Path("src/server/TradeSettlement.lua").read_text()
 config=Path("src/shared/Config.lua").read_text()
 contracts={
  "egg pool defined": "C.Eggs={" in config and "C.EggOrder" in config,
@@ -56,6 +57,17 @@ contracts={
  )) and 'TradePersistence.recoverForLoad(' in data
     and 'Autosave deferred for pending trade' in data
     and 'SessionPolicy.releaseRaw(' in data
+    and 'C.DurableTrades=false' in config,
+ "durable settlement synchronizes exact committed snapshots":all(token in data for token in (
+    'function Data.canMutate(','function Data.settleTrade(',
+    'settling[left]=true;settling[right]=true','TradeSettlement.execute(',
+    'profiles[left]=snapshots.a;profiles[right]=snapshots.b',
+    'if settlementFault[player] or settling[player] then rawRelease(player)'
+ )) and all(token in trade_settlement for token in (
+    'function Settlement.plan(','function Settlement.execute(',
+    'TradeRules.exchange(','TradePersistence.execute(',
+    'terminal.participants.a.after','terminal.participants.b.after'
+ )) and 'not Data.canMutate(player)' in server
     and 'C.DurableTrades=false' in config,
 }
 for label,ok in contracts.items():

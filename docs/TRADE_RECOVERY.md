@@ -3,9 +3,10 @@
 Published player trading remains disabled. `TradeReceiptPolicy.lua` defines the
 pure state machine. `TradePersistence.lua` now drives that policy through an
 injected UpdateAsync-style store with session-token checks and per-profile
-recovery. `Data.lua` now invokes raw join recovery before gameplay hydration
-and protects pending markers from ordinary saves, but no live trade remote
-executes the durable coordinator. Published trading therefore remains closed.
+recovery. `Data.lua` invokes raw join recovery before gameplay hydration,
+protects pending markers from ordinary saves, and now owns a gated live
+settlement entry point. Published trading remains closed while retention,
+diagnostics and private-published fault evidence are incomplete.
 
 ## Safety invariants
 
@@ -26,6 +27,12 @@ executes the durable coordinator. Published trading therefore remains closed.
 8. A normal autosave cannot erase `_trade`. Final unload may release session
    ownership while preserving the marker, and `_tradeResult` survives later
    saves as terminal idempotency evidence.
+9. Both live profiles are locked before exact preconditions are persisted. A
+   COMPLETE result replaces both in-memory profiles from detached receipt
+   snapshots; ABORTED changes neither; PENDING forces raw release and rejoin.
+10. ABORTED unlocks live memory only after both profile markers are cleared or
+    their absence is durably observed under the owned sessions. Unconfirmed
+    cleanup remains PENDING even when the receipt already says ABORTED.
 
 ## Required durable write order
 
@@ -44,16 +51,12 @@ boundary and executes retry/conflict cases against the real policy module.
 
 ## Still required before enabling the feature
 
-- Add the server-owned settlement entry point that feeds validated before/after
-  snapshots into `execute`, blocks conflicting live mutation, and refreshes
-  both in-memory profiles from the exact durable result.
 - Define bounded COMPLETE/ABORTED receipt retention and operational diagnostics.
 - Extend fault injection through the concrete DataStore wrapper. Current tests
   cover raw-load PREPARING recovery, marker-safe saves, permanent pre-write
   failure and lost responses, but not Roblox throttling or cross-server timing.
 - Private published two-account tests for throttling, disconnect, shutdown,
   lease expiry and cross-server rejoin.
-- Receipt retention/cleanup limits and operational diagnostics.
 
 Only after those checks pass may `Config.DurableTrades` be considered for a
 separate reviewed change. CI success alone is not approval to enable it.
@@ -76,6 +79,11 @@ Invalid recovery fails closed and best-effort releases the claimed session.
 terminal `_tradeResult`, and `releaseRaw` lets shutdown relinquish ownership
 without deleting recovery evidence.
 
-Durable execution from the trade remote, in-memory synchronization, retention
-and private-published evidence remain release blockers; `DurableTrades` stays
-false.
+`TradeSettlement.execute` now builds the immutable receipt from detached
+TradeRules results and exposes live snapshots only after a matching COMPLETE
+receipt. `Data.settleTrade` blocks remote actions, harvesting, minute ticks and
+ordinary save mutation for both participants, revalidates identity/version/
+session ownership, and fails closed to join-time recovery on an unknown result.
+
+Retention, diagnostics and private-published evidence remain release blockers;
+`DurableTrades` stays false.
