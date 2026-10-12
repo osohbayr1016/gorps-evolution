@@ -128,6 +128,25 @@ Glowcap. Reject if any turn is visually lost, a segment z-fights or floats,
 the avatar snags, a prompt is covered, or the guide/Glowcaps bloom white; record
 the same camera path and real-phone FPS/memory.
 
+## GE-MAP-03f — seam-safe Glowcap threshold
+
+The final rotated `GroveLink_05` and `GroveClearing` previously shared only a
+1.37 stud² corner even though their centers satisfied the older proximity
+check. One 12×11 non-colliding Ground `GroveThreshold` now overlaps the ribbon
+by 28.36 stud² and the clearing by 92.40 stud². No route, harvest root, ranch,
+Glowcap or gameplay payload moved; the world adds one BasePart and no light,
+particle, script or external asset.
+
+`verify_map_routes.py` clips the actual XZ oriented footprints in both source
+and Rojo package, requires >=20/30 stud² joins, preserves Ground/non-collision
+policy, and keeps the threshold >=20 studs from all 70 resource interaction
+roots. This cannot prove Roblox rendering, avatar physics or player navigation.
+
+**One Studio test:** hold the same shoulder-height lagoon→Grove camera and walk
+slowly across `GroveLink_05`→`GroveThreshold`→`GroveClearing`. Reject any gap,
+z-fighting, float, abrupt material edge, avatar snag or covered prompt. Then
+record real-phone FPS/memory; Device Emulator is not real-device evidence.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 

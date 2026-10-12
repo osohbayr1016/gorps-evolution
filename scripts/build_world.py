@@ -576,6 +576,12 @@ trail_ribbon(handoff,"GroveLink",[
     (-125,182),(-130,195),(-139,208),(-151,219),(-165,227),(-180,230),
 ],7.5,(111,139,121))
 
+# The rotated final ribbon only touched the clearing at one narrow corner.
+# This compact threshold deliberately overlaps both footprints so the handoff
+# reads as one continuous surface without adding collision or a new route.
+block(handoff,"GroveThreshold",(-183,1.18,230),(12,.27,11),(88,127,103),
+      material="Ground",solid=False,rotation=(0,7,0))
+
 # One payload-free guide marks the final turn without a new PointLight or
 # collision obstacle. Its Glass cap echoes the grove rather than copying a
 # competitor icon or adding another global glow effect.

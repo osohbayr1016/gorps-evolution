@@ -65,6 +65,81 @@ def size(item):
     return tuple(float(vector.find(component).text) for component in "XYZ")
 
 
+def footprint(item):
+    """Return the XZ oriented bounding box as a counter-clockwise polygon."""
+    props = properties(item)
+    entries = props if props is not None else []
+    frame = next((p for p in entries if p.get("name") == "CFrame"), None)
+    if frame is None:
+        raise AssertionError((value(item, "Name"), "missing CFrame"))
+    center_x, center_z = float(frame.find("X").text), float(frame.find("Z").text)
+    size_x, _, size_z = size(item)
+    r00 = float(frame.find("R00").text)
+    r02 = float(frame.find("R02").text)
+    r20 = float(frame.find("R20").text)
+    r22 = float(frame.find("R22").text)
+    corners = [
+        (-size_x/2, -size_z/2),
+        (size_x/2, -size_z/2),
+        (size_x/2, size_z/2),
+        (-size_x/2, size_z/2),
+    ]
+    polygon = [
+        (center_x+r00*x+r02*z, center_z+r20*x+r22*z)
+        for x, z in corners
+    ]
+    if signed_area(polygon) < 0:
+        polygon.reverse()
+    return polygon
+
+
+def signed_area(polygon):
+    return sum(
+        polygon[index][0]*polygon[(index+1) % len(polygon)][1]
+        - polygon[(index+1) % len(polygon)][0]*polygon[index][1]
+        for index in range(len(polygon))
+    ) / 2
+
+
+def footprint_overlap(first, second):
+    """Calculate convex XZ overlap area with Sutherland-Hodgman clipping."""
+    subject = footprint(first)
+    clipper = footprint(second)
+    for index, clip_start in enumerate(clipper):
+        clip_end = clipper[(index+1) % len(clipper)]
+        source = subject
+        subject = []
+        if not source:
+            break
+
+        def inside(point):
+            return ((clip_end[0]-clip_start[0])*(point[1]-clip_start[1])
+                    - (clip_end[1]-clip_start[1])*(point[0]-clip_start[0])) >= -1e-7
+
+        def intersection(start, end):
+            clip_delta = (clip_start[0]-clip_end[0], clip_start[1]-clip_end[1])
+            edge_delta = (start[0]-end[0], start[1]-end[1])
+            clip_cross = clip_start[0]*clip_end[1]-clip_start[1]*clip_end[0]
+            edge_cross = start[0]*end[1]-start[1]*end[0]
+            denominator = clip_delta[0]*edge_delta[1]-clip_delta[1]*edge_delta[0]
+            assert abs(denominator) > 1e-9, ("parallel clipping edges", start, end)
+            return (
+                (clip_cross*edge_delta[0]-edge_cross*clip_delta[0]) / denominator,
+                (clip_cross*edge_delta[1]-edge_cross*clip_delta[1]) / denominator,
+            )
+
+        start = source[-1]
+        for end in source:
+            if inside(end):
+                if not inside(start):
+                    subject.append(intersection(start, end))
+                subject.append(end)
+            elif inside(start):
+                subject.append(intersection(start, end))
+            start = end
+    return abs(signed_area(subject)) if subject else 0
+
+
 def direct_children(item):
     return [child for child in item if child.tag == "Item"]
 
@@ -236,15 +311,26 @@ def validate(path):
                     path, prefix, resource_name, "handoff crowds resource", center
                 )
     assert len(named.get("Glowcap", [])) == 16
-    grove_end = position(named["GroveLink_05"][0])
+    grove_end_part = named["GroveLink_05"][0]
     grove_clearing = named.get("GroveClearing", [])
     assert len(grove_clearing) == 1, (path, "grove handoff has no destination clearing")
-    clearing_center = position(grove_clearing[0])
-    clearing_size = size(grove_clearing[0])
-    assert abs(grove_end[1]-clearing_center[1]) <= clearing_size[2]/2
-    assert abs(grove_end[0]-clearing_center[0])-clearing_size[0]/2 <= 10, (
-        path, "grove handoff does not reach the protected clearing"
+    thresholds = named.get("GroveThreshold", [])
+    assert len(thresholds) == 1, (path, "grove handoff has no seam-safe threshold")
+    threshold = thresholds[0]
+    assert value(threshold, "Material") == "1360"
+    assert value(threshold, "CanCollide") == "false"
+    assert footprint_overlap(grove_end_part, threshold) >= 20, (
+        path, "final ribbon has insufficient threshold overlap",
+        footprint_overlap(grove_end_part, threshold),
     )
+    assert footprint_overlap(threshold, grove_clearing[0]) >= 30, (
+        path, "threshold has insufficient clearing overlap",
+        footprint_overlap(threshold, grove_clearing[0]),
+    )
+    for resource_name, resource_point in resources.items():
+        assert math.dist(position(threshold), resource_point) >= 20, (
+            path, resource_name, "grove threshold crowds resource prompt"
+        )
     guide_models = named.get("GlowcapGuide", [])
     assert len(guide_models) == 1, (path, "missing Glowcap turn guide")
     guide_parts = {value(child, "Name"): child

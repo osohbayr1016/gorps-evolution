@@ -140,3 +140,22 @@ Roblox camera readability or collision feel. Studio must walk the full lagoon
 handoff, rotate once from the clearing, test ring prompts and bloom, inspect
 Output, then record phone frame time/memory. Fix the first engine-visible defect
 before adding more glow, particles or set dressing.
+
+## GE-MAP-03f — measure and reinforce the Grove surface handoff
+
+**Verified design basis:** Creator Hub's greybox and world-construction guidance
+requires traversal testing and preservation of playable path intent through
+polish. Theme Park Tycoon 2's official page verifies cooperative plot building
+only; no competitor path, map or asset is used as a geometric template.
+
+**Measured implementation:** convex clipping of the real rotated XZ footprints
+found only 1.365 stud² where `GroveLink_05` met `GroveClearing`. One original
+12×11 non-colliding Ground threshold raises the two joins to 28.357 and 92.403
+stud². It adds one BasePart, no light/particle/script/reward/external asset, and
+moves no authored route, harvest root, ranch, Glowcap or RNG draw.
+
+**Evidence boundary and next step:** source/package checks establish oriented
+surface overlap, material/collision policy and 70-root clearance only. Studio
+must still prove no gap, z-fighting, float, snag, prompt occlusion or phone
+regression. After that, measure the fixed entry camera's foliage/prompt corridor
+to the north focal cap before increasing glow or prop density.
