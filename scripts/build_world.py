@@ -576,7 +576,7 @@ knoll_centers = []
 # row-first enumeration distributes knolls across west/east rather than
 # concentrating the first nine on one edge.
 for z in (-58, -18, 22, 85, 128, 171, 214, 257):
-    for x in range(-258, 259, 43):
+    for x in range(-300, 301, 40):
         if reserved_route(x, z, 22):
             continue
         if any(math.hypot(x - nx, z - nz) < 28 for nx, nz in placed):
