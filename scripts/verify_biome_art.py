@@ -40,6 +40,12 @@ def position(item):
     return float(frame.find("X").text), float(frame.find("Z").text)
 
 
+def size(item):
+    properties = props(item)
+    vector = next(entry for entry in properties if entry.get("name") in {"Size", "size"})
+    return tuple(float(vector.find(axis).text) for axis in ("X", "Y", "Z"))
+
+
 def validate(path):
     root = ET.parse(path).getroot()
     named = {}
@@ -98,6 +104,40 @@ def validate(path):
     assert len(named.get("GlowDot", [])) == 32, (path, "glowcap light budget drifted")
     assert all(value(cap, "Material") == "1568" for cap in named.get("Glowcap", [])), (
         path, "glowcaps must use Glass instead of broad Neon caps"
+    )
+    stems = named.get("MushroomStem", [])
+    assert len(stems) == 16, (path, "glowcap stem layout drifted", len(stems))
+    clearing = named.get("GroveClearing", [])
+    assert len(clearing) == 1, (path, "missing protected grove clearing")
+    clearing = clearing[0]
+    clearing_center = position(clearing)
+    assert math.dist(clearing_center, (-204, 228)) <= 0.1
+    assert size(clearing) == (46.0, 0.28, 34.0)
+    assert value(clearing, "CanCollide") == "false"
+    assert value(clearing, "Material") == "1360", (path, "clearing is not Ground")
+    stem_points = [position(stem) for stem in stems]
+    assert min(math.dist(point, clearing_center) for point in stem_points) >= 50, (
+        path, "mushroom entered protected walkable interior"
+    )
+    assert min(
+        math.dist(point, other)
+        for index, point in enumerate(stem_points)
+        for other in stem_points[index + 1:]
+    ) >= 19, (path, "grove ring silhouettes overlap")
+    stem_heights = [size(stem)[1] for stem in stems]
+    assert len(set(stem_heights)) >= 8, (path, "grove height hierarchy flattened")
+    assert max(stem_heights) >= 15 and min(stem_heights) <= 6
+    cap_widths = [size(cap)[0] for cap in named.get("Glowcap", [])]
+    assert max(cap_widths) >= 11.5 and sum(width >= 9 for width in cap_widths) == 3, (
+        path, "north focal cap hierarchy drifted", cap_widths
+    )
+    grove_interacts = [
+        item for item in named.get("Interact", [])
+        if -310 < position(item)[0] < -140 and 150 < position(item)[1] < 305
+    ]
+    assert grove_interacts, (path, "missing harvest evidence around grove")
+    assert min(math.dist(position(item), clearing_center) for item in grove_interacts) >= 30, (
+        path, "harvest prompt intrudes on grove clearing"
     )
 
 

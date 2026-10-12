@@ -235,11 +235,15 @@ def validate(path):
                 assert math.dist(center, resource_point) >= 20, (
                     path, prefix, resource_name, "handoff crowds resource", center
                 )
-    glowcaps = named.get("Glowcap", [])
-    assert len(glowcaps) == 16
+    assert len(named.get("Glowcap", [])) == 16
     grove_end = position(named["GroveLink_05"][0])
-    assert min(math.dist(grove_end, position(cap)) for cap in glowcaps) <= 15, (
-        path, "grove handoff does not visually reach a Glowcap"
+    grove_clearing = named.get("GroveClearing", [])
+    assert len(grove_clearing) == 1, (path, "grove handoff has no destination clearing")
+    clearing_center = position(grove_clearing[0])
+    clearing_size = size(grove_clearing[0])
+    assert abs(grove_end[1]-clearing_center[1]) <= clearing_size[2]/2
+    assert abs(grove_end[0]-clearing_center[0])-clearing_size[0]/2 <= 10, (
+        path, "grove handoff does not reach the protected clearing"
     )
     guide_models = named.get("GlowcapGuide", [])
     assert len(guide_models) == 1, (path, "missing Glowcap turn guide")

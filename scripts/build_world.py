@@ -637,14 +637,43 @@ for i in range(7):
     block(quarry,"LanternGlow",(x,5,-27),(2.3,2.3,2.3),(254,211,124),
           shape="Ball",solid=False,material="Neon")
 mushrooms=group(landmarks,"GlowcapGrove")
-for i in range(16):
-    x=rng.uniform(-290,-175)
-    z=rng.uniform(175,298)
-    h=rng.uniform(4,10)
+# Keep the activity pocket readable after the new route arrives from the east.
+# The old fully random scatter left no guaranteed interior or height hierarchy;
+# this asymmetric outer ring protects one resource-free clearing and makes the
+# tallest cap a north-side focal silhouette.  The historical RNG calls below
+# remain in their original order so markets/scenery do not silently move.
+block(mushrooms,"GroveClearing",(-204,1.14,228),(46,.28,34),(76,113,94),
+      material="Ground",solid=False,rotation=(0,7,0))
+glowcap_palette=[
+    (210,131,199),(119,178,228),(239,166,152),(196,164,234),
+]
+glowcap_layout=[
+    (-226,183,6,6.0,glowcap_palette[1]),
+    (-205,150,7,6.8,glowcap_palette[2]),
+    (-165,176,8,7.2,glowcap_palette[0]),
+    (-156,208,9,8.0,glowcap_palette[3]),
+    (-138,232,6,6.3,glowcap_palette[1]),
+    (-150,258,7,7.0,glowcap_palette[2]),
+    (-174,278,9,8.2,glowcap_palette[0]),
+    (-195,289,11,8.8,glowcap_palette[3]),
+    (-219,292,15,11.5,glowcap_palette[1]),
+    (-242,282,12,9.2,glowcap_palette[2]),
+    (-263,266,10,8.4,glowcap_palette[0]),
+    (-291,232,8,7.5,glowcap_palette[3]),
+    (-286,211,9,8.0,glowcap_palette[1]),
+    (-270,188,11,9.0,glowcap_palette[2]),
+    (-263,164,10,8.2,glowcap_palette[0]),
+    (-244,145,8,7.4,glowcap_palette[3]),
+]
+for i,(x,z,h,cap_width,cap_color) in enumerate(glowcap_layout):
+    rng.uniform(-290,-175)
+    rng.uniform(175,298)
+    rng.uniform(4,10)
     block(mushrooms,"MushroomStem",(x,h/2+1,z),(1.9,h,1.9),
           (225,214,192),material="SmoothPlastic")
-    cap_color=rng.choice([(210,131,199),(119,178,228),(239,166,152),(196,164,234)])
-    cap = block(mushrooms,"Glowcap",(x,h+1,z),(rng.uniform(5,9),3.7,7),cap_color,
+    rng.choice(glowcap_palette)
+    rng.uniform(5,9)
+    cap = block(mushrooms,"Glowcap",(x,h+1,z),(cap_width,3.7,7),cap_color,
           shape="Ball",solid=False,material="Glass")
     if i % 4 == 0:
         point_light(cap, "GroveLight", cap_color, 0.55, 18)

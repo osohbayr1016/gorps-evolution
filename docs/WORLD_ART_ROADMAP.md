@@ -117,3 +117,26 @@ local light. Studio must prove the route reads as one chain, sits on terrain,
 does not snag avatars or obscure prompts, and retains real-phone performance.
 If no engine defect is supplied, measure the grove's internal walkable clearing
 before any additional prop or effect density.
+
+## GE-MAP-03e — frame a walkable Glowcap activity pocket
+
+**Verified design basis:** Creator Hub's world-construction guidance uses
+intentional activity pockets, controlled entrances, peaks/valleys, sight lines
+and differentiated floor materials to orient players. Gorps adapts that method
+to its original route and Glowcap kit; the work does not copy another game's
+grove, map, assets or effects.
+
+**Measured implementation:** the former independent RNG scatter is replaced by
+an asymmetric 16-stem ring around one 46×34 non-colliding Ground clearing.
+Every stem is at least 50 studs from center and 19 studs from another stem;
+eight stem heights culminate in a 15-stud north focal cap. Existing counts stay
+at 16 Glass caps, 32 dots and four grove PointLights. Historical RNG calls stay
+in the same order, 70 resources and 12 ranches do not move, and only one new
+BasePart is added.
+
+**Evidence boundary and next step:** source/package checks prove declared
+geometry, spacing, interaction clearance, hierarchy and bounded budgets, not
+Roblox camera readability or collision feel. Studio must walk the full lagoon
+handoff, rotate once from the clearing, test ring prompts and bloom, inspect
+Output, then record phone frame time/memory. Fix the first engine-visible defect
+before adding more glow, particles or set dressing.

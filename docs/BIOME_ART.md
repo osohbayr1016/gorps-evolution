@@ -29,6 +29,11 @@ substitute for final original MeshPart/PBR production assets.
 - Glowcap Grove was reduced from 29 large Neon caps plus 87 dots to 16 Glass
   caps plus 32 small light dots. This is a static density reduction, not a
   measured frame-rate claim.
+- Those 16 caps now form an authored asymmetric ring around a 46×34
+  non-colliding Ground clearing rather than an unconstrained RNG scatter. The
+  protected center is at least 50 studs from every stem, stem pairs remain at
+  least 19 studs apart, and eight height tiers rise to one north focal cap.
+  The four existing grove lights and downstream world RNG boundary are unchanged.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.
@@ -40,9 +45,10 @@ substitute for final original MeshPart/PBR production assets.
    different silhouettes, not recolored duplicates.
 2. Walk the village-to-resource route and both branch paths. No foliage should
    collide with the avatar; only trunks should stop movement.
-3. Visit the western forest, northern meadow, eastern quarry and Glowcap Grove.
-   Each area should have a recognizable floor palette and landmark without
-   hiding harvest nodes or prompts.
+3. Enter Glowcap Grove from the new east link, stand on `GroveClearing`, and
+   rotate the camera. The center must stay walkable; the north focal cap must
+   read above the ring; harvest prompts must remain visible without bloom
+   whiteout. Then compare western forest, northern meadow and eastern quarry.
 4. In Device Emulator, test a representative phone in portrait and landscape.
    Record client FPS, memory and any visible pop-in using Studio profiling tools.
 5. Check Server and Client Output. The first red error, impassable collision,
