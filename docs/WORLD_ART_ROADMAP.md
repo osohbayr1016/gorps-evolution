@@ -58,3 +58,11 @@ Exact push run [38192594721](https://github.com/osohbayr1016/gorps-evolution/act
 The repaired fallback uses 12 measured open pockets split evenly west/east. Each compact hillock reserves a 12-stud horizontal footprint with a four-stud buffer around a maximum ten-stud rock fill, so its validation boundary remains larger than its generated voxel footprint. Large primary contours remain preferred when safe; resource roots, trees, existing knolls, Glowcaps, all protected paths, ranches, lagoon and quarry regions remain hard exclusions. `VerdantVoxelRelief_04` forces a previously stamped local Studio place to receive the corrected plan once.
 
 **Evidence boundary:** generated-XML/Luau tests establish deterministic clearance and distribution only. In Studio, capture the same village-to-west/east camera pair, walk each nearest hillock and harvest adjacent resources, then record the first collision/material seam plus baseline-device frame time and memory. Do not accept visual quality from CI alone.
+
+## GE-MAP-03a — original spawn-to-biome route hierarchy
+
+**Baseline:** `c910db2be7c59d22e6b02e5686bb859e1754517d`, exact push [Actions 38212951333](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38212951333) **success**. Source inspection confirmed the center north road and distant forest/quarry roads had no authored surface connection.
+
+**Implementation:** `VerdantRouteFork` uses twelve low non-colliding Ground segments to create two gentle, asymmetric arcs through the existing starter resource circuit. Paired original waystones use a terrace foot, angular stone spire, emissive band and rune to make the forest/quarry choice legible through the existing gate. They add no local lights, particles, animation loop or asset dependency and do not replace genuine voxel relief.
+
+**Acceptance boundary:** static tests prove route topology, material/collision policy, landmark composition and clearance from all 70 interaction roots in source and package. They do not prove camera legibility, z-fighting, terrain blending, avatar navigation or mobile cost. Fixed-camera Studio and real-device evidence remain mandatory before art acceptance.

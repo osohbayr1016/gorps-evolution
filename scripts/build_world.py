@@ -98,6 +98,18 @@ def point_light(part, name, rgb, brightness=0.65, radius=20):
     prop(properties, "bool", "Shadows", False)
 
 
+def trail_ribbon(parent, prefix, points, width, rgb):
+    """Lay a low, non-colliding segmented trail through authored waypoints."""
+    for index, ((x0, z0), (x1, z1)) in enumerate(zip(points, points[1:]), 1):
+        dx, dz = x1-x0, z1-z0
+        length = math.hypot(dx, dz)
+        yaw = math.degrees(math.atan2(dx, dz))
+        block(parent, f"{prefix}_{index:02d}",
+              ((x0+x1)/2, 1.19, (z0+z1)/2),
+              (width, .26, length+1.5), rgb, material="Ground",
+              rotation=(0, yaw, 0), solid=False)
+
+
 world = group(document, "PlanetVerdant")
 terrain = group(world, "TerrainAndPaths")
 block(terrain, "Ground", (0, 0, 0), (648, 2, 648), (79, 129, 101), material="Grass")
@@ -273,6 +285,40 @@ block(wayfinder, "GateLintel", (0, 17.2, 43), (37.4, 2.3, 3.6),
       (102, 110, 97), material="Slate")
 block(wayfinder, "GateCrest", (0, 19.7, 43), (8.2, 2.8, 2.8),
       (205, 184, 124), material="Wood", solid=False)
+
+# The old branch roads started more than 120 studs from the north road and had
+# no authored connection. Two asymmetric, gently curving ribbons now make the
+# starter resource circuit read as a deliberate forest/quarry fork. They are
+# non-colliding navigation paint rather than fake elevation or reward geometry.
+route_fork = group(terrain, "VerdantRouteFork")
+trail_ribbon(route_fork, "ForestRoute", [
+    (-5, 56), (-20, 67), (-39, 80), (-60, 91),
+    (-82, 103), (-103, 111), (-125, 116),
+], 8.5, (129, 145, 111))
+trail_ribbon(route_fork, "QuarryRoute", [
+    (5, 56), (22, 68), (43, 80), (64, 94),
+    (87, 106), (108, 114), (133, 120),
+], 8.5, (151, 137, 107))
+
+# Paired original waystones are visible through the gate from spawn. Their
+# silhouettes and emissive bands differentiate west forest from east quarry
+# without adding a PointLight, particle loop, collision in the route, or a
+# proprietary reference asset.
+for name, x, z, tint, yaw in [
+    ("ForestWaystone", -22, 96, (103, 210, 157), -18),
+    ("QuarryWaystone", 22, 96, (239, 186, 103), 18),
+]:
+    stone = group(wayfinder, name)
+    block(stone, "TerraceFoot", (x, 2.0, z), (8.5, 2.0, 8.5),
+          (124, 126, 111), shape="Ball", material="Slate")
+    block(stone, "WaystoneSpire", (x, 7.1, z), (4.2, 9.0, 4.2),
+          (102, 111, 103), part_class="WedgePart", material="Slate",
+          rotation=(0, yaw, 0))
+    block(stone, "RouteBand", (x, 8.0, z-.25), (4.5, 1.0, 4.5),
+          tint, shape="Ball", material="Neon", solid=False)
+    block(stone, "RouteRune", (x, 10.5, z-.7), (1.2, 2.4, .45),
+          tint, part_class="WedgePart", material="Neon",
+          rotation=(0, yaw, 0), solid=False)
 for side in (-1, 1):
     # Seats and garden pots live outside the central travel lane.
     px = side * 22

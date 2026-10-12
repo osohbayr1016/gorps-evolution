@@ -22,6 +22,10 @@ STARTER = {
     "Fiber_007": (-45.0, 132.0),
     "Wild_008": (55.0, 155.0),
 }
+BRANCHES = {
+    "ForestRoute": ((-5.0, 56.0), (-125.0, 116.0)),
+    "QuarryRoute": ((5.0, 56.0), (133.0, 120.0)),
+}
 
 
 def properties(item):
@@ -90,6 +94,39 @@ def validate(path):
     assert len(named.get("TrailPost", [])) == 0, (path, "ambiguous unsuffixed trail post")
     assert sum(len(named.get(f"TrailPost_{i}", [])) for i in range(1, 6)) == 5
     assert sum(len(named.get(f"TrailArrow_{i}", [])) for i in range(1, 6)) == 5
+    for prefix, (expected_start, expected_end) in BRANCHES.items():
+        route = [named[f"{prefix}_{index:02d}"][0] for index in range(1, 7)]
+        centers = [position(part) for part in route]
+        assert all(value(part, "CanCollide") == "false" for part in route), (
+            path, prefix, "route ribbon must not obstruct players"
+        )
+        assert all(value(part, "Material") == "1360" for part in route), (
+            path, prefix, "route ribbon must retain Ground material"
+        )
+        assert math.dist(centers[0], expected_start) < 15, (path, prefix, "misses trailhead")
+        assert math.dist(centers[-1], expected_end) < 16, (path, prefix, "misses branch road")
+        assert all(centers[index][1] < centers[index+1][1]
+                   for index in range(len(centers)-1)), (
+            path, prefix, "route must progress north without doubling back"
+        )
+        direction = -1 if prefix == "ForestRoute" else 1
+        assert all(direction*centers[index][0] < direction*centers[index+1][0]
+                   for index in range(len(centers)-1)), (
+            path, prefix, "route must progressively branch from center"
+        )
+    for stone_name, side in (("ForestWaystone", -1), ("QuarryWaystone", 1)):
+        stones = named.get(stone_name, [])
+        assert len(stones) == 1, (path, "missing branch landmark", stone_name)
+        pieces = {value(child, "Name"): child for child in direct_children(stones[0])}
+        assert set(pieces) == {"TerraceFoot", "WaystoneSpire", "RouteBand", "RouteRune"}
+        x, z = position(pieces["WaystoneSpire"])
+        assert side*x >= 20 and z == 96, (path, stone_name, "wrong visual branch")
+        assert value(pieces["RouteBand"], "Material") == "288"
+        assert value(pieces["RouteBand"], "CanCollide") == "false"
+        for resource_name, resource_point in resources.items():
+            assert math.dist((x, z), resource_point) >= 20, (
+                path, stone_name, resource_name, "landmark crowds resource prompt"
+            )
     for station in ("TradingPost", "CraftingWorkshop", "FarmerGuild", "CreatureNursery"):
         model = named.get(station, [])
         assert len(model) == 1, (path, "missing village station", station)
@@ -109,7 +146,8 @@ def validate(path):
 
     print(
         f"PASS {path}: 8-node teaching circuit, 70 spaced resources, "
-        "clear north route, five markers and pitched village roofs"
+        "clear north route, two curved branches, paired waystones, five markers "
+        "and pitched village roofs"
     )
 
 

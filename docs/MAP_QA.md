@@ -42,6 +42,27 @@ readability, collision feel, visual polish, or device performance.
 Only human/engine evidence can close this visual milestone. A green workflow
 proves deterministic geometry and packaging, not that the map looks finished.
 
+## GE-MAP-03a — village-to-biome route fork
+
+The north trailhead now divides into original curved Ground ribbons: six west
+segments meet `ForestPath`, and six east segments meet `MinesPath`. A mint
+forest waystone and amber quarry waystone sit between the center road and each
+branch. Their Neon bands are emissive cues only—this pass adds no PointLight,
+particle, moving part, reward or remote behavior. The 20-part addition keeps
+the existing eight-light and 2,350-BasePart static budgets intact.
+
+`verify_map_routes.py` requires both branches to progress north and outward,
+remain non-colliding Ground parts, reach their destination roads, and keep both
+four-piece waystones at least 20 studs from every resource interaction root.
+This proves authored connectivity, not player comprehension or Studio physics.
+
+**One Studio test:** from the default spawn, hold the same camera through the
+north gate and identify the mint west/amber east fork without opening a menu.
+Walk each ribbon to its named branch, harvest the closest node on each side,
+and reject for any invisible gap, z-fighting, misleading turn, covered prompt
+or avatar snag. Record one phone FPS/memory sample; Emulator memory is not a
+real-device measurement.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 
