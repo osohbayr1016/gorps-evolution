@@ -16,7 +16,7 @@ expect(inland>=8,"free interior biome shoulders produce visible ridges")
 expect(inland<=Plan.MAX_INLAND_SITES,"inland site limit")
 expect(#ops==#Plan.sites*2+inland*3,"outer paired and inner triple-lobed real voxel fills")
 expect(#ops<=Plan.MAX_WRITES,"fixed maximum work per server start")
-expect(Plan.VERSION=="VerdantVoxelRelief_03","new art version invalidates old bake tag")
+expect(Plan.VERSION=="VerdantVoxelRelief_04","new art version invalidates old bake tag")
 local ids={}
 for i,site in ipairs(Plan.sites) do
  expect(Plan.isClear(site,{}),"site "..i.." avoids reserved route and ranch footprints")
@@ -25,7 +25,7 @@ for i,site in ipairs(Plan.sites) do
 end
 for index,entry in ipairs(ops) do
  expect(entry.material=="Grass" or entry.material=="Rock" or entry.material=="Ground","supported voxel terrain material")
- expect(entry.radius>=9 and entry.radius<=32,"safe terrain sphere bounds")
+ expect(entry.radius>=6 and entry.radius<=32,"safe terrain sphere bounds")
  expect(entry.y+entry.radius<=12,"terrain elevations capped outside gameplay")
  expect(type(entry.x)=="number" and type(entry.z)=="number","stable numeric site")
  if index<=#Plan.sites*2 and index%2==0 then
@@ -82,4 +82,5 @@ expect(not Plan.isClear({x=0,z=175,radius=22},{}),"north trail protected")
 expect(not Plan.isClear({x=0,z=-170,radius=22},{}),"ranch corridor protected")
 expect(not Plan.isClear({x=-215,z=45,radius=22},{}),"lagoon protected")
 expect(not Plan.isClear({x=222,z=20,radius=22},{}),"quarry protected")
+expect(not Plan.isClear({x=280,z=280,radius=12,buffer=0},{}),"invalid clearance buffer rejected")
 print("PASS:",checks,"terrain plan assertions; Roblox Terrain engine needs Studio QA")

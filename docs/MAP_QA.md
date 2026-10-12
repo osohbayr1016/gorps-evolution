@@ -53,6 +53,10 @@ The 2026-10-12 environment pass adds 14 peripheral escarpments, cleared solid kn
 
 The runtime now calls the guarded server-side voxel builder on world bootstrap. Terrain is authored with Roblox's smooth voxel API, not merely native Ball/WedgePart props; freshly generated Rojo XML is still not a pre-baked Terrain asset. Confirm the server Output `[Gorps World] Applied smooth voxel terrain` line, that `workspace.Terrain` genuinely contains landscape in Play, 70 resource interact roots and 12 ranch plots remain usable, and no hill occludes a path. See [WORLD_ART_ROADMAP.md](WORLD_ART_ROADMAP.md) for the optional manual bake-to-Edit command. Record Android/iPhone device emulator frame time and screenshot; no source/CI pass substitutes for this check.
 
+## GE-MAP-02e — corrected authored-map contour check
+
+The previous actual-map CI run failed with zero accepted inland contours. The corrected plan targets twelve smaller measured hillocks, evenly split west/east, while preserving larger preferred contours when they are genuinely clear. In Studio Play, inspect the nearest hillocks at `(-92, 76)`, `(100, 90)`, `(-76, 150)` and `(256, 136)`. Walk around and over each one, activate the nearest harvest prompt, and reject the build for any buried root, avatar trap, abrupt material seam or blocked sightline. Record real device FPS/memory separately; CI cannot validate them.
+
 ## GE-MAP-02c — test new forest/quarry terrain transitions
 
 With synced main, Stop → Play and watch the server's `[Gorps World] Applied smooth voxel terrain` line. From the village north exit compare the west forest, east quarry, and distant edge as actual different-elevation landscapes. Walk to the nearest safe inland slope, approach harvest resources and check no buried interaction prompts. Phone Emulator: note frame rate and memory before and after the change, not estimated values. The generator still retains the original ground Part until engine testing proves the new walkable terrain is complete.

@@ -16,6 +16,14 @@ The **confirmed code gap** is not a missing Terrain API: the previous `Plan.buil
 - `extract_terrain_obstacles.py` reads the actual generated XML and produces a CI-only obstacle fixture; `test_terrain_real_world.luau` calls the **real TerrainPlan module** with exactly these obstruction shapes. Reject fewer than six accepted safe inland contours, or fewer than two on either forest/quarry side. It also verifies all write names unique and geometric bounds/determinism.
 - Real Studio collision, camera screenshots, lighting, streaming, join time, voxel appearance and mobile memory remain pending. Passing CI is **not** an engine screenshot.
 
+## 2026-10-12 corrective evidence — GE-MAP-02e
+
+- **Confirmed:** exact push [Actions 38192594721](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38192594721) failed with `actual authored terrain has too few inland contours: 0`. This rejects GE-MAP-02d's claimed minimum-six acceptance; it is not a subjective screenshot judgment.
+- **Creator Hub technique retained:** native material Terrain and deterministic scripted sculpting remain appropriate, while Roblox's performance guidance requires real baseline-device frame/memory measurement rather than treating Studio/CI as device proof. No competitor map, mesh or texture is copied.
+- **Original corrective action (P1, low/medium complexity):** preserve large preferred contours, then use twelve compact clearance-checked Verdant hillocks in measured gaps. Their safety footprint exceeds their actual fill, with an even forest/quarry split and unchanged resource/ranch/path identities.
+- **Acceptance:** generated real-map fixture produces 12 inland contours, 6 west/6 east, within 80 total fills and deterministically. Studio Play must still prove material blending, no buried prompts, safe traversal and mobile performance.
+- **Exact next milestone:** fixed-camera Studio validation; repair the first observed contour/collision/lighting defect before adding more world density.
+
 ## Prior milestone evidence
 [Commit e29a957](https://github.com/osohbayr1016/gorps-evolution/commit/e29a95779635c9c09dfbcd374cf042a52b278412), exact push [Actions #38191185397](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38191185397): SUCCESS. That job's 471 empty/fake-obstacle plan assertions motivated this real-map integration test.
 

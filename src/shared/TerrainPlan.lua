@@ -2,7 +2,7 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_03"
+Plan.VERSION="VerdantVoxelRelief_04"
 Plan.MAX_WRITES=80
 Plan.MAX_INLAND_SITES=12
 
@@ -57,20 +57,29 @@ Plan.inlandCandidates={
  {name="EastGroveEdge",x=184,z=284,radius=19},
 }
 
--- Ordered backup terraces for when the REAL 70 harvestables and 64 tree trunks
--- occupy preferred art-director sites. Pair western forest / eastern quarry
--- candidates within each z band to avoid clustering all relief on one side.
--- All sites still pass the same protected-route and collision guards.
-for _,z in ipairs({90,132,174,216,258,298}) do
- for _,absX in ipairs({90,126,162,198,234,270}) do
-  for _,sign in ipairs({-1,1}) do
-   local x=absX*sign
-   table.insert(Plan.inlandCandidates,{
-    name="BiomeTransition_"..tostring(z).."_"..tostring(x),
-    x=x,z=z,radius=17,
-   })
-  end
- end
+-- Compact fallback hillocks occupy measured open pockets in the generated
+-- authored map. Their 12-stud validated footprint and four-stud buffer remain
+-- larger than the actual ten-stud rock fill, while avoiding the unrealistic
+-- 42-stud exclusion diameter that rejected every inland site in GE-MAP-02d.
+-- These coordinates are still checked against live obstacles at runtime.
+local fallbackCandidates={
+ {name="WestTrailHillock",x=-92,z=76},
+ {name="EastTrailHillock",x=100,z=90},
+ {name="WestGroveHillock",x=-76,z=150},
+ {name="EastRimHillock",x=288,z=116},
+ {name="WestForestHillock",x=-180,z=162},
+ {name="EastQuarryHillock",x=256,z=136},
+ {name="WestCanopyHillock",x=-194,z=226},
+ {name="EastHighHillock",x=144,z=286},
+ {name="WestPineHillock",x=-160,z=230},
+ {name="EastWayfinderHillock",x=70,z=290},
+ {name="WestNorthHillock",x=-114,z=294},
+ {name="EastNorthHillock",x=250,z=290},
+}
+for _,site in ipairs(fallbackCandidates) do
+ site.radius=12
+ site.buffer=4
+ table.insert(Plan.inlandCandidates,site)
 end
 
 local protectedRects={
@@ -94,7 +103,8 @@ function Plan.isClear(site,obstacles)
   or type(site.radius)~="number" or site.radius<12 or site.radius>32 then
   return false
  end
- local buffer=6
+ local buffer=site.buffer or 6
+ if type(buffer)~="number" or buffer<4 or buffer>6 then return false end
  for _,rect in ipairs(protectedRects) do
   local dx=math.max(math.abs(site.x-rect.x)-rect.halfX,0)
   local dz=math.max(math.abs(site.z-rect.z)-rect.halfZ,0)
@@ -128,9 +138,11 @@ end
 -- soil. All heights stay <=11 studs above the flat teaching-route ground.
 local function inlandContour(site,operations)
  local dry=site.x>0
- local shoulderRadius=14
- local capRadius=11.6
- local offsetX=site.x<0 and 6 or -6
+ local shoulderRadius=math.min(14,site.radius-2)
+ local capRadius=shoulderRadius*0.82
+ local crestRadius=math.max(6,shoulderRadius-4)
+ local offset=math.min(6,site.radius-7)
+ local offsetX=site.x<0 and offset or -offset
  table.insert(operations,{
   name=site.name.."_Foundation",x=site.x,y=9-shoulderRadius,z=site.z,
   radius=shoulderRadius,material="Rock",
@@ -140,8 +152,8 @@ local function inlandContour(site,operations)
   radius=capRadius,material=dry and "Ground" or "Grass",
  })
  table.insert(operations,{
-  name=site.name.."_Crest",x=site.x+offsetX,y=11-9,z=site.z+2,
-  radius=9,material=dry and "Ground" or "Grass",
+  name=site.name.."_Crest",x=site.x+offsetX,y=11-crestRadius,z=site.z+2,
+  radius=crestRadius,material=dry and "Ground" or "Grass",
  })
 end
 

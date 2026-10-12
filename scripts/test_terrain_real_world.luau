@@ -15,7 +15,8 @@ assert(fixture.counts.mushrooms==16,"glowcap roots absent")
 assert(#anchors==fixture.counts.resources+fixture.counts.trees+fixture.counts.knolls+fixture.counts.mushrooms,
  "fixture loses a live collision anchor")
 local writes,accepted,inland=Plan.build(anchors)
-assert(inland>=6,"actual authored terrain has too few inland contours: "..tostring(inland))
+assert(inland==Plan.MAX_INLAND_SITES,
+ "actual authored terrain should fill its inland budget: "..tostring(inland))
 assert(inland<=Plan.MAX_INLAND_SITES,"inland site budget exceeded")
 assert(#writes<=Plan.MAX_WRITES,"terrain write budget exceeded")
 local west,east=0,0
@@ -29,13 +30,13 @@ for _,site in ipairs(Plan.inlandCandidates) do
   end
  end
 end
-assert(west>=2 and east>=2,
+assert(west==6 and east==6,
  "world sculpt ignores one side (west="..tostring(west)..", east="..tostring(east)..")")
 local seen={}
 for _,op in ipairs(writes) do
  assert(not seen[op.name],"duplicated terrain operation "..op.name)
  seen[op.name]=true
- assert(op.radius>=9 and op.radius<=32,"unsafe radius")
+ assert(op.radius>=6 and op.radius<=32,"unsafe radius")
  assert(op.y+op.radius<=12,"terrain encroaches above safe elevations")
 end
 local again,totalAgain,inlandAgain=Plan.build(anchors)

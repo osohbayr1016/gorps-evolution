@@ -13,7 +13,8 @@ import xml.etree.ElementTree as ET
 
 def name(item):
     props = item.find("Properties")
-    return next((p.text or "" for p in props or [] if p.get("name") == "Name"), "")
+    values = props if props is not None else []
+    return next((p.text or "" for p in values if p.get("name") == "Name"), "")
 
 
 def children(item):
