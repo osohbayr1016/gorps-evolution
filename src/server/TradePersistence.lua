@@ -119,7 +119,7 @@ local function abortPrepared(store,keys,candidate)
    return nil,"Stored receipt does not match transaction"
   end
   if stored.state==ReceiptPolicy.PREPARING or stored.state==ReceiptPolicy.ABORTED then
-   return ReceiptPolicy.abort(stored)
+   return ReceiptPolicy.abort(stored,storeNow(store))
   end
   return stored
  end)
@@ -178,7 +178,7 @@ function Persistence.execute(store,keys,candidate)
    if not sameTransaction(stored,candidate) then
     return nil,"Stored receipt does not match transaction"
    end
-   return ReceiptPolicy.commit(stored,left,right)
+   return ReceiptPolicy.commit(stored,left,right,storeNow(store))
   end)
   if not receipt then
    receipt=observeReceipt(store,keys.receipt,candidate)
@@ -207,7 +207,7 @@ function Persistence.execute(store,keys,candidate)
   if not sameTransaction(stored,candidate) then
    return nil,"Stored receipt does not match transaction"
   end
-  return ReceiptPolicy.complete(stored,left,right)
+  return ReceiptPolicy.complete(stored,left,right,storeNow(store))
  end)
  if not receipt then
   receipt=observeReceipt(store,keys.receipt,candidate)
@@ -227,7 +227,9 @@ function Persistence.recoverProfile(store,receiptKey,profileKey,sessionToken,rol
  end
  local receipt,reason=updateValue(store,receiptKey,function(stored)
   if not ReceiptPolicy.valid(stored) then return nil,"Invalid stored receipt" end
-  if stored.state==ReceiptPolicy.PREPARING then return ReceiptPolicy.abort(stored) end
+  if stored.state==ReceiptPolicy.PREPARING then
+   return ReceiptPolicy.abort(stored,storeNow(store))
+  end
   return stored
  end)
  if not receipt then return nil,Persistence.PENDING,reason end

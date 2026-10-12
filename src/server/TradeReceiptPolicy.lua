@@ -3,6 +3,7 @@
 -- private-server fault injection proves every write boundary.
 local Policy={}
 Policy.VERSION=1
+Policy.AUDIT_VERSION=1
 Policy.PREPARING="PREPARING"
 Policy.COMMITTED="COMMITTED"
 Policy.ABORTED="ABORTED"
@@ -47,17 +48,56 @@ local function validParticipant(participant)
   and type(participant.offer)=="table" and type(participant.before)=="table"
   and type(participant.after)=="table"
 end
+local function validAudit(receipt)
+ local audit=receipt._audit
+ -- Receipts written before lifecycle auditing remain recoverable. Every new
+ -- receipt receives an audit record in create(), and transitions backfill it.
+ if audit==nil then return true end
+ if type(audit)~="table" or audit.version~=Policy.AUDIT_VERSION
+  or audit.createdAt~=receipt.createdAt then return false end
+ for _,key in ipairs({"committedAt","abortedAt","completedAt"}) do
+  if audit[key]~=nil and not whole(audit[key],receipt.createdAt,10^15) then
+   return false
+  end
+ end
+ if audit.committedAt~=nil and audit.abortedAt~=nil then return false end
+ if receipt.state==Policy.PREPARING then
+  return audit.committedAt==nil and audit.abortedAt==nil and audit.completedAt==nil
+ end
+ if receipt.state==Policy.COMMITTED then
+  return audit.committedAt~=nil and audit.abortedAt==nil and audit.completedAt==nil
+ end
+ if receipt.state==Policy.ABORTED then
+  return audit.abortedAt~=nil and audit.committedAt==nil and audit.completedAt==nil
+ end
+ return receipt.state==Policy.COMPLETE and audit.committedAt~=nil
+  and audit.abortedAt==nil and audit.completedAt~=nil
+  and audit.completedAt>=audit.committedAt
+end
 local function validReceipt(receipt)
  if type(receipt)~="table" or receipt.version~=Policy.VERSION
   or not validId(receipt.id) or not whole(receipt.createdAt,0,10^15)
   or type(receipt.participants)~="table"
   or not validParticipant(receipt.participants.a)
   or not validParticipant(receipt.participants.b)
-  or receipt.participants.a.userId==receipt.participants.b.userId then
+  or receipt.participants.a.userId==receipt.participants.b.userId
+  or not validAudit(receipt) then
   return false
  end
  return receipt.state==Policy.PREPARING or receipt.state==Policy.COMMITTED
   or receipt.state==Policy.ABORTED or receipt.state==Policy.COMPLETE
+end
+local function auditFor(receipt)
+ local audit=copy(receipt._audit)
+ if type(audit)~="table" then
+  audit={version=Policy.AUDIT_VERSION,createdAt=receipt.createdAt}
+ end
+ return audit
+end
+local function transitionAt(receipt,value)
+ local at=value==nil and receipt.createdAt or value
+ if not whole(at,receipt.createdAt,10^15) then return nil end
+ return at
 end
 local function markerMatches(profile,receipt,role)
  local marker=type(profile)=="table" and profile._trade or nil
@@ -85,6 +125,7 @@ function Policy.create(id,createdAt,leftUserId,rightUserId,leftOffer,rightOffer,
  leftBefore,leftAfter,rightBefore,rightAfter)
  local receipt={
   version=Policy.VERSION,id=id,createdAt=createdAt,state=Policy.PREPARING,
+  _audit={version=Policy.AUDIT_VERSION,createdAt=createdAt},
   participants={
    a={userId=leftUserId,offer=copy(leftOffer),before=gameplay(leftBefore),after=gameplay(leftAfter)},
    b={userId=rightUserId,offer=copy(rightOffer),before=gameplay(rightBefore),after=gameplay(rightAfter)},
@@ -105,6 +146,8 @@ function Policy.sameTransaction(left,right)
  rightValue.state=Policy.PREPARING
  leftValue._retention=nil
  rightValue._retention=nil
+ leftValue._audit={version=Policy.AUDIT_VERSION,createdAt=leftValue.createdAt}
+ rightValue._audit={version=Policy.AUDIT_VERSION,createdAt=rightValue.createdAt}
  return equal(leftValue,rightValue)
 end
 function Policy.prepare(profile,receipt,role)
@@ -131,7 +174,7 @@ end
 function Policy.prepared(profile,receipt,role)
  return validReceipt(receipt) and markerMatches(profile,receipt,role)
 end
-function Policy.commit(receipt,leftProfile,rightProfile)
+function Policy.commit(receipt,leftProfile,rightProfile,committedAt)
  if not validReceipt(receipt) then return nil,"Invalid trade receipt" end
  if receipt.state==Policy.COMMITTED or receipt.state==Policy.COMPLETE then
   return copy(receipt)
@@ -141,16 +184,24 @@ function Policy.commit(receipt,leftProfile,rightProfile)
   or not markerMatches(rightProfile,receipt,"b") then
   return nil,"Both profiles must be prepared"
  end
+ committedAt=transitionAt(receipt,committedAt)
+ if not committedAt then return nil,"Invalid trade commit time" end
  local nextValue=copy(receipt)
  nextValue.state=Policy.COMMITTED
+ nextValue._audit=auditFor(receipt)
+ nextValue._audit.committedAt=nextValue._audit.committedAt or committedAt
  return nextValue
 end
-function Policy.abort(receipt)
+function Policy.abort(receipt,abortedAt)
  if not validReceipt(receipt) then return nil,"Invalid trade receipt" end
  if receipt.state==Policy.ABORTED then return copy(receipt) end
  if receipt.state~=Policy.PREPARING then return nil,"Committed trade cannot abort" end
+ abortedAt=transitionAt(receipt,abortedAt)
+ if not abortedAt then return nil,"Invalid trade abort time" end
  local nextValue=copy(receipt)
  nextValue.state=Policy.ABORTED
+ nextValue._audit=auditFor(receipt)
+ nextValue._audit.abortedAt=nextValue._audit.abortedAt or abortedAt
  return nextValue
 end
 function Policy.resolve(profile,receipt,role)
@@ -179,7 +230,7 @@ function Policy.resolved(profile,receipt,role,outcome)
  return validReceipt(receipt) and (role=="a" or role=="b")
   and resultMatches(profile,receipt,role,outcome)
 end
-function Policy.complete(receipt,leftProfile,rightProfile)
+function Policy.complete(receipt,leftProfile,rightProfile,completedAt)
  if not validReceipt(receipt) then return nil,"Invalid trade receipt" end
  if receipt.state==Policy.COMPLETE then return copy(receipt) end
  if receipt.state~=Policy.COMMITTED then return nil,"Trade is not committed" end
@@ -187,8 +238,18 @@ function Policy.complete(receipt,leftProfile,rightProfile)
   or not resultMatches(rightProfile,receipt,"b",Policy.COMMITTED) then
   return nil,"Both profiles must resolve before completion"
  end
+ completedAt=transitionAt(receipt,completedAt)
+ if not completedAt then return nil,"Invalid trade completion time" end
  local nextValue=copy(receipt)
  nextValue.state=Policy.COMPLETE
+ nextValue._audit=auditFor(receipt)
+ -- Legacy committed receipts did not record decision time. Backfill the
+ -- earliest truthful lower bound rather than inventing a later commit time.
+ nextValue._audit.committedAt=nextValue._audit.committedAt or receipt.createdAt
+ if completedAt<nextValue._audit.committedAt then
+  return nil,"Completion precedes trade commit"
+ end
+ nextValue._audit.completedAt=nextValue._audit.completedAt or completedAt
  return nextValue
 end
 return Policy

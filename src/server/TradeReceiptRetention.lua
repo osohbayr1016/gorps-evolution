@@ -33,6 +33,33 @@ local function validSchedule(receipt)
   and whole(schedule.terminalAt,receipt.createdAt,10^15)
   and schedule.compactAfter==schedule.terminalAt+Retention.SECONDS
 end
+local function compactAudit(receipt)
+ local audit=receipt._audit
+ if type(audit)~="table" or audit.version~=1
+  or audit.createdAt~=receipt.createdAt then return nil end
+ local result={version=1,createdAt=audit.createdAt}
+ for _,key in ipairs({"committedAt","abortedAt","completedAt"}) do
+  if audit[key]~=nil then result[key]=audit[key] end
+ end
+ return result
+end
+local function validAudit(value)
+ local audit=value.audit
+ if audit==nil then return true end
+ if type(audit)~="table" or audit.version~=1
+  or audit.createdAt~=value.createdAt then return false end
+ for _,key in ipairs({"committedAt","abortedAt","completedAt"}) do
+  if audit[key]~=nil and not whole(audit[key],value.createdAt,10^15) then
+   return false
+  end
+ end
+ if value.outcome=="ABORTED" then
+  return audit.abortedAt~=nil and audit.committedAt==nil and audit.completedAt==nil
+ end
+ return value.outcome=="COMPLETE" and audit.committedAt~=nil
+  and audit.completedAt~=nil and audit.abortedAt==nil
+  and audit.completedAt>=audit.committedAt
+end
 
 function Retention.attach(receipt,terminalAt)
  if not terminal(receipt) or not whole(terminalAt,receipt.createdAt,10^15) then
@@ -65,6 +92,7 @@ function Retention.compact(receipt,now)
   state=Retention.ARCHIVED,
   id=receipt.id,
   createdAt=receipt.createdAt,
+  audit=compactAudit(receipt),
   outcome=receipt.state,
   participants={
    a={userId=receipt.participants.a.userId},
@@ -89,6 +117,7 @@ function Retention.validArchive(value)
   and whole(value.participants.a.userId,1,10^15)
   and whole(value.participants.b.userId,1,10^15)
   and value.participants.a.userId~=value.participants.b.userId
+  and validAudit(value)
   and type(value.retention)=="table"
   and whole(value.retention.terminalAt,value.createdAt,10^15)
   and whole(value.retention.archivedAt,value.retention.terminalAt,10^15)

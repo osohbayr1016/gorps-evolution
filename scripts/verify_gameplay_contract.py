@@ -14,6 +14,7 @@ sessions=Path("src/server/SessionPolicy.lua").read_text()
 trade=Path("src/server/Trade.lua").read_text()
 trade_receipts=Path("src/server/TradeReceiptPolicy.lua").read_text()
 trade_retention=Path("src/server/TradeReceiptRetention.lua").read_text()
+trade_audit_test=Path("scripts/test_trade_audit.luau").read_text()
 trade_persistence=Path("src/server/TradePersistence.lua").read_text()
 trade_store=Path("src/server/TradeStoreAdapter.lua").read_text()
 trade_settlement=Path("src/server/TradeSettlement.lua").read_text()
@@ -70,6 +71,14 @@ contracts={
  )) and 'TRADE_DIAGNOSTIC_LIMIT=64' in data
     and 'function Data.getTradeDiagnostics()' in data
     and 'C.DurableTrades=false' in config,
+ "trade lifecycle audit is bounded and restart-safe":all(token in trade_receipts for token in (
+    'Policy.AUDIT_VERSION=1','_audit={version=Policy.AUDIT_VERSION,createdAt=createdAt}',
+    'nextValue._audit.committedAt','nextValue._audit.abortedAt',
+    'nextValue._audit.completedAt',
+ )) and all(token in trade_audit_test for token in (
+    'commit retry preserves first time','archive carries no offer payload',
+    'legacy receipt remains recoverable',
+ )) and 'C.DurableTrades=false' in config,
  "concrete trade store wrapper classifies safe diagnostics":all(token in trade_store for token in (
     'function Adapter.classify(','function Adapter.new(',
     'datastore_update_failed','datastore_update_rejected',

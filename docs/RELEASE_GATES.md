@@ -107,13 +107,21 @@ observed. A 64-entry server-only diagnostic ring excludes offers and snapshots.
 The concrete `TradeStoreAdapter.lua` now classifies wrapper failures and is
 fault-injected with the coordinator, but only against a fake `UpdateAsync`
 service; the ring and Output warnings are not restart-safe durable evidence.
+The receipt itself now preserves bounded creation, immutable-decision and
+completion timestamps across restarts inside its existing atomic writes. This
+does not make wrapper error classifications durable and stores no trade payload
+in the compact archive.
 
 **Still release-blocking:** each player's profile persists separately. Crash
 tests against the concrete/private-published DataStore remain mandatory before
 changing the release flag. Required evidence includes failures before and after
 receipt creation, each profile prepare, commit, each profile apply, retention
 schedule/archive and cleanup, with retry-safe convergence and no duplicate
-assets. The fake-store suites are not Roblox runtime proof; a never-revisited
+assets. Receipt decisions now persist bounded lifecycle timestamps inside the
+same atomic values, without an extra write or archived offer/profile payload.
+Headless audit tests prove chronology and retry stability, not live DataStore
+timing or restart-safe wrapper error logs. The fake-store suites are not Roblox
+runtime proof; a never-revisited
 receipt may also remain full beyond its eligibility deadline because no global
 background index has been approved.
 

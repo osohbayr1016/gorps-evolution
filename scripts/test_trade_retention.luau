@@ -100,6 +100,8 @@ local ok,status=Adapter.execute(store,keys,candidate())
 equal(ok,true,"terminal transaction completes")
 equal(status,ReceiptPolicy.COMPLETE,"terminal status")
 local full=store.values[receiptKey]
+equal(full._audit.committedAt,1900000100,"persistence uses store clock for commit audit")
+equal(full._audit.completedAt,1900000100,"persistence uses store clock for completion audit")
 equal(full._retention.terminalAt,1900000100,"retention starts after both profile results")
 equal(full._retention.compactAfter,1900000100+ReceiptRetention.SECONDS,
  "retention has bounded compact time")
@@ -124,6 +126,8 @@ equal(archive.participants.a.before,nil,"archive removes before snapshot")
 equal(archive.participants.a.after,nil,"archive removes after snapshot")
 equal(archive.participants.a.userId,301,"archive keeps participant identity")
 equal(archive.outcome,ReceiptPolicy.COMPLETE,"archive keeps terminal decision")
+equal(archive.audit.committedAt,1900000100,"archive keeps persisted commit audit")
+equal(archive.audit.completedAt,1900000100,"archive keeps persisted completion audit")
 
 local archivedB,archiveStateB=Adapter.recoverForLoad(
  store,keys.b.key,tokenB,302,store.values[keys.b.key]
@@ -158,6 +162,19 @@ equal(badStatus,Adapter.PENDING,"conflicting archive needs recovery")
 equal(type(badStore.values[keys.a.key]._tradeResult),"table",
  "conflicting archive cannot erase terminal evidence")
 
+local failedLeft,failedRight=profiles()
+local failedKeys=copy(keys)
+failedKeys.b.token="wrong-session:333333333333"
+local failedStore=Store.new({
+ [keys.a.key]=failedLeft,
+ [keys.b.key]=failedRight,
+},1900000200)
+local failedOk,failedStatus=Adapter.execute(failedStore,failedKeys,candidate())
+equal(failedOk,nil,"lost peer ownership keeps abort cleanup pending")
+equal(failedStatus,Adapter.PENDING,"lost peer ownership fails closed")
+equal(failedStore.values[receiptKey]._audit.abortedAt,1900000200,
+ "persistence uses store clock for abort audit")
+
 local abortLeft,abortRight=profiles()
 local abortCandidate=candidate()
 local abortReceipt=ReceiptPolicy.abort(abortCandidate)
@@ -173,5 +190,7 @@ equal(abortStatus,ReceiptPolicy.ABORTED,"safe abort status")
 equal(abortStore.values[keys.a.key]._trade,nil,"safe abort clears prepared marker")
 equal(abortStore.values[receiptKey]._retention.terminalAt,1900000200,
  "abort retention starts only after both profiles confirmed clean")
+equal(abortStore.values[receiptKey]._audit.abortedAt,1900000000,
+ "pre-decided abort retry preserves original audit time")
 
 print("PASS: "..checks.." trade receipt retention assertions with safe archive cleanup (fake store only).")

@@ -60,6 +60,27 @@ adapter mutations. `scripts/test_trade_retention.luau` covers the deadline,
 archive payload removal, both marker cleanups, conflicts and a lost cleanup
 response against the real retention/persistence modules.
 
+### Restart-safe lifecycle audit
+
+Receipt version 1 now includes a bounded `_audit` object with schema version and
+`createdAt`. The existing PREPARING → COMMITTED/ABORTED receipt write sets exactly
+one of `committedAt` or `abortedAt`; the existing COMMITTED → COMPLETE write sets
+`completedAt`. Values come from the store's injected clock, live in the same
+atomic receipt value as the decision, and preserve the first value on retry after
+an unknown response. There is no separate audit key and no added DataStore write.
+
+The 30-day metadata archive preserves these lifecycle timestamps, participant
+user IDs and outcome, but not offers or before/after profiles. Legacy receipts
+without `_audit` remain recoverable and receive a bounded record on their next
+transition. Invalid mixed commit/abort histories, timestamps before creation and
+completion before commit fail validation. `scripts/test_trade_audit.luau` covers
+chronology, retry stability, legacy recovery and payload-free archival; the
+retention fake-store suite proves `TradePersistence` passes its store clock.
+
+This audit survives server restart because it is part of the receipt. The
+THROTTLED/BUDGET/TRANSIENT classifications remain server-local diagnostics and
+are **not** claimed as restart-safe operational logs.
+
 ## Still required before enabling the feature
 
 - Extend fault injection through the concrete DataStore wrapper. Current tests
