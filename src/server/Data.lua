@@ -10,6 +10,7 @@ local Config=require(ReplicatedStorage.Shared.Config)
 local SessionPolicy=require(script.Parent.SessionPolicy)
 local TradePersistence=require(script.Parent.TradePersistence)
 local TradeSettlement=require(script.Parent.TradeSettlement)
+local TradeStoreAdapter=require(script.Parent.TradeStoreAdapter)
 local Data={}
 local profiles={}
 local versions={}
@@ -21,6 +22,7 @@ local settling={}
 local settlementFault={}
 local tradeDiagnostics={}
 local TRADE_DIAGNOSTIC_LIMIT=64
+local tradeDiagnosticSequence=0
 local studio=RunService:IsStudio()
 local store=nil
 local function getStore()
@@ -61,29 +63,24 @@ local function claimSession(liveStore,key,token)
  return false,lastError
 end
 local function tradeStore(liveStore)
- local adapter={}
- function adapter:update(key,transform)
-  local rejected
-  local value=liveStore:UpdateAsync(key,function(old)
-   local nextValue,reason=transform(old)
-   rejected=reason
-   return nextValue
-  end)
-  if value==nil then return nil,rejected end
-  return value
- end
- function adapter:now() return os.time() end
- function adapter:diagnostic(kind,fields)
-  local entry={at=os.time(),kind=tostring(kind):sub(1,40)}
+ return TradeStoreAdapter.new(liveStore,{
+  now=os.time,
+  record=function(kind,fields)
+  tradeDiagnosticSequence+=1
+  local entry={sequence=tradeDiagnosticSequence,at=os.time(),kind=tostring(kind):sub(1,40)}
   if type(fields)=="table" then
    if type(fields.id)=="string" then entry.id=fields.id:sub(1,44) end
    if type(fields.status)=="string" then entry.status=fields.status:sub(1,24) end
    if type(fields.reason)=="string" then entry.reason=fields.reason:sub(1,160) end
+   if type(fields.scope)=="string" then entry.scope=fields.scope:sub(1,16) end
   end
   table.insert(tradeDiagnostics,entry)
   if #tradeDiagnostics>TRADE_DIAGNOSTIC_LIMIT then table.remove(tradeDiagnostics,1) end
- end
- return adapter
+  if kind=="datastore_update_failed" then
+   warn("[Gorps TradeStore]",entry.status,entry.scope,entry.reason)
+  end
+  end,
+ })
 end
 local function releaseClaim(liveStore,key,token)
  local ok,result=retry(function()

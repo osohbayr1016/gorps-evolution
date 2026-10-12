@@ -87,6 +87,15 @@ to a 64-entry in-memory diagnostic ring exposed to server code through
 `Data.getTradeDiagnostics()`. It never records offers, inventory snapshots or
 other gameplay payloads, and it is not a durable analytics system.
 
+`TradeStoreAdapter.lua` is the concrete live `UpdateAsync` boundary. It catches
+service exceptions without changing the coordinator's three-attempt retry
+budget, distinguishes callback rejection from service failure, and classifies
+sanitized errors as THROTTLED, BUDGET, TRANSIENT, CONFIG or UNKNOWN. Diagnostics
+record only receipt/profile scope, never the actual DataStore key. The 119-case
+fake-service suite injects a lost response after each of the eight mutations and
+throttle/budget failures through this exact adapter. String classification is
+operational triage, not an engine guarantee; Roblox may change error text.
+
 
 ## Implemented adapter boundary
 
@@ -111,5 +120,5 @@ receipt. `Data.settleTrade` blocks remote actions, harvesting, minute ticks and
 ordinary save mutation for both participants, revalidates identity/version/
 session ownership, and fails closed to join-time recovery on an unknown result.
 
-Concrete DataStore fault injection, cross-server diagnostics and private-
-published evidence remain release blockers; `DurableTrades` stays false.
+Live DataStore fault injection, restart-safe cross-server diagnostics and
+private-published evidence remain release blockers; `DurableTrades` stays false.

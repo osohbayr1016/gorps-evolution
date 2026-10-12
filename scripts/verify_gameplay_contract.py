@@ -15,6 +15,7 @@ trade=Path("src/server/Trade.lua").read_text()
 trade_receipts=Path("src/server/TradeReceiptPolicy.lua").read_text()
 trade_retention=Path("src/server/TradeReceiptRetention.lua").read_text()
 trade_persistence=Path("src/server/TradePersistence.lua").read_text()
+trade_store=Path("src/server/TradeStoreAdapter.lua").read_text()
 trade_settlement=Path("src/server/TradeSettlement.lua").read_text()
 config=Path("src/shared/Config.lua").read_text()
 contracts={
@@ -68,6 +69,16 @@ contracts={
     'diagnostic(store,"retention_scheduled"','diagnostic(store,"receipt_archived"'
  )) and 'TRADE_DIAGNOSTIC_LIMIT=64' in data
     and 'function Data.getTradeDiagnostics()' in data
+    and 'C.DurableTrades=false' in config,
+ "concrete trade store wrapper classifies safe diagnostics":all(token in trade_store for token in (
+    'function Adapter.classify(','function Adapter.new(',
+    'datastore_update_failed','datastore_update_rejected',
+    'return "THROTTLED"','return "BUDGET"','return "TRANSIENT"',
+    'return "CONFIG"','return "UNKNOWN"'
+ )) and 'TradeStoreAdapter.new(liveStore' in data
+    and 'local TradeStoreAdapter=require(script.Parent.TradeStoreAdapter)' in data
+    and 'tradeDiagnosticSequence+=1' in data
+    and 'TRADE_DIAGNOSTIC_LIMIT=64' in data
     and 'C.DurableTrades=false' in config,
  "durable settlement synchronizes exact committed snapshots":all(token in data for token in (
     'function Data.canMutate(','function Data.settleTrade(',

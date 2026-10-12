@@ -25,6 +25,13 @@ No paid dependencies, player-value wagers, live publishing or Robux changes. Pha
 - **Implemented:** a terminal clock starts only after both profiles are durably COMPLETE or confirmed-clean ABORTED. After 30 days, the next session-owned load atomically compacts the receipt to an immutable decision/participant/timestamp archive with no offers or snapshots, then clears only a matching terminal marker. Archive conflicts and response loss fail closed or converge idempotently. A 64-entry server-only diagnostic ring records bounded IDs/status/reasons without trade payloads.
 - **Acceptance evidence:** the real retention and persistence modules must pass deadline, pre-deadline, archive-content, two-profile cleanup, conflicting archive and lost-response cases; persistence must still converge across all eight writes. This is fake-store/source evidence only. Roblox throttling, cross-server timing, background cleanup of never-revisited receipts and private-published recovery remain unverified.
 
+## Latest core milestone — GE-TRADE-01g, concrete DataStore wrapper fault model
+
+- **Verified previous baseline:** commit [`187ff09`](https://github.com/osohbayr1016/gorps-evolution/commit/187ff09013201636071c7eafb407c66b5a0d7b6d), exact push [Actions 38202719546](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38202719546) **success**, including the 29-assertion retention suite, strict lint, authored world and Rojo package.
+- **Confirmed P0 coverage gap:** `Data.lua` contained the real `UpdateAsync` adapter inline. Prior fake-store tests called `TradePersistence` directly, so a wrapper-level exception, nil callback result, throttle message or post-write response loss could change behavior without any regression detecting it.
+- **Implemented:** packaged `TradeStoreAdapter.lua` is now the sole live trade wrapper. It catches each `UpdateAsync` call, preserves bounded coordinator retries, classifies THROTTLED/BUDGET/TRANSIENT/CONFIG/UNKNOWN separately from callback REJECTED, reports only sanitized scope/status/reason metadata, and never records a raw profile key, offer or snapshot. `Data.lua` assigns monotonic per-server diagnostic sequence numbers, caps the ring at 64 and warns on wrapper failures. `DurableTrades=false` is unchanged.
+- **Acceptance evidence:** 119 concrete-wrapper assertions run the real retention/persistence coordinator through a fake `UpdateAsync` service, inject response loss after each of eight durable mutations, prove exact-once balances, retry two throttles, fail closed after three budget errors, and verify diagnostic classification plus exact-key redaction. This is not a live DataStore request or restart-safe log proof.
+
 ## Latest visual milestone — GE-MAP-02d, real-map obstacle-aware sculpting
 
 - **Verified previous baseline:** commit [e29a957](https://github.com/osohbayr1016/gorps-evolution/commit/e29a95779635c9c09dfbcd374cf042a52b278412), exact push [Actions 38191185397](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38191185397) **success**. The source terrain test ran with empty/one synthetic obstacle while the real map uses 70 resource roots, 64 forest trunks and other decor; a green run could have produced very few actual safe inland hills.
@@ -251,8 +258,8 @@ Research is translated into backlog/implementation decisions. It is not a reason
 
 ## NEXT ACTION
 
-1. Verify the exact main commit/Actions run for GE-TRADE-01f and record results in the next implementation commit. Repair a failing build or supplied first red Studio/private-server error before adding another milestone.
-2. Extend fault injection through the concrete DataStore wrapper, including budget/throttle classification and restart-safe diagnostic evidence. Keep `DurableTrades=false`.
+1. Verify the exact main commit/Actions run for GE-TRADE-01g and record results in the next implementation commit. Repair a failing build or supplied first red Studio/private-server error before adding another milestone.
+2. Design restart-safe, bounded operational evidence without persisting offers/snapshots or consuming unsafe DataStore budget. Keep `DurableTrades=false`; do not treat in-memory ring or Output warnings as durable proof.
 3. Run private-published two-account crash/rejoin, throttle, unknown-outcome, lease-expiry and shutdown cases. GE-START-02 / GE-SAVE-02 / GE-SAVE-03 still require engine evidence; published trading stays closed until every boundary is proven.
 4. After verified core/visual gates, progress to skill-based non-wager PvP, original refined assets/clips, genuine multi-planet craftable travel and seasonal content. No public publishing or Robux changes are authorized.
 

@@ -104,6 +104,9 @@ of a snapshot save. The release flag remains false. Terminal receipts now
 become eligible after 30 days for session-owned compaction to immutable
 metadata-only archives; profile markers clear only after a matching archive is
 observed. A 64-entry server-only diagnostic ring excludes offers and snapshots.
+The concrete `TradeStoreAdapter.lua` now classifies wrapper failures and is
+fault-injected with the coordinator, but only against a fake `UpdateAsync`
+service; the ring and Output warnings are not restart-safe durable evidence.
 
 **Still release-blocking:** each player's profile persists separately. Crash
 tests against the concrete/private-published DataStore remain mandatory before
