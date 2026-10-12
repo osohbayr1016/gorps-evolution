@@ -13,3 +13,23 @@
 **Studio visual acceptance:** Start Play on updated Rojo build. From center spawn pan north to compare escarpment depth and avoid jagged cutoffs; walk forest/mines/Glowcap routes, harvest every starter node, approach knolls to verify genuine elevation and no impassable overlap; inspect glow during afternoon and 19:00 Studio Lighting ClockTime; verify text/prompt contrast, no washed-out Bloom, and Phone Emulator frame time/memory (measure, do not assume). Record the first failing screenshot/output error.
 
 **Release safety:** Published trading stays disabled. New lighting and landscape source tests/green CI prove packaging and positional contracts only, not real Studio shading, engine collision, visual quality, 30/60 FPS, multiplayer or monetization readiness.
+
+
+
+## GE-MAP-02b — real smooth Roblox Terrain hills (2026-10-12, engine QA pending)
+
+**Implementation:** `src/shared/TerrainPlan.lua` produces a stable, bounded, server-authoritative plan of 16 original peripheral shoulder sites with two material layers (rock foot, grassy crest); `src/server/WorldTerrain.lua` writes **real workspace.Terrain smooth voxels** with `FillBall`. The launcher `src/server/World.lua` invokes it once per untouched server terrain version. Obstacles are read from the current 70 authored harvest interact roots and 64 forest trunks and compared with protected village/trail/ranch/lagoon/quarry regions *before* sculpting; unsafe sites are skipped. Maximum 48 sphere writes, actual planned maximum 32. This does not move a ranch, resource, road or pet. `Terrain:Clear()` is never called, and existing authored Terrain is not erased.
+
+**Edit mode:** Rojo cannot serialize newly created voxels into the statically generated XML part model, so the .rbxlx build itself contains only this code; normal Play automatically builds voxels server-side. To **bake them permanently into a local Studio Place** after Rojo sync (opt-in; save your own backup), stop Play and paste this into Studio's **Command Bar**:
+
+```lua
+local gameTerrain = require(game.ServerScriptService.GorpsServer.WorldTerrain)
+local ok,info=gameTerrain.apply(workspace:WaitForChild("PlanetVerdant"))
+print("Voxel bake:",ok,info)
+```
+
+Save the edited place to retain Workspace.Terrain on your machine. The terrain version attribute prevents a second application of identical shapes. An edited .rbxlx must not be claimed to contain baked voxels unless saved from Studio.
+
+**Authoritative API:** [Roblox Terrain:FillBall](https://create.roblox.com/docs/reference/engine/classes/Terrain#FillBall) creates smooth material-filled voxel spheres. It is not a MeshPart, a disc, or a thin cosmetic overlay. The terrain authoring is deterministic and its pure Luau plan is tested in CI; engine geometry and rendering are not proven by headless tests.
+
+**Required QA:** Play the latest synced Studio build, inspect `Workspace.Terrain` and the `[Gorps World] Applied smooth voxel terrain` Output line; compare fixed-camera spawn-to-north and forest/quarry horizon, walk each tutorial route and ranch perimeter, harvest from an edge-near node, and check no buried nodes, abrupt cube seams or newly impassable paths. Profile mobile FPS/memory with the same device as before; keep native-Part fallback until Studio accepts new voxels. Do not claim published-client voxel replication without an actual two-client test.

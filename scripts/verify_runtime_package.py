@@ -40,6 +40,8 @@ required={
  "ServerScriptService/GorpsServer/TradeReceiptPolicy":"ModuleScript",
  "ServerScriptService/GorpsServer/TradePersistence":"ModuleScript",
  "ServerScriptService/GorpsServer/TradeSettlement":"ModuleScript",
+ "ServerScriptService/GorpsServer/WorldTerrain":"ModuleScript",
+ "ReplicatedStorage/Shared/TerrainPlan":"ModuleScript",
  "ReplicatedStorage/Shared/Config":"ModuleScript",
  "ReplicatedStorage/Shared/TradeRules":"ModuleScript",
  "ReplicatedStorage/Shared/Onboarding":"ModuleScript",
@@ -78,5 +80,8 @@ for species in ("Gorp","Shade","Boulder","Bloom","Carrier","Mole","Dart"):
  assert len(motors)>=6, "missing packaged creature joints: "+species
  assert found[prefix+"/AnimationController"][0]=="AnimationController", "missing authoring controller"
  print("PASS: packaged editable rig",species,"with",len(motors),"joints")
+world_source = next(p.text or "" for p in found["ServerScriptService/GorpsServer/World"][1].find("Properties") if p.get("name")=="Source")
+terrain_source = next(p.text or "" for p in found["ServerScriptService/GorpsServer/WorldTerrain"][1].find("Properties") if p.get("name")=="Source")
+assert "WorldTerrain.apply" in world_source and "FillBall" in terrain_source, "voxel builder not wired to world boot"
 print("PASS: all critical scripts and original editable creature rigs are packaged (not Studio execution)")
 

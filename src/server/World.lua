@@ -4,6 +4,7 @@ local TweenService=game:GetService("TweenService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local C=require(ReplicatedStorage.Shared.Config)
 local CreatureFactory=require(ReplicatedStorage.Shared.CreatureFactory)
+local WorldTerrain=require(script.Parent.WorldTerrain)
 local World={}
 local folder
 local worldReady=false
@@ -77,6 +78,13 @@ function World.make(onGather)
  local terrain=planet:FindFirstChild("TerrainAndPaths")
  if not nodes or not terrain or not terrain:FindFirstChild("Ground") then
   error("PlanetVerdant is incomplete: missing ResourceNodes or Ground")
+ end
+ -- Generate smooth *real voxel terrain* at server startup (not a fake Part
+ -- terrain). Never block player boot if the engine rejects a terrain write.
+ -- Editing Studio users can bake the exact same deterministic plan manually.
+ local applied,okOrReason,detail=pcall(WorldTerrain.apply,planet)
+ if not applied or not okOrReason then
+  warn("[Gorps World] Voxel relief unavailable:",detail or okOrReason)
  end
  folder=workspace:FindFirstChild("ChaosGalaxy")
  if not folder then
