@@ -19,6 +19,8 @@ local sessions={}
 local unloading={}
 local settling={}
 local settlementFault={}
+local tradeDiagnostics={}
+local TRADE_DIAGNOSTIC_LIMIT=64
 local studio=RunService:IsStudio()
 local store=nil
 local function getStore()
@@ -70,6 +72,17 @@ local function tradeStore(liveStore)
   if value==nil then return nil,rejected end
   return value
  end
+ function adapter:now() return os.time() end
+ function adapter:diagnostic(kind,fields)
+  local entry={at=os.time(),kind=tostring(kind):sub(1,40)}
+  if type(fields)=="table" then
+   if type(fields.id)=="string" then entry.id=fields.id:sub(1,44) end
+   if type(fields.status)=="string" then entry.status=fields.status:sub(1,24) end
+   if type(fields.reason)=="string" then entry.reason=fields.reason:sub(1,160) end
+  end
+  table.insert(tradeDiagnostics,entry)
+  if #tradeDiagnostics>TRADE_DIAGNOSTIC_LIMIT then table.remove(tradeDiagnostics,1) end
+ end
  return adapter
 end
 local function releaseClaim(liveStore,key,token)
@@ -101,6 +114,9 @@ function Data.supportsTrading()
  return studio or Config.DurableTrades==true
 end
 function Data.get(player) return profiles[player] end
+function Data.getTradeDiagnostics()
+ return Rules.copy(tradeDiagnostics)
+end
 function Data.canMutate(player)
  return profiles[player]~=nil and not unloading[player] and not settling[player]
 end

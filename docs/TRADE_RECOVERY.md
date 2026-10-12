@@ -5,8 +5,10 @@ pure state machine. `TradePersistence.lua` now drives that policy through an
 injected UpdateAsync-style store with session-token checks and per-profile
 recovery. `Data.lua` invokes raw join recovery before gameplay hydration,
 protects pending markers from ordinary saves, and now owns a gated live
-settlement entry point. Published trading remains closed while retention,
-diagnostics and private-published fault evidence are incomplete.
+settlement entry point. `TradeReceiptRetention.lua` schedules safe terminal
+payload compaction and `Data.lua` keeps bounded server-only diagnostics.
+Published trading remains closed while concrete/private-published fault
+evidence is incomplete.
 
 ## Safety invariants
 
@@ -33,6 +35,11 @@ diagnostics and private-published fault evidence are incomplete.
 10. ABORTED unlocks live memory only after both profile markers are cleared or
     their absence is durably observed under the owned sessions. Unconfirmed
     cleanup remains PENDING even when the receipt already says ABORTED.
+11. The 30-day retention clock begins only after both sides are durably terminal.
+    On the first owned profile load at or after the deadline, the receipt becomes
+    an immutable archive containing IDs, participant IDs, outcome and timestamps,
+    but no offers or before/after snapshots. A terminal profile marker clears
+    only after that matching archive is observed. Conflicts fail closed.
 
 ## Required durable write order
 
@@ -45,13 +52,16 @@ diagnostics and private-published fault evidence are incomplete.
 | 5 | Resolve profile A | Resolve B; A retry is a no-op |
 | 6 | Resolve profile B | Mark receipt complete |
 | 7 | Change receipt to `COMPLETE` | Terminal no-op |
+| 8 | Attach terminal retention deadline | Retry later; terminal gameplay result stays final |
 
-`scripts/test_trade_receipt_policy.luau` simulates a process crash after each
-boundary and executes retry/conflict cases against the real policy module.
+`scripts/test_trade_receipt_policy.luau` simulates the seven decision boundaries.
+`scripts/test_trade_persistence.luau` injects response loss across all eight
+adapter mutations. `scripts/test_trade_retention.luau` covers the deadline,
+archive payload removal, both marker cleanups, conflicts and a lost cleanup
+response against the real retention/persistence modules.
 
 ## Still required before enabling the feature
 
-- Define bounded COMPLETE/ABORTED receipt retention and operational diagnostics.
 - Extend fault injection through the concrete DataStore wrapper. Current tests
   cover raw-load PREPARING recovery, marker-safe saves, permanent pre-write
   failure and lost responses, but not Roblox throttling or cross-server timing.
@@ -60,6 +70,22 @@ boundary and executes retry/conflict cases against the real policy module.
 
 Only after those checks pass may `Config.DurableTrades` be considered for a
 separate reviewed change. CI success alone is not approval to enable it.
+
+## Terminal retention and diagnostics
+
+Full terminal receipts retain recovery snapshots for 30 days **after** both
+profiles have confirmed COMPLETE or safe ABORTED cleanup. After that deadline,
+the next session-owned load atomically replaces the full receipt with a compact
+archive and then clears only that player's matching `_tradeResult`. The peer
+does the same on its next owned load. No global receipt index or unowned profile
+write is introduced. Consequently, a receipt that no player accesses after the
+deadline can remain full longer; proving scheduled cleanup would require a
+separate indexed/background design and live DataStore budget evidence.
+
+The server adapter emits only bounded metadata (`id`, status, reason and time)
+to a 64-entry in-memory diagnostic ring exposed to server code through
+`Data.getTradeDiagnostics()`. It never records offers, inventory snapshots or
+other gameplay payloads, and it is not a durable analytics system.
 
 
 ## Implemented adapter boundary
@@ -85,5 +111,5 @@ receipt. `Data.settleTrade` blocks remote actions, harvesting, minute ticks and
 ordinary save mutation for both participants, revalidates identity/version/
 session ownership, and fails closed to join-time recovery on an unknown result.
 
-Retention, diagnostics and private-published evidence remain release blockers;
-`DurableTrades` stays false.
+Concrete DataStore fault injection, cross-server diagnostics and private-
+published evidence remain release blockers; `DurableTrades` stays false.

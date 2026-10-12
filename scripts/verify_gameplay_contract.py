@@ -13,6 +13,7 @@ data=Path("src/server/Data.lua").read_text()
 sessions=Path("src/server/SessionPolicy.lua").read_text()
 trade=Path("src/server/Trade.lua").read_text()
 trade_receipts=Path("src/server/TradeReceiptPolicy.lua").read_text()
+trade_retention=Path("src/server/TradeReceiptRetention.lua").read_text()
 trade_persistence=Path("src/server/TradePersistence.lua").read_text()
 trade_settlement=Path("src/server/TradeSettlement.lua").read_text()
 config=Path("src/shared/Config.lua").read_text()
@@ -57,6 +58,16 @@ contracts={
  )) and 'TradePersistence.recoverForLoad(' in data
     and 'Autosave deferred for pending trade' in data
     and 'SessionPolicy.releaseRaw(' in data
+    and 'C.DurableTrades=false' in config,
+ "terminal trade retention is bounded and observable":all(token in trade_retention for token in (
+    'Retention.SECONDS=30*24*60*60','function Retention.attach(',
+    'function Retention.compact(','function Retention.validArchive(',
+    'function Retention.matchesArchive('
+ )) and all(token in trade_persistence for token in (
+    'ReceiptRetention.attach(','ReceiptRetention.compact(',
+    'diagnostic(store,"retention_scheduled"','diagnostic(store,"receipt_archived"'
+ )) and 'TRADE_DIAGNOSTIC_LIMIT=64' in data
+    and 'function Data.getTradeDiagnostics()' in data
     and 'C.DurableTrades=false' in config,
  "durable settlement synchronizes exact committed snapshots":all(token in data for token in (
     'function Data.canMutate(','function Data.settleTrade(',

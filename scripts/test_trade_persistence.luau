@@ -6,6 +6,10 @@ local receiptChunk=luau.load(fs.readFile("src/server/TradeReceiptPolicy.lua"),{
  debugName="src/server/TradeReceiptPolicy.lua",
 })
 local ReceiptPolicy=receiptChunk()
+local retentionChunk=luau.load(fs.readFile("src/server/TradeReceiptRetention.lua"),{
+ debugName="src/server/TradeReceiptRetention.lua",
+})
+local ReceiptRetention=retentionChunk()
 local sessionChunk=luau.load(fs.readFile("src/server/SessionPolicy.lua"),{
  debugName="src/server/SessionPolicy.lua",
 })
@@ -13,7 +17,11 @@ local SessionPolicy=sessionChunk()
 local adapterChunk=luau.load(fs.readFile("src/server/TradePersistence.lua"),{
  debugName="src/server/TradePersistence.lua",
  environment={
-  script={Parent={TradeReceiptPolicy=ReceiptPolicy,SessionPolicy=SessionPolicy}},
+  script={Parent={
+   TradeReceiptPolicy=ReceiptPolicy,
+   TradeReceiptRetention=ReceiptRetention,
+   SessionPolicy=SessionPolicy,
+  }},
   require=function(value) return value end,
  },
 })
@@ -46,9 +54,10 @@ Store.__index=Store
 function Store.new(values,failAfterWrite,blockedKey)
  return setmetatable({
   values=copy(values),writes=0,failAfterWrite=failAfterWrite,
-  failed=false,blockedKey=blockedKey,
+  failed=false,blockedKey=blockedKey,time=1800000100,
  },Store)
 end
+function Store:now() return self.time end
 function Store:update(key,transform)
  if self.blockedKey==key then error("injected pre-write failure for "..key) end
  local current=copy(self.values[key])
@@ -112,18 +121,18 @@ end
 
 -- Lose the response after each actual durable mutation. Retry must recognize the
 -- written value and converge without a duplicate debit or credit.
-for boundary=1,7 do
+for boundary=1,8 do
  local store=Store.new(values(),boundary)
  local ok,status=Adapter.execute(store,keys,receipt())
  equal(ok,true,"post-write boundary "..boundary.." succeeds")
  equal(status,ReceiptPolicy.COMPLETE,"post-write boundary "..boundary.." status")
  equal(store.failed,true,"post-write boundary "..boundary.." injected")
- equal(store.writes,7,"post-write boundary "..boundary.." has seven mutations")
+ equal(store.writes,8,"post-write boundary "..boundary.." has eight mutations")
  assertCommitted(store,"post-write boundary "..boundary)
  local retryOk,retryStatus=Adapter.execute(store,keys,receipt())
  equal(retryOk,true,"terminal retry "..boundary.." succeeds")
  equal(retryStatus,ReceiptPolicy.COMPLETE,"terminal retry "..boundary.." status")
- equal(store.writes,7,"terminal retry "..boundary.." adds no mutation")
+ equal(store.writes,8,"terminal retry "..boundary.." adds no mutation")
 end
 
 local blocked=Store.new(values(),nil,keys.b.key)

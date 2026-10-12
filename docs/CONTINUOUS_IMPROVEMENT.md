@@ -18,6 +18,13 @@ No paid dependencies, player-value wagers, live publishing or Robux changes. Pha
 - **Root cause and fix:** 17–19 stud candidate footprints plus a global six-stud buffer and live obstacle radii made every authored inland position impossible. The planner now keeps the large preferred contours but adds 12 measured, symmetrical original hillocks with a 12-stud validated footprint, four-stud safety margin and maximum ten-stud rock fill. All candidates still pass protected route/lagoon/quarry/ranch checks and actual runtime obstacles; the terrain stamp advances to `VerdantVoxelRelief_04`.
 - **Acceptance evidence:** the actual generated XML fixture must yield exactly 12 inland contours, at least two per side, unique bounded fills and identical repeated plans. Roblox Studio voxel rendering, collisions, mobile frame time and silhouettes remain unverified; `DurableTrades=false` remains unchanged.
 
+## Latest core milestone — GE-TRADE-01f, safe terminal receipt retention
+
+- **Verified previous baseline:** commit [`f79e286`](https://github.com/osohbayr1016/gorps-evolution/commit/f79e2861500506c7999662bf0e2abe0f83ddd462), exact push [Actions 38199283954](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38199283954) **success** (29 primary validation steps). `DurableTrades=false` remained enforced.
+- **Confirmed P0 storage/privacy gap:** COMPLETE/ABORTED receipts kept offers and both full before/after profiles indefinitely, while `_tradeResult` markers could never retire. A naive delete could erase evidence a reconnect still needs.
+- **Implemented:** a terminal clock starts only after both profiles are durably COMPLETE or confirmed-clean ABORTED. After 30 days, the next session-owned load atomically compacts the receipt to an immutable decision/participant/timestamp archive with no offers or snapshots, then clears only a matching terminal marker. Archive conflicts and response loss fail closed or converge idempotently. A 64-entry server-only diagnostic ring records bounded IDs/status/reasons without trade payloads.
+- **Acceptance evidence:** the real retention and persistence modules must pass deadline, pre-deadline, archive-content, two-profile cleanup, conflicting archive and lost-response cases; persistence must still converge across all eight writes. This is fake-store/source evidence only. Roblox throttling, cross-server timing, background cleanup of never-revisited receipts and private-published recovery remain unverified.
+
 ## Latest visual milestone — GE-MAP-02d, real-map obstacle-aware sculpting
 
 - **Verified previous baseline:** commit [e29a957](https://github.com/osohbayr1016/gorps-evolution/commit/e29a95779635c9c09dfbcd374cf042a52b278412), exact push [Actions 38191185397](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38191185397) **success**. The source terrain test ran with empty/one synthetic obstacle while the real map uses 70 resource roots, 64 forest trunks and other decor; a green run could have produced very few actual safe inland hills.
@@ -244,9 +251,9 @@ Research is translated into backlog/implementation decisions. It is not a reason
 
 ## NEXT ACTION
 
-1. Verify the exact main commit/Actions run for GE-TRADE-01e and record results in the next implementation commit. Repair a failing build or supplied first red Studio/private-server error before adding another milestone.
-2. If Studio feedback is supplied, fix the first confirmed defect. Otherwise continue P0 GE-TRADE-01 by defining bounded COMPLETE/ABORTED receipt retention and server-owned diagnostics without deleting evidence that a reconnect can still need. Keep `DurableTrades=false`.
-3. Extend fault injection through the concrete DataStore wrapper, then run private-published two-account crash/rejoin, throttle, unknown-outcome and shutdown cases. GE-START-02 / GE-SAVE-02 / GE-SAVE-03 still require engine evidence; published trading stays closed until every boundary is proven.
+1. Verify the exact main commit/Actions run for GE-TRADE-01f and record results in the next implementation commit. Repair a failing build or supplied first red Studio/private-server error before adding another milestone.
+2. Extend fault injection through the concrete DataStore wrapper, including budget/throttle classification and restart-safe diagnostic evidence. Keep `DurableTrades=false`.
+3. Run private-published two-account crash/rejoin, throttle, unknown-outcome, lease-expiry and shutdown cases. GE-START-02 / GE-SAVE-02 / GE-SAVE-03 still require engine evidence; published trading stays closed until every boundary is proven.
 4. After verified core/visual gates, progress to skill-based non-wager PvP, original refined assets/clips, genuine multi-planet craftable travel and seasonal content. No public publishing or Robux changes are authorized.
 
 Studio acceptance request: start a two-player local server, open TRADE on both clients, exchange five Wood for five Stone, then swap inactive pets and cancel a third offer. Each successful exchange must update both profiles exactly once, active pets must remain unofferable, and disconnect/cancel must grant nothing. In a private published server, TRADE must show the protection notice and no invite control. Controller, ranch, route, biome and companion acceptance remain in their dedicated QA documents.

@@ -19,13 +19,20 @@ end
 local ReceiptPolicy=luau.load(fs.readFile("src/server/TradeReceiptPolicy.lua"),{
  debugName="src/server/TradeReceiptPolicy.lua",
 })()
+local ReceiptRetention=luau.load(fs.readFile("src/server/TradeReceiptRetention.lua"),{
+ debugName="src/server/TradeReceiptRetention.lua",
+})()
 local SessionPolicy=luau.load(fs.readFile("src/server/SessionPolicy.lua"),{
  debugName="src/server/SessionPolicy.lua",
 })()
 local Persistence=luau.load(fs.readFile("src/server/TradePersistence.lua"),{
  debugName="src/server/TradePersistence.lua",
  environment={
-  script={Parent={TradeReceiptPolicy=ReceiptPolicy,SessionPolicy=SessionPolicy}},
+  script={Parent={
+   TradeReceiptPolicy=ReceiptPolicy,
+   TradeReceiptRetention=ReceiptRetention,
+   SessionPolicy=SessionPolicy,
+  }},
   require=function(value) return value end,
  },
 })()
@@ -67,9 +74,10 @@ local Store={}
 Store.__index=Store
 function Store.new(values,blocked,rejectPrepare)
  return setmetatable({
-  values=copy(values),blocked=blocked,rejectPrepare=rejectPrepare,writes=0,
+  values=copy(values),blocked=blocked,rejectPrepare=rejectPrepare,writes=0,time=1900000100,
  },Store)
 end
+function Store:now() return self.time end
 function Store:update(key,transform)
  if self.blocked==key then error("injected blocked profile") end
  local current=copy(self.values[key])
@@ -111,7 +119,7 @@ local store=Store.new({[keys.a.key]=left,[keys.b.key]=right})
 local ok,status,snapshots,receipt=Settlement.execute(store,keys,request(left,right))
 equal(ok,true,"durable settlement succeeds")
 equal(status,ReceiptPolicy.COMPLETE,"durable settlement completes")
-equal(store.writes,7,"settlement uses seven durable mutations")
+equal(store.writes,8,"settlement uses eight durable mutations including retention")
 equal(left.Inventory.Wood,100,"planning never mutates live left profile")
 equal(right.Inventory.Stone,100,"planning never mutates live right profile")
 equal(snapshots.a.Inventory.Wood,88,"returned left snapshot pays once")

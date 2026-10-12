@@ -103,6 +103,8 @@ function Policy.sameTransaction(left,right)
  local rightValue=copy(right)
  leftValue.state=Policy.PREPARING
  rightValue.state=Policy.PREPARING
+ leftValue._retention=nil
+ rightValue._retention=nil
  return equal(leftValue,rightValue)
 end
 function Policy.prepare(profile,receipt,role)

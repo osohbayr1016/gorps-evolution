@@ -1,12 +1,14 @@
 -- Session-checked durable trade coordinator over an injected UpdateAsync-style store.
 -- This module is intentionally not wired to live trading while DurableTrades is false.
 local ReceiptPolicy=require(script.Parent.TradeReceiptPolicy)
+local ReceiptRetention=require(script.Parent.TradeReceiptRetention)
 local SessionPolicy=require(script.Parent.SessionPolicy)
 
 local Persistence={}
 Persistence.RETRIES=3
 Persistence.PENDING="PENDING"
 Persistence.CLEAN="CLEAN"
+Persistence.ARCHIVED=ReceiptRetention.ARCHIVED
 
 local function copy(value)
  if type(value)~="table" then return value end
@@ -41,6 +43,18 @@ local function updateValue(store,key,transform)
   lastReason=ok and (reason or "Update rejected") or tostring(value)
  end
  return nil,lastReason
+end
+local function storeNow(store)
+ if type(store)=="table" and type(store.now)=="function" then
+  local ok,value=pcall(store.now,store)
+  if ok and type(value)=="number" then return math.floor(value) end
+ end
+ return os.time()
+end
+local function diagnostic(store,kind,fields)
+ if type(store)=="table" and type(store.diagnostic)=="function" then
+  pcall(store.diagnostic,store,kind,fields)
+ end
 end
 local function sameTransaction(stored,candidate)
  return ReceiptPolicy.sameTransaction(stored,candidate)
@@ -80,6 +94,25 @@ local function confirmAbortedProfile(store,entry,receipt,role)
   return ReceiptPolicy.resolve(stored,receipt,role)
  end)
 end
+local function attachRetention(store,key,candidate,receipt)
+ local retained,reason=updateValue(store,key,function(stored)
+  if not sameTransaction(stored,candidate) then
+   return nil,"Stored receipt does not match transaction"
+  end
+  if stored.state~=ReceiptPolicy.COMPLETE and stored.state~=ReceiptPolicy.ABORTED then
+   return nil,"Receipt is not terminal"
+  end
+  return ReceiptRetention.attach(stored,storeNow(store))
+ end)
+ if retained then
+  diagnostic(store,"retention_scheduled",{id=retained.id,status=retained.state})
+  return retained
+ end
+ -- Terminal safety is already established; retention can be retried later.
+ -- Never turn a completed/aborted trade back into an unknown gameplay result.
+ diagnostic(store,"retention_deferred",{id=receipt.id,status=receipt.state,reason=reason})
+ return receipt
+end
 local function abortPrepared(store,keys,candidate)
  local receipt,reason=updateValue(store,keys.receipt,function(stored)
   if not sameTransaction(stored,candidate) then
@@ -102,8 +135,12 @@ local function abortPrepared(store,keys,candidate)
  local left,leftReason=confirmAbortedProfile(store,keys.a,receipt,"a")
  local right,rightReason=confirmAbortedProfile(store,keys.b,receipt,"b")
  if not left or not right then
+  diagnostic(store,"abort_cleanup_pending",{
+   id=receipt.id,status=Persistence.PENDING,reason=leftReason or rightReason,
+  })
   return nil,Persistence.PENDING,leftReason or rightReason or "Abort cleanup unconfirmed"
  end
+ receipt=attachRetention(store,keys.receipt,candidate,receipt)
  return false,ReceiptPolicy.ABORTED,receipt
 end
 
@@ -119,9 +156,10 @@ function Persistence.execute(store,keys,candidate)
  end)
  if not receipt then return nil,Persistence.PENDING,reason end
  if receipt.state==ReceiptPolicy.ABORTED then
-  return false,ReceiptPolicy.ABORTED,receipt
+  return abortPrepared(store,keys,candidate)
  end
  if receipt.state==ReceiptPolicy.COMPLETE then
+  receipt=attachRetention(store,keys.receipt,candidate,receipt)
   return true,ReceiptPolicy.COMPLETE,receipt
  end
 
@@ -153,10 +191,11 @@ function Persistence.execute(store,keys,candidate)
 
  if receipt.state~=ReceiptPolicy.COMMITTED then
   if receipt.state==ReceiptPolicy.COMPLETE then
+   receipt=attachRetention(store,keys.receipt,candidate,receipt)
    return true,ReceiptPolicy.COMPLETE,receipt
   end
   if receipt.state==ReceiptPolicy.ABORTED then
-   return false,ReceiptPolicy.ABORTED,receipt
+   return abortPrepared(store,keys,candidate)
   end
   return nil,Persistence.PENDING,"Receipt has no recoverable decision"
  end
@@ -176,6 +215,7 @@ function Persistence.execute(store,keys,candidate)
    return nil,Persistence.PENDING,reason
   end
  end
+ receipt=attachRetention(store,keys.receipt,candidate,receipt)
  return true,ReceiptPolicy.COMPLETE,receipt
 end
 
@@ -235,7 +275,41 @@ function Persistence.recoverForLoad(store,profileKey,sessionToken,userId,claimed
   if not validMarker(terminal,userId,true) then
    return nil,Persistence.PENDING,"Invalid terminal trade marker"
   end
-  return copy(claimed),terminal.outcome
+  local receiptKey=Persistence.receiptKey(terminal.id)
+  local receipt,reason=updateValue(store,receiptKey,function(stored)
+   if ReceiptRetention.validArchive(stored) then
+    if ReceiptRetention.matchesArchive(stored,terminal) then return stored end
+    return nil,"Archived receipt does not match terminal marker"
+   end
+   if not ReceiptPolicy.valid(stored)
+    or not ReceiptPolicy.resolved(claimed,stored,terminal.role,terminal.outcome) then
+    return nil,"Stored receipt does not match terminal marker"
+   end
+   if ReceiptRetention.due(stored,storeNow(store)) then
+    return ReceiptRetention.compact(stored,storeNow(store))
+   end
+   return stored
+  end)
+  if not receipt then return nil,Persistence.PENDING,reason end
+  if ReceiptRetention.validArchive(receipt) then
+   local cleared
+   cleared,reason=updateOwnedProfile(store,{key=profileKey,token=sessionToken},function(stored)
+    if type(stored)=="table" and stored._trade==nil and stored._tradeResult==nil then
+     return stored
+    end
+    if not validMarker(stored._tradeResult,userId,true)
+     or not ReceiptRetention.matchesArchive(receipt,stored._tradeResult) then
+     return nil,"Terminal marker changed during receipt archival"
+    end
+    local nextValue=copy(stored)
+    nextValue._tradeResult=nil
+    return nextValue
+   end)
+   if not cleared then return nil,Persistence.PENDING,reason end
+   diagnostic(store,"receipt_archived",{id=receipt.id,status=receipt.outcome})
+   return cleared,Persistence.ARCHIVED,receipt
+  end
+  return copy(claimed),terminal.outcome,receipt
  end
  return copy(claimed),Persistence.CLEAN
 end

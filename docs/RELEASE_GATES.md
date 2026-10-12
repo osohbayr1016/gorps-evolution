@@ -92,16 +92,27 @@ converge safely after each of seven modeled durable writes. The policy is pure
 and deliberately disconnected from live trade; see `TRADE_RECOVERY.md`.
 
 `TradePersistence.lua` provides bounded retries, session-token checks,
-immutable receipt matching and seven-boundary lost-response fault injection.
+immutable receipt matching and eight-mutation lost-response fault injection,
+including the terminal retention schedule.
 The published load path now resolves raw PREPARING/COMMITTED markers before
 `Rules.load`, and autosave/unload cannot erase pending recovery evidence.
 `TradeSettlement.lua` and `Data.settleTrade` now provide the still-gated live
 bridge: both profiles are locked, exact preconditions are saved, ownership and
 versions are revalidated, and memory changes only from a matching COMPLETE
 receipt. Unknown outcomes force rejoin recovery and raw session release instead
-of a snapshot save. The release flag remains false.
+of a snapshot save. The release flag remains false. Terminal receipts now
+become eligible after 30 days for session-owned compaction to immutable
+metadata-only archives; profile markers clear only after a matching archive is
+observed. A 64-entry server-only diagnostic ring excludes offers and snapshots.
 
-**Still release-blocking:** each player's profile persists separately. Receipt retention/diagnostics and crash tests against the concrete/private-published DataStore remain mandatory before changing the release flag. Required evidence includes failures before and after receipt creation, each profile prepare, commit, each profile apply and cleanup, with retry-safe convergence and no duplicate assets. The 26-assertion synchronization suite is fake-store evidence, not Roblox runtime proof.
+**Still release-blocking:** each player's profile persists separately. Crash
+tests against the concrete/private-published DataStore remain mandatory before
+changing the release flag. Required evidence includes failures before and after
+receipt creation, each profile prepare, commit, each profile apply, retention
+schedule/archive and cleanup, with retry-safe convergence and no duplicate
+assets. The fake-store suites are not Roblox runtime proof; a never-revisited
+receipt may also remain full beyond its eligibility deadline because no global
+background index has been approved.
 
 ## First-session collection loop (Pet Simulator 99 / Steal An Egg inspired)
 
