@@ -2,8 +2,9 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_01"
-Plan.MAX_WRITES=48
+Plan.VERSION="VerdantVoxelRelief_02"
+Plan.MAX_WRITES=80
+Plan.MAX_INLAND_SITES=12
 
 -- Cliff shoulders are near the outer map edge so the spawn vista has depth.
 -- A site's actual footprint is checked against reserved routes and live world
@@ -25,6 +26,35 @@ Plan.sites={
  {name="NorthQuarry",x=165,z=329,radius=26},
  {name="WestHorizon",x=-93,z=337,radius=27},
  {name="EastHorizon",x=93,z=337,radius=27},
+}
+
+-- Ordered left/right in pairs to sculpt both meadow-to-forest and
+-- meadow-to-quarry transitions rather than a handful of distant mountains.
+-- The server skips candidates crowded by live resource roots or tree trunks.
+-- radius is the entire *horizontal* safety footprint of three blended lobes.
+Plan.inlandCandidates={
+ {name="WestMeadowShoulder",x=-142,z=-36,radius=19},
+ {name="EastMeadowShoulder",x=112,z=-42,radius=19},
+ {name="WestForestTerrace",x=-232,z=154,radius=19},
+ {name="EastQuarryTerrace",x=230,z=154,radius=19},
+ {name="WestGroveRise",x=-185,z=184,radius=19},
+ {name="EastStoneRise",x=177,z=184,radius=19},
+ {name="WestCanopyHill",x=-213,z=235,radius=19},
+ {name="EastCanopyHill",x=219,z=235,radius=19},
+ {name="WestHighMeadow",x=-165,z=258,radius=19},
+ {name="EastHighMeadow",x=160,z=258,radius=19},
+ {name="WestWayfinderHill",x=-90,z=278,radius=19},
+ {name="EastWayfinderHill",x=91,z=278,radius=19},
+ {name="WestClearing",x=-71,z=214,radius=19},
+ {name="EastClearing",x=79,z=214,radius=19},
+ {name="WestOuterClearing",x=-260,z=204,radius=19},
+ {name="EastOuterClearing",x=264,z=204,radius=19},
+ {name="WestNorthClearing",x=-268,z=283,radius=19},
+ {name="EastNorthClearing",x=264,z=283,radius=19},
+ {name="WestSidePass",x=-266,z=138,radius=19},
+ {name="EastSidePass",x=267,z=138,radius=19},
+ {name="WestGroveEdge",x=-180,z=284,radius=19},
+ {name="EastGroveEdge",x=184,z=284,radius=19},
 }
 
 local protectedRects={
@@ -68,15 +98,48 @@ function Plan.isClear(site,obstacles)
  return true
 end
 
--- Two nested fills form a slate foot and a soft grassy crest with a real
--- voxel slope. Both occupy the same guarded horizontal footprint.
+local function farFromSites(site,placed)
+ for _,other in ipairs(placed) do
+  if distanceSquared(site.x,site.z,other.x,other.z)<
+   (site.radius+other.radius+4)^2 then return false end
+ end
+ return true
+end
+
+-- Each inland contour consists of THREE connected voxel fills, not three
+-- independent perfect round hills. The offset crest sits inside its entire
+-- radius-19 validated footprint. West is grassy woodland; east has dry quarry
+-- soil. All heights stay <=11 studs above the flat teaching-route ground.
+local function inlandContour(site,operations)
+ local dry=site.x>0
+ local shoulderRadius=14
+ local capRadius=11.6
+ local offsetX=site.x<0 and 6 or -6
+ table.insert(operations,{
+  name=site.name.."_Foundation",x=site.x,y=9-shoulderRadius,z=site.z,
+  radius=shoulderRadius,material="Rock",
+ })
+ table.insert(operations,{
+  name=site.name.."_Hillside",x=site.x,y=10-capRadius,z=site.z,
+  radius=capRadius,material=dry and "Ground" or "Grass",
+ })
+ table.insert(operations,{
+  name=site.name.."_Crest",x=site.x+offsetX,y=11-9,z=site.z+2,
+  radius=9,material=dry and "Ground" or "Grass",
+ })
+end
+
+-- The original outer horizon remains intact. Interior contours are strictly
+-- opt-in by geometric clearance and are spread over both biome shoulders.
 function Plan.build(obstacles)
  local operations={}
  local accepted=0
+ local placed={}
  for _,site in ipairs(Plan.sites) do
   if Plan.isClear(site,obstacles) then
    local radius=site.radius
    accepted+=1
+   table.insert(placed,site)
    table.insert(operations,{
     name=site.name.."_Rock",x=site.x,y=10-radius,z=site.z,
     radius=radius,material="Rock",
@@ -88,7 +151,17 @@ function Plan.build(obstacles)
    })
   end
  end
+ local inland=0
+ for _,site in ipairs(Plan.inlandCandidates) do
+  if inland>=Plan.MAX_INLAND_SITES then break end
+  if Plan.isClear(site,obstacles) and farFromSites(site,placed) then
+   inland+=1
+   accepted+=1
+   table.insert(placed,site)
+   inlandContour(site,operations)
+  end
+ end
  assert(#operations<=Plan.MAX_WRITES,"Terrain write budget exceeded")
- return operations,accepted
+ return operations,accepted,inland
 end
 return Plan

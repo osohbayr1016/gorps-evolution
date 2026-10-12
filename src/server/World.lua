@@ -82,10 +82,13 @@ function World.make(onGather)
  -- Generate smooth *real voxel terrain* at server startup (not a fake Part
  -- terrain). Never block player boot if the engine rejects a terrain write.
  -- Editing Studio users can bake the exact same deterministic plan manually.
- local applied,okOrReason,detail=pcall(WorldTerrain.apply,planet)
- if not applied or not okOrReason then
-  warn("[Gorps World] Voxel relief unavailable:",detail or okOrReason)
- end
+ task.defer(function()
+  if not planet.Parent then return end
+  local applied,okOrReason,detail=pcall(WorldTerrain.apply,planet)
+  if not applied or not okOrReason then
+   warn("[Gorps World] Voxel relief unavailable:",detail or okOrReason)
+  end
+ end)
  folder=workspace:FindFirstChild("ChaosGalaxy")
  if not folder then
   folder=Instance.new("Folder")

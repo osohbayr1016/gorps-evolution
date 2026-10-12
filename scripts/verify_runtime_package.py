@@ -83,5 +83,7 @@ for species in ("Gorp","Shade","Boulder","Bloom","Carrier","Mole","Dart"):
 world_source = next(p.text or "" for p in found["ServerScriptService/GorpsServer/World"][1].find("Properties") if p.get("name")=="Source")
 terrain_source = next(p.text or "" for p in found["ServerScriptService/GorpsServer/WorldTerrain"][1].find("Properties") if p.get("name")=="Source")
 assert "WorldTerrain.apply" in world_source and "FillBall" in terrain_source, "voxel builder not wired to world boot"
+assert "task.defer(function()" in world_source, "terrain creation must not stall startup"
+assert "task.wait()" in terrain_source, "voxel fills should yield between batches"
 print("PASS: all critical scripts and original editable creature rigs are packaged (not Studio execution)")
 

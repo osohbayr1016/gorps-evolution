@@ -44,9 +44,11 @@ function WorldTerrain.apply(planet)
   return false,"Not enough safe voxel relief sites"
  end
  local succeeded,reason=pcall(function()
-  for _,entry in ipairs(writes) do
+  for index,entry in ipairs(writes) do
    terrain:FillBall(Vector3.new(entry.x,entry.y,entry.z),entry.radius,
     Enum.Material[entry.material])
+   -- Amortize voxel writes rather than stalling the join/bootstrap frame.
+   if index%4==0 then task.wait() end
   end
  end)
  if not succeeded then
