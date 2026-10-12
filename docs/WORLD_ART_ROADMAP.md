@@ -66,3 +66,11 @@ The repaired fallback uses 12 measured open pockets split evenly west/east. Each
 **Implementation:** `VerdantRouteFork` uses twelve low non-colliding Ground segments to create two gentle, asymmetric arcs through the existing starter resource circuit. Paired original waystones use a terrace foot, angular stone spire, emissive band and rune to make the forest/quarry choice legible through the existing gate. They add no local lights, particles, animation loop or asset dependency and do not replace genuine voxel relief.
 
 **Acceptance boundary:** static tests prove route topology, material/collision policy, landmark composition and clearance from all 70 interaction roots in source and package. They do not prove camera legibility, z-fighting, terrain blending, avatar navigation or mobile cost. Fixed-camera Studio and real-device evidence remain mandatory before art acceptance.
+
+## GE-MAP-03b — east quarry vertical landmark
+
+**Baseline:** [`5f1e376`](https://github.com/osohbayr1016/gorps-evolution/commit/5f1e37606d392d55a80cb5280cac17600dc44b78), exact push [Actions 38227714787](https://github.com/osohbayr1016/gorps-evolution/actions/runs/38227714787) **success**. Its route fork made the east choice legible, but source inspection found the destination itself was a low Ball and repeated 4x3 boulder grid.
+
+**Implementation:** an original 27-part quarry kit forms three offset tapering terraces, a framed portal, amber crest, nine varied ore clusters and a low approach. The kit stays inside the existing quarry reserve, adds one net BasePart and no light/particle/runtime cost category. It does not claim a modeled MeshPart, cave interior or voxel cliff.
+
+**Acceptance boundary:** XML/package tests prove hierarchy, naming, material/collision policy, cluster variation and 70-resource clearance. Studio must still prove the east vista, apparent scale, portal traversal, terrain/material joins, shadows and baseline-phone cost. Next art production should repair observed engine defects first; absent evidence, compose the west lagoon/Glowcap handoff with the same bounded approach.

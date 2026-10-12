@@ -525,15 +525,48 @@ for i in range(6):
     block(lake,"BridgePost",(-182+i*3,5.6,41),(1,3.4,1),
           (128,97,77),material="Wood")
 quarry=group(landmarks,"SunstoneQuarry")
-block(quarry,"MineRidge",(222,3,20),(74,8,66),(101,113,124),
+# A three-level asymmetric quarry replaces the old low sphere and 4x3 grid of
+# identical rocks. The taper creates a readable east-side destination from the
+# route fork while keeping every piece inside the quarry's protected reserve.
+block(quarry,"QuarryTerraceLow",(222,4.5,20),(78,9,68),(94,108,116),
       shape="Ball",material="Slate")
-block(quarry,"Entrance",(222,7,-16),(23,13,6),(48,58,69),material="Slate")
-for i in range(12):
-    x=196+(i%4)*16
-    z=-7+(i//4)*16
-    block(quarry,"OreBoulder",(x,6,z),(9,9,9),(119,133,142),shape="Ball",material="Slate")
-    block(quarry,"OreGem",(x+2,9,z-1),(3,4,3),rng.choice([(113,209,218),(175,150,238),(245,202,120)]),
-          shape="Ball",solid=False,material="Neon")
+block(quarry,"QuarryTerraceMid",(230,11,29),(58,13,49),(111,121,124),
+      part_class="WedgePart",material="Slate",rotation=(0,-11,0))
+block(quarry,"QuarryCrown",(239,18,39),(38,14,31),(133,137,126),
+      part_class="WedgePart",material="Slate",rotation=(0,-19,0))
+block(quarry,"QuarryApproach",(181,1.3,-13),(54,.3,11),(156,145,119),
+      material="Ground",solid=False,rotation=(0,74,0))
+
+portal=group(quarry,"QuarryPortal")
+block(portal,"PortalButtressLeft",(211,9,-13),(8,16,9),(84,94,101),
+      part_class="WedgePart",material="Slate",rotation=(0,-7,0))
+block(portal,"PortalButtressRight",(233,9,-13),(8,16,9),(84,94,101),
+      part_class="WedgePart",material="Slate",rotation=(0,7,0))
+block(portal,"PortalLintel",(222,17,-13),(31,5,9),(105,111,110),material="Slate")
+block(portal,"Entrance",(222,9,-17),(15,14,4),(39,47,54),material="Slate",solid=False)
+block(portal,"SunstoneCrest",(222,22,-12),(4,7,4),(246,193,105),
+      part_class="WedgePart",material="Neon",solid=False,rotation=(0,45,0))
+
+# Uneven clusters make the excavation read as hand-worked strata rather than
+# a repeated primitive grid. Every cluster is deterministic and uses no light.
+quarry_clusters=[
+    (193,-1,8,10,7,-12),(202,17,11,8,9,18),(214,33,9,12,8,-7),
+    (231,14,12,9,10,13),(247,2,8,11,8,-21),(253,25,10,8,12,9),
+    (198,40,9,7,10,24),(237,47,13,9,8,-16),(258,43,7,10,9,27),
+]
+# Preserve the historical twelve-draw world RNG boundary so changing quarry
+# cluster count cannot silently move downstream Glowcaps, markets or scenery.
+quarry_gem_colors=[
+    rng.choice([(113,209,218),(175,150,238),(245,202,120)])
+    for _ in range(12)
+]
+for i,(x,z,sx,sy,sz,yaw) in enumerate(quarry_clusters,1):
+    block(quarry,f"OreBoulder_{i:02d}",(x,sy/2+1,z),(sx,sy,sz),
+          (119,133,142),shape="Ball",material="Slate",rotation=(0,yaw,0))
+    block(quarry,f"OreGem_{i:02d}",(x+sx*.18,sy+1.8,z-sz*.12),
+          (max(2.2,sx*.28),max(3.2,sy*.42),max(2.2,sz*.28)),
+          quarry_gem_colors[i-1],
+          part_class="WedgePart",solid=False,material="Neon",rotation=(0,yaw+18,0))
 for i in range(7):
     x=189+i*9
     block(quarry,"QuarryLantern",(x,3,-27),(1,3,1),(136,111,78),material="Wood")

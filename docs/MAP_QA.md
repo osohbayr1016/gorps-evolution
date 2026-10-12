@@ -63,6 +63,26 @@ and reject for any invisible gap, z-fighting, misleading turn, covered prompt
 or avatar snag. Record one phone FPS/memory sample; Emulator memory is not a
 real-device measurement.
 
+## GE-MAP-03b — terraced Sunstone Quarry
+
+The east landmark no longer uses a single low ridge and twelve identical rocks
+on a rectangular grid. Three offset Slate terraces climb toward the northeast,
+while two buttresses, a lintel, a dark non-colliding entrance and restrained
+amber crest establish one readable portal. Nine ore clusters vary in footprint,
+height and yaw. The replacement adds one net BasePart and no PointLight,
+particle, animation loop or external asset.
+
+`verify_map_routes.py` now rejects missing/non-rising tiers, a non-tapering
+silhouette, an incomplete portal kit, repeated equal boulders, blocking Neon,
+or ore clusters within 15 studs of any of the 70 resource roots. These are
+static placement contracts, not Roblox camera, collision or art approval.
+
+**One Studio test:** from the amber branch, keep a shoulder-height camera aimed
+east while walking from `MinesPath` to the quarry apron and through the framed
+entrance. Reject if the crest is hidden, terraces collapse into one flat mass,
+the avatar snags, an ore cluster covers a prompt, or Slate/Ground surfaces
+z-fight. Record the same phone FPS/memory sample used for the prior fork test.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 

@@ -34,15 +34,35 @@ def properties(item):
 
 def value(item, prop_name, default=None):
     props = properties(item)
-    return next((p.text for p in props or [] if p.get("name") == prop_name), default)
+    entries = props if props is not None else []
+    return next((p.text for p in entries if p.get("name") == prop_name), default)
 
 
 def position(item):
     props = properties(item)
-    frame = next((p for p in props or [] if p.get("name") == "CFrame"), None)
+    entries = props if props is not None else []
+    frame = next((p for p in entries if p.get("name") == "CFrame"), None)
     if frame is None:
         raise AssertionError((value(item, "Name"), "missing CFrame"))
     return float(frame.find("X").text), float(frame.find("Z").text)
+
+
+def elevation(item):
+    props = properties(item)
+    entries = props if props is not None else []
+    frame = next((p for p in entries if p.get("name") == "CFrame"), None)
+    if frame is None:
+        raise AssertionError((value(item, "Name"), "missing CFrame"))
+    return float(frame.find("Y").text)
+
+
+def size(item):
+    props = properties(item)
+    entries = props if props is not None else []
+    vector = next((p for p in entries if (p.get("name") or "").lower() == "size"), None)
+    if vector is None:
+        raise AssertionError((value(item, "Name"), "missing Size"))
+    return tuple(float(vector.find(component).text) for component in "XYZ")
 
 
 def direct_children(item):
@@ -127,6 +147,42 @@ def validate(path):
             assert math.dist((x, z), resource_point) >= 20, (
                 path, stone_name, resource_name, "landmark crowds resource prompt"
             )
+
+    quarry_models = named.get("SunstoneQuarry", [])
+    assert len(quarry_models) == 1, (path, "missing quarry destination")
+    quarry_parts = {value(child, "Name"): child for child in direct_children(quarry_models[0])}
+    tiers = [quarry_parts[name] for name in (
+        "QuarryTerraceLow", "QuarryTerraceMid", "QuarryCrown"
+    )]
+    assert [elevation(part) for part in tiers] == sorted(elevation(part) for part in tiers), (
+        path, "quarry terraces do not rise toward the skyline"
+    )
+    assert size(tiers[0])[0] > size(tiers[1])[0] > size(tiers[2])[0], (
+        path, "quarry silhouette does not taper"
+    )
+    portal_models = named.get("QuarryPortal", [])
+    assert len(portal_models) == 1, (path, "missing quarry portal landmark")
+    portal_parts = {value(child, "Name"): child for child in direct_children(portal_models[0])}
+    assert set(portal_parts) == {
+        "PortalButtressLeft", "PortalButtressRight", "PortalLintel",
+        "Entrance", "SunstoneCrest",
+    }
+    assert value(portal_parts["Entrance"], "CanCollide") == "false"
+    assert value(portal_parts["SunstoneCrest"], "Material") == "288"
+    assert value(portal_parts["SunstoneCrest"], "CanCollide") == "false"
+    boulders = [quarry_parts[f"OreBoulder_{index:02d}"] for index in range(1, 10)]
+    gems = [quarry_parts[f"OreGem_{index:02d}"] for index in range(1, 10)]
+    assert len({size(part) for part in boulders}) >= 7, (
+        path, "quarry regressed to repeated equal boulders"
+    )
+    assert all(value(part, "Material") == "288" and value(part, "CanCollide") == "false"
+               for part in gems), (path, "ore highlights must be bounded nonblocking Neon")
+    for boulder in boulders:
+        boulder_point = position(boulder)
+        for resource_name, resource_point in resources.items():
+            assert math.dist(boulder_point, resource_point) >= 15, (
+                path, resource_name, "quarry cluster crowds resource", boulder_point
+            )
     for station in ("TradingPost", "CraftingWorkshop", "FarmerGuild", "CreatureNursery"):
         model = named.get(station, [])
         assert len(model) == 1, (path, "missing village station", station)
@@ -139,7 +195,8 @@ def validate(path):
         candidates = named.get(cylinder_name, [])
         assert len(candidates) == 1, (path, "missing authored cylinder", cylinder_name)
         props = properties(candidates[0])
-        frame = next(p for p in props or [] if p.get("name") == "CFrame")
+        entries = props if props is not None else []
+        frame = next(p for p in entries if p.get("name") == "CFrame")
         assert abs(float(frame.find("R00").text)) < 0.01, (
             path, cylinder_name, "cylinder axis was not rotated vertical"
         )
@@ -147,7 +204,7 @@ def validate(path):
     print(
         f"PASS {path}: 8-node teaching circuit, 70 spaced resources, "
         "clear north route, two curved branches, paired waystones, five markers "
-        "and pitched village roofs"
+        "and pitched village roofs plus a terraced quarry portal"
     )
 
 
