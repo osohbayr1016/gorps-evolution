@@ -227,3 +227,25 @@ clearance. Studio still owns facade/roof seam, prompt projection, avatar snag,
 spawn composition and real-phone performance. Without engine evidence, next
 measure the fountain/platform frame and north-gate camera corridor before any
 additional prop or glow work.
+
+## GE-MAP-03j — move the fountain off the first navigation axis
+
+**Verified design basis:** Creator Hub's greybox curriculum makes spawn exits,
+primary lanes, camera-safe dimensions and sightline testing layout concerns that
+precede polish. The PS99 official area update confirms distributed area
+activities only; Gorps does not copy a plaza, prop, texture or branded layout.
+
+**Measured implementation:** the old 15-stud solid basin overlapped the fixed
+18×18 `SafetySpawn` by 7.5 studs and the solid column intersected a fixed
+spawn→`GateCrest` 3D segment. Repositioning the same four fountain pieces at
+`(-15.5, 12)`, reducing basin/water diameters to 11.5/9 and disabling water
+collision produces 1.409 studs of spawn clearance, a 9.75-stud central
+half-lane and zero static sightline blockers. Counts and budgets do not change.
+Priority P1; complexity low.
+
+**Evidence boundary and next step:** source/package tests protect the exact
+composition, clearance, collision policy and camera ray, not Studio spawning,
+visual grounding, camera clipping, avatar physics or device cost. Run five
+default spawns, direct north-gate walks and one fountain circle; repair the
+first engine defect. Without engine evidence, next measure the gate→route-fork
+surface/view handoff before new geometry or glow.

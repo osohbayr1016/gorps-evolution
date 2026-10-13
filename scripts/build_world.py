@@ -149,13 +149,20 @@ for index, (x, z, sx, sz, tint, material) in enumerate([
 
 hub = group(world, "VillageHub")
 block(hub, "WelcomePlatform", (0, 1.7, 8), (42, 1.3, 26), (169, 150, 119), material="Slate")
-block(hub, "FountainBasin", (0, 3.1, 4), (2.3, 15, 15), (127, 158, 167),
+# Keep the first north-gate view and the 18x18 SafetySpawn footprint open. The
+# fountain is a left-shoulder plaza landmark rather than a collidable spawn plug.
+FOUNTAIN_CENTER = (-15.5, 12)
+block(hub, "FountainBasin", (FOUNTAIN_CENTER[0], 3.1, FOUNTAIN_CENTER[1]),
+      (2.3, 11.5, 11.5), (127, 158, 167),
       shape="Cylinder", material="Slate", rotation=(0, 0, 90))
-block(hub, "FountainWater", (0, 4.4, 4), (.6, 12, 12), (92, 163, 159),
-      shape="Cylinder", material="Glass", rotation=(0, 0, 90))
-block(hub, "FountainColumn", (0, 7.5, 4), (7, 2.6, 2.6), (141, 173, 177),
+block(hub, "FountainWater", (FOUNTAIN_CENTER[0], 4.4, FOUNTAIN_CENTER[1]),
+      (.6, 9, 9), (92, 163, 159), shape="Cylinder", solid=False,
+      material="Glass", rotation=(0, 0, 90))
+block(hub, "FountainColumn", (FOUNTAIN_CENTER[0], 7.5, FOUNTAIN_CENTER[1]),
+      (7, 2.6, 2.6), (141, 173, 177),
       shape="Cylinder", rotation=(0, 0, 90))
-block(hub, "FountainTop", (0, 11.5, 4), (5, 2.5, 5), (149, 209, 195), shape="Ball", solid=False, material="Glass")
+block(hub, "FountainTop", (FOUNTAIN_CENTER[0], 11.5, FOUNTAIN_CENTER[1]),
+      (5, 2.5, 5), (149, 209, 195), shape="Ball", solid=False, material="Glass")
 
 # Four recognizable silhouettes share a small, reusable kit but never identical facades.
 # Geometry is authored in Edit mode and interaction doors retain their names.

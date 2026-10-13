@@ -1,5 +1,6 @@
 """Regression test: Rojo must bake a collidable ground and neutral spawn into the place."""
 import json
+import math
 import sys
 import xml.etree.ElementTree as ET
 
@@ -39,4 +40,29 @@ for name, class_name in (("Baseplate", "Part"), ("SafetySpawn", "SpawnLocation")
         value = next((p.text for p in properties if p.get("name") == property_name), None)
         assert value == "true", f"{name}.{property_name} is not true in built place"
 
-print("PASS: packaged place contains permanent collidable baseplate and safe SpawnLocation")
+def vector(properties, property_name):
+    prop = next(p for p in properties if p.get("name") == property_name)
+    return tuple(float(prop.find(component).text) for component in "XYZ")
+
+fountain = get_item("FountainBasin", "Part")
+fountain_water = get_item("FountainWater", "Part")
+fountain_position = vector(fountain, "CFrame")
+fountain_size = vector(fountain, "size")
+spawn_x, _, spawn_z = spawn["Position"]
+spawn_half_x, _, spawn_half_z = (component / 2 for component in spawn["Size"])
+nearest_x = min(spawn_x + spawn_half_x, max(spawn_x - spawn_half_x, fountain_position[0]))
+nearest_z = min(spawn_z + spawn_half_z, max(spawn_z - spawn_half_z, fountain_position[2]))
+basin_radius = fountain_size[1] / 2
+clearance = math.dist(
+    (fountain_position[0], fountain_position[2]), (nearest_x, nearest_z)
+) - basin_radius
+assert clearance >= 1.25, f"FountainBasin crowds SafetySpawn: {clearance:.3f} studs"
+water_collision = next(
+    (p.text for p in fountain_water if p.get("name") == "CanCollide"), None
+)
+assert water_collision == "false", "decorative FountainWater must not block spawn egress"
+
+print(
+    "PASS: packaged place contains permanent collidable baseplate, safe SpawnLocation, "
+    f"and {clearance:.3f}-stud fountain clearance"
+)

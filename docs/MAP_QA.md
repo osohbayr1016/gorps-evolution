@@ -232,3 +232,24 @@ Workshop, Farmer Guild and Nursery, then activate each Door. Reject floating
 trim, roof gaps, blocked prompts, invisible collision or silhouettes that still
 read as clones; confirm the north gate remains visible and record real-phone
 FPS/memory.
+
+## GE-MAP-03j — clear spawn egress and gate reveal
+
+Static measurement found the old 15-stud fountain basin centered inside the
+18×18 `SafetySpawn` footprint and its column crossing the fixed shoulder-height
+spawn→`GateCrest` segment. The same four pieces now sit at `(-15.5, 12)` as a
+smaller left-shoulder landmark. The basin/water diameters are 11.5/9 studs and
+the decorative water disc no longer collides. Generated XML measures 1.409
+studs of spawn clearance, a 9.75-stud central half-lane and zero blockers on the
+fixed gate line. No part, light, effect, script, external asset or RNG draw was
+added.
+
+`verify_map_routes.py` protects those geometry and collision contracts in the
+authored model and packaged place. It cannot prove Roblox spawn resolution,
+camera clipping, apparent scale, surface grounding, avatar movement or phone
+performance.
+
+**One Studio test:** press Play from the default spawn five times, walk straight
+through the north gate each time, then circle the fountain. Reject any spawn
+overlap, forced sidestep, camera clip, floating/embedded basin, hidden gate,
+seam, prompt obstruction or red Output error; record real-phone FPS/memory.

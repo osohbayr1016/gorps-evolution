@@ -507,6 +507,51 @@ def validate(path):
         path, "village roof hierarchy flattened", ridge_tops
     )
 
+    fountain = {name: named.get(name, []) for name in (
+        "FountainBasin", "FountainWater", "FountainColumn", "FountainTop"
+    )}
+    assert all(len(parts) == 1 for parts in fountain.values()), (
+        path, "missing or repeated fountain piece", fountain
+    )
+    fountain = {name: parts[0] for name, parts in fountain.items()}
+    fountain_centers = {position(part) for part in fountain.values()}
+    assert fountain_centers == {(-15.5, 12.0)}, (
+        path, "fountain lost its left-shoulder composition", fountain_centers
+    )
+    assert size(fountain["FountainBasin"]) == (2.3, 11.5, 11.5)
+    assert size(fountain["FountainWater"]) == (0.6, 9.0, 9.0)
+    assert value(fountain["FountainBasin"], "CanCollide") == "true"
+    assert value(fountain["FountainColumn"], "CanCollide") == "true"
+    assert value(fountain["FountainWater"], "CanCollide") == "false"
+    assert value(fountain["FountainTop"], "CanCollide") == "false"
+
+    # SafetySpawn is a fixed 18x18 project object at (0, 0). Approximate the
+    # vertical basin cylinder by its exact circular XZ footprint and require a
+    # positive body-width margin from the spawn rectangle.
+    basin_x, basin_z = position(fountain["FountainBasin"])
+    basin_radius = size(fountain["FountainBasin"])[1] / 2
+    nearest_spawn_x = min(9.0, max(-9.0, basin_x))
+    nearest_spawn_z = min(9.0, max(-9.0, basin_z))
+    spawn_clearance = math.dist(
+        (basin_x, basin_z), (nearest_spawn_x, nearest_spawn_z)
+    ) - basin_radius
+    assert spawn_clearance >= 1.25, (
+        path, "fountain overlaps or crowds SafetySpawn", spawn_clearance
+    )
+    assert abs(basin_x) - basin_radius >= 9.5, (
+        path, "fountain crowds the protected spawn-to-gate lane"
+    )
+
+    gate_crests = named.get("GateCrest", [])
+    assert len(gate_crests) == 1, (path, "missing north gate crest")
+    spawn_gate_blockers = visual_blockers(
+        root, (0.0, 6.0, 0.0), position3(gate_crests[0]), gate_crests
+    )
+    assert not spawn_gate_blockers, (
+        path, "spawn-to-gate shoulder-height sightline is occluded",
+        spawn_gate_blockers,
+    )
+
     for cylinder_name in ("FountainBasin", "FountainWater", "FountainColumn", "Saucer", "NorthBeacon"):
         candidates = named.get(cylinder_name, [])
         assert len(candidates) == 1, (path, "missing authored cylinder", cylinder_name)
@@ -520,7 +565,7 @@ def validate(path):
     print(
         f"PASS {path}: 8-node teaching circuit, 70 spaced resources, "
         "clear north route, two curved branches, paired waystones, five markers, "
-        "lagoon-to-grove handoff, four station profiles and distinct destinations"
+        "lagoon-to-grove handoff, four station profiles, clear spawn vista and distinct destinations"
     )
 
 
