@@ -563,6 +563,17 @@ for name,pos,size,yaw in [
 block(lake,"GlowingWater",(-214,2.2,45),(58,.8,55),(83,190,195),
       shape="Ball",solid=False,material="Neon")
 
+# Two low slate shelves make the open east bank legible on either side of the
+# guarded overlook. Their water-side ends sit on the solid ellipsoid rim and
+# their land-side ends remain a one-stud step above the global ground; this
+# adds redundant returns without lights, particles or an invisible barrier.
+for name,z,yaw in [
+    ("LagoonExitNorth",31,-7),
+    ("LagoonExitSouth",59,7),
+]:
+    block(lake,name,(-185,1.5,z),(11,1,7),(145,157,151),
+          material="Slate",rotation=(0,yaw,0))
+
 # A small west-side crescent provides a destination silhouette without local
 # lights, particles, scripts or external assets. Its Neon vein is nonblocking.
 crescent=group(lake,"MoonstoneCrescent")

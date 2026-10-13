@@ -368,6 +368,59 @@ def validate(path):
     assert value(water, "CanCollide") == "false", (
         path, "lagoon water cue must not become a collision shelf"
     )
+    exits = [
+        lagoon_parts.get("LagoonExitNorth"),
+        lagoon_parts.get("LagoonExitSouth"),
+    ]
+    assert all(part is not None for part in exits), (
+        path, "lagoon east bank needs two independent return shelves"
+    )
+    assert [position(part) for part in exits] == [(-185.0, 31.0), (-185.0, 59.0)]
+    assert all(size(part) == (11.0, 1.0, 7.0) for part in exits)
+    assert all(value(part, "Material") == "800" for part in exits)
+    assert all(value(part, "CanCollide") == "true" for part in exits)
+    assert all(abs(elevation(part)-1.5) < .01 for part in exits)
+    # The west end of each shelf is deliberately embedded in the solid Ball
+    # rim, while its east end returns to the y=1 global ground. Validate the
+    # authored ellipsoid surface instead of treating the Ball as a box.
+    rim_center_x, rim_center_z = position(lagoon_parts["LagoonRockRim"])
+    rim_center_y = elevation(lagoon_parts["LagoonRockRim"])
+    rim_radius_x, rim_diameter_y, rim_radius_z = size(lagoon_parts["LagoonRockRim"])
+    rim_radius_x /= 2
+    rim_radius_z /= 2
+    rim_radius_y = rim_diameter_y/2
+    for exit_part in exits:
+        frame = next(
+            prop for prop in properties(exit_part) if prop.get("name") == "CFrame"
+        )
+        center_x, center_z = position(exit_part)
+        half_length = size(exit_part)[0]/2
+        x_axis_x = float(frame.find("R00").text)
+        x_axis_z = float(frame.find("R20").text)
+        water_end = (
+            center_x-half_length*x_axis_x,
+            center_z-half_length*x_axis_z,
+        )
+        land_end = (
+            center_x+half_length*x_axis_x,
+            center_z+half_length*x_axis_z,
+        )
+        normalized = (
+            ((water_end[0]-rim_center_x)/rim_radius_x)**2
+            + ((water_end[1]-rim_center_z)/rim_radius_z)**2
+        )
+        assert normalized < 1, (path, "shore exit misses solid rim", water_end)
+        rim_top = rim_center_y + rim_radius_y*math.sqrt(1-normalized)
+        shelf_top = elevation(exit_part)+size(exit_part)[1]/2
+        assert 0 <= shelf_top-rim_top <= .55, (
+            path, "shore exit has an unsafe rim step", shelf_top, rim_top
+        )
+        assert land_end[0] > rim_center_x+rim_radius_x, (
+            path, "shore exit does not reach the open ground", land_end
+        )
+        assert shelf_top-1.0 <= 1.0, (
+            path, "shore exit has an unsafe ground step", shelf_top
+        )
     lilies = [lagoon_parts[f"WaterLily_{index:02d}"] for index in range(1, 8)]
     flowers = [lagoon_parts[f"LilyFlower_{index:02d}"] for index in range(1, 8)]
     assert len({size(part) for part in lilies}) == 7, (
@@ -452,7 +505,7 @@ def validate(path):
     )
     lagoon_lights = [item for item in lagoon.iter("Item") if item.get("class") == "PointLight"]
     assert not lagoon_lights, (path, "lagoon milestone must not add local lights")
-    for part in list(crescent_parts.values()) + decks + [approach]:
+    for part in list(crescent_parts.values()) + decks + [approach] + exits:
         part_point = position(part)
         for resource_name, resource_point in resources.items():
             assert math.dist(part_point, resource_point) >= 15, (

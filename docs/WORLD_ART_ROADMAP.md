@@ -312,3 +312,22 @@ kit, seating, overlap and nominal corridor width—not Humanoid turning, jumping
 camera collision or visual weight. Studio must cross, touch the end guard,
 U-turn and return on keyboard/touch. If clean, next source audit measures the
 walkable rim/shore boundary for a deterministic water-edge trap.
+
+## GE-MAP-03o — dual Moonwater shoreline returns
+
+**Verified design basis:** Creator Hub uses material boundaries and containment
+to communicate where playable terrain begins and ends. The source audit did
+not find a fully enclosed lagoon and therefore does not claim a player trap.
+
+**Measured implementation:** the guarded bridge divided the east opening but
+neither side had a named, regression-protected rim→ground handoff. Two original
+11×1×7 Slate shelves now frame it at z=31/59. Each rises 0.481 studs from the
+sampled solid ellipsoid surface and lands outside the rim with a 1.0-stud step
+to global ground. Cost: +2 anchored parts, zero light/particle/script/asset/RNG
+changes.
+
+**Evidence boundary and next step:** source/package math proves endpoints,
+surface deltas, collision and material—not Humanoid locomotion, perceived water
+depth, seams, camera behavior or phone cost. Studio must exit through each shelf
+without jumping on keyboard/touch. If clean, next inspect the curved Neon water
+cue against its solid rim before increasing glow or shoreline density.
