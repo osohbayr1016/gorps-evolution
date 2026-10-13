@@ -51,7 +51,7 @@ def color(props, rgb):
 
 
 def block(parent, name, pos, size, rgb, shape="Block", solid=True, material="SmoothPlastic",
-          rotation=(0,0,0), part_class="Part"):
+          rotation=(0,0,0), part_class="Part", cast_shadow=True):
     global count
     count += 1
     obj, props = item(parent, part_class, name)
@@ -74,7 +74,7 @@ def block(parent, name, pos, size, rgb, shape="Block", solid=True, material="Smo
     color(props, rgb)
     prop(props, "bool", "Anchored", True)
     prop(props, "bool", "CanCollide", solid)
-    prop(props, "bool", "CastShadow", True)
+    prop(props, "bool", "CastShadow", cast_shadow)
     if part_class=="Part":
         prop(props, "token", "Shape", {"Ball": 0, "Block": 1, "Cylinder": 2}[shape])
     # Enum.Material identifiers are stable values in Roblox.
@@ -729,25 +729,51 @@ for i in range(20):
 # The far escarpments are deliberately outside resource/plot corridors; the
 # smaller knolls must pass clearance checks against every harvest and tree root.
 relief = group(world, "WorldRelief")
+# Every tuple carries a distinct rise, yaw, retreat and crest width. The old
+# kit stacked all four layers at one X/Z coordinate and mirrored the first
+# four west/east silhouettes exactly. Receding layers now create near/mid/far
+# depth without adding a single part, light, texture or runtime operation.
 edge_ridges = [
-    (-320, 20, 37, 51), (-320, 92, 39, 56), (-319, 171, 37, 55),
-    (-320, 256, 40, 54), (320, 20, 37, 51), (320, 92, 39, 56),
-    (319, 171, 37, 55), (320, 256, 40, 54),
-    (-260, 320, 54, 37), (-175, 319, 57, 38), (-95, 320, 49, 38),
-    (95, 320, 49, 38), (175, 319, 57, 38), (260, 320, 54, 37),
+    (-320, 20, 37, 51, .92, -10, 6.0, .62),
+    (-323, 92, 39, 56, 1.14, 8, 8.0, .68),
+    (-317, 171, 37, 55, 1.32, -15, 10.0, .58),
+    (-325, 256, 40, 54, 1.06, 12, 7.0, .72),
+    (319, 20, 37, 51, 1.08, 14, 7.0, .66),
+    (324, 92, 39, 56, .98, -9, 5.5, .60),
+    (316, 171, 37, 55, 1.24, 17, 9.0, .70),
+    (322, 256, 40, 54, 1.42, -13, 11.0, .56),
+    (-260, 322, 54, 37, 1.18, -9, 7.5, .66),
+    (-175, 318, 57, 38, .95, 11, 5.5, .72),
+    (-95, 323, 49, 38, 1.37, -14, 10.0, .60),
+    (95, 317, 49, 38, 1.08, 16, 6.5, .68),
+    (175, 322, 57, 38, 1.28, -7, 9.0, .57),
+    (260, 319, 54, 37, 1.01, 13, 6.0, .74),
 ]
-for index, (x, z, sx, sz) in enumerate(edge_ridges):
+for index, (x, z, sx, sz, rise, yaw, retreat, crest_scale) in enumerate(edge_ridges):
     ridge = group(relief, f"Escarpment_{index:02d}")
-    factor = 1.0 + (index % 4) * 0.11
-    block(ridge, "RockFoot", (x, 4.7, z), (sx * 1.18, 9.2, sz * 1.12),
+    # Side walls recede away from the central playfield along X; the north
+    # wall recedes along Z. The foot remains closest to players and the crest
+    # is farthest away, creating real spatial parallax rather than a flat pile.
+    if abs(x) > abs(z):
+        inward_x, inward_z = (-1 if x > 0 else 1), 0
+    else:
+        inward_x, inward_z = 0, -1
+    foot_x, foot_z = x + inward_x * 2.5, z + inward_z * 2.5
+    shelf_x, shelf_z = x - inward_x * retreat * .45, z - inward_z * retreat * .45
+    crest_x, crest_z = x - inward_x * retreat, z - inward_z * retreat
+    block(ridge, "RockFoot", (foot_x, 4.6, foot_z), (sx * 1.18, 9.2, sz * 1.12),
           (99, 115, 107), shape="Ball", material="Slate")
-    block(ridge, "CliffSlope", (x, 10.0 * factor, z), (sx * .9, 16 * factor, sz * .88),
+    block(ridge, "CliffSlope", (x, 9.4 * rise, z), (sx * .9, 15.5 * rise, sz * .88),
           (116, 126, 112), material="Slate", part_class="WedgePart",
-          rotation=(0, (index % 3 - 1) * 17, 0))
-    block(ridge, "StrataShelf", (x, 17.4 * factor, z), (sx * .8, 3.8, sz * .75),
-          (144, 149, 126), shape="Ball", material="Slate")
-    block(ridge, "GrassCrest", (x, 19.6 * factor, z), (sx * .67, 4.4, sz * .7),
-          (73, 118, 92), shape="Ball", material="Grass")
+          rotation=(0, yaw, 0))
+    block(ridge, "StrataShelf", (shelf_x, 16.2 * rise, shelf_z),
+          (sx * (.73 + crest_scale * .1), 3.4 + rise * .45, sz * .72),
+          (144, 149, 126), shape="Ball", material="Slate", rotation=(0, -yaw * .35, 0),
+          cast_shadow=False)
+    block(ridge, "GrassCrest", (crest_x, 19.2 * rise, crest_z),
+          (sx * crest_scale, 4.0 + rise * .55, sz * (.54 + crest_scale * .2)),
+          (73, 118, 92), shape="Ball", material="Grass", rotation=(0, yaw * .55, 0),
+          cast_shadow=False)
 
 knoll_centers = []
 # Prefer open meadow shoulders first, then gently relieved forest pockets;

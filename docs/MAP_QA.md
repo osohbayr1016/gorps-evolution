@@ -167,6 +167,26 @@ checks cannot prove Roblox camera projection, avatar physics or visual quality.
 changing the shoulder-height camera. Reject any gap, z-fighting, float, snag,
 hidden cue or projected prompt overlap; record real-phone FPS/memory.
 
+## GE-MAP-03h — asymmetric receding Verdant horizon
+
+The original 14 escarpments used 56 real solid parts, but every ridge stacked
+its foot, slope, shelf and crest at one X/Z center; the first four west/east
+pairs were exact profile mirrors. The same 56 pieces now form 14 unique
+profiles with 8.0–13.5 studs of receding depth and top elevations from 19.92 to
+29.65 studs. Decorative distant shelves/crests do not cast shadows; collidable
+feet/slopes still do. No part, light, particle, script or external asset was
+added.
+
+`verify_biome_art.py` checks both authored and packaged worlds for depth,
+profile/top variety, no exact side mirrors, four-piece integrity, shadow policy
+and existing part/light budgets. These checks cannot see parallax, skyline
+holes, camera framing, collision feel or phone performance.
+
+**One Studio test:** from default spawn capture west/east/north views, then walk
+toward Moonwater and Sunstone at shoulder height. Reject intersecting strata,
+sky holes, obvious mirrored repetition, invisible destination silhouettes or
+an unexpected collision wall; record real-phone FPS/memory.
+
 
 ## GE-MAP-02a — solid relief and fantasy lighting (source-only, Studio QA pending)
 

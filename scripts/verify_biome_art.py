@@ -40,6 +40,12 @@ def position(item):
     return float(frame.find("X").text), float(frame.find("Z").text)
 
 
+def position3(item):
+    properties = props(item)
+    frame = next(entry for entry in properties if entry.get("name") == "CFrame")
+    return tuple(float(frame.find(axis).text) for axis in ("X", "Y", "Z"))
+
+
 def size(item):
     properties = props(item)
     vector = next(entry for entry in properties if entry.get("name") in {"Size", "size"})
@@ -149,11 +155,33 @@ def validate(path):
               if item.get("class") == "Model" and value(item, "Name", "").startswith("TerrainKnoll_")]
     assert len(ridges) == 14, (path, "missing tall outer escarpments", len(ridges))
     assert len(knolls) >= 6, (path, "insufficient true 3D ground relief", len(knolls))
+    ridge_profiles = []
+    ridge_tops = []
     for ridge in ridges:
-        names = {value(p, "Name") for p in children(ridge)}
+        pieces = {value(part, "Name"): part for part in children(ridge)}
+        names = set(pieces)
         assert names == {"RockFoot", "CliffSlope", "StrataShelf", "GrassCrest"}
-        slope = next(p for p in children(ridge) if value(p, "Name") == "CliffSlope")
+        slope = pieces["CliffSlope"]
         assert slope.get("class") == "WedgePart" and value(slope, "CanCollide") == "true"
+        depth = math.dist(position(pieces["RockFoot"]), position(pieces["GrassCrest"]))
+        assert depth >= 7.9, (path, value(ridge, "Name"), "flat aligned skyline stack", depth)
+        assert value(pieces["StrataShelf"], "CastShadow") == "false"
+        assert value(pieces["GrassCrest"], "CastShadow") == "false"
+        ridge_profiles.append(tuple(round(component, 2) for part_name in (
+            "CliffSlope", "StrataShelf", "GrassCrest"
+        ) for component in size(pieces[part_name])) + (round(depth, 2),))
+        crest_y = position3(pieces["GrassCrest"])[1]
+        ridge_tops.append(round(crest_y + size(pieces["GrassCrest"])[1] / 2, 2))
+    assert len(set(ridge_profiles)) >= 13, (
+        path, "outer skyline regressed to repeated profiles", len(set(ridge_profiles))
+    )
+    assert len(set(ridge_tops)) >= 10 and max(ridge_tops) - min(ridge_tops) >= 8, (
+        path, "outer skyline lost its height hierarchy", ridge_tops
+    )
+    for west_index, east_index in zip(range(4), range(4, 8)):
+        assert ridge_profiles[west_index] != ridge_profiles[east_index], (
+            path, "west/east skyline pair is exactly mirrored", west_index, east_index
+        )
     resources = [item for item in root.iter("Item") if value(item, "Name") == "Interact"]
     for knoll in knolls:
         slope = next(p for p in children(knoll) if value(p, "Name") == "RisingSlope")

@@ -179,3 +179,27 @@ surface joints and three fixed camera lines. Studio must still verify rendered
 seams, perspective/UI prompt projection, avatar traversal and real-phone cost.
 If no engine evidence arrives, next measure the west/east background depth and
 repeated skyline modules before a bounded original composition pass.
+
+## GE-MAP-03h — receding asymmetric perimeter without a density increase
+
+**Verified basis:** Roblox's environmental-art curriculum treats world art as
+gameplay context, and its construction/optimization guidance pairs distinct
+area composition with device profiling and selective edge-detail shadows. The
+official PS99 Tech World post confirms named zones/portals only; no proprietary
+skyline or map geometry is used here.
+
+**Measured gap and implementation:** all 14 four-piece escarpments previously
+shared one X/Z center per model, while four west/east pairs repeated exact
+mirrored profiles. The generator now assigns each ridge a deterministic rise,
+yaw, retreat and crest proportion. Foot-to-crest depth spans 8.0–13.5 studs,
+all 14 profiles are unique, no side pair is an exact mirror, and top elevations
+span 19.92–29.65 studs. Part count remains 56; the 28 far decorative
+shelf/crest pieces stop casting shadows while the solid foot/slope layers keep
+them. No light, particle, script, texture or runtime work is added.
+
+**Evidence boundary and next step:** source/package tests protect the declared
+spatial hierarchy and budgets, not actual parallax, shadow quality, collision,
+destination readability or device cost. Capture fixed spawn west/east/north
+views and walk both destination approaches in Studio. Fix the first observed
+gap, intersection or visibility defect; otherwise measure the next box-like
+foreground module in the village reveal before adding density.
