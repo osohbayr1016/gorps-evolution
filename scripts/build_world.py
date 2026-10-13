@@ -333,7 +333,7 @@ block(wayfinder, "GateCrest", (0, 19.7, 43), (8.2, 2.8, 2.8),
 # non-colliding navigation paint rather than fake elevation or reward geometry.
 route_fork = group(terrain, "VerdantRouteFork")
 trail_ribbon(route_fork, "ForestRoute", [
-    (-5, 56), (-20, 67), (-39, 80), (-60, 91),
+    (-5, 56), (-20, 67), (-39, 76), (-60, 91),
     (-82, 103), (-103, 111), (-125, 116),
 ], 8.5, (129, 145, 111))
 trail_ribbon(route_fork, "QuarryRoute", [

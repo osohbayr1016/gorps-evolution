@@ -26,6 +26,19 @@ BRANCHES = {
     "ForestRoute": ((-5.0, 56.0), (-125.0, 116.0)),
     "QuarryRoute": ((5.0, 56.0), (133.0, 120.0)),
 }
+BRANCH_POINTS = {
+    "ForestRoute": [
+        (-5.0, 56.0), (-20.0, 67.0), (-39.0, 76.0), (-60.0, 91.0),
+        (-82.0, 103.0), (-103.0, 111.0), (-125.0, 116.0),
+    ],
+    "QuarryRoute": [
+        (5.0, 56.0), (22.0, 68.0), (43.0, 80.0), (64.0, 94.0),
+        (87.0, 106.0), (108.0, 114.0), (133.0, 120.0),
+    ],
+}
+FIRST_PROMPTS = {"ForestRoute": "Tree_001", "QuarryRoute": "Tree_002"}
+PROMPT_ACTIVATION_DISTANCE = 13.0
+CONSERVATIVE_PLAYER_ROOT_Y = 3.0
 
 
 def properties(item):
@@ -149,6 +162,23 @@ def footprint_overlap(first, second):
     return abs(signed_area(subject)) if subject else 0
 
 
+def point_segment_distance(point, start, end):
+    """Return distance and nearest point on one XZ segment."""
+    delta = (end[0]-start[0], end[1]-start[1])
+    length_squared = delta[0]**2 + delta[1]**2
+    assert length_squared > 0, ("zero-length route segment", start, end)
+    offset = (point[0]-start[0], point[1]-start[1])
+    t = max(0.0, min(1.0,
+                     (offset[0]*delta[0] + offset[1]*delta[1]) / length_squared))
+    nearest = (start[0]+t*delta[0], start[1]+t*delta[1])
+    return math.dist(point, nearest), nearest
+
+
+def point_polyline_distance(point, points):
+    return min(point_segment_distance(point, start, end)
+               for start, end in zip(points, points[1:]))
+
+
 def segment_obb_interval(start, end, item):
     """Return the normalized 3D segment interval inside an oriented box."""
     props = properties(item)
@@ -248,6 +278,10 @@ def validate(path):
             )
 
     assert len(named.get("TrailheadPad", [])) == 1, (path, "missing resource trailhead")
+    trailhead = named["TrailheadPad"][0]
+    assert footprint_overlap(named["MainRoadNorth"][0], trailhead) >= 200, (
+        path, "north road has an insufficient trailhead handoff"
+    )
     assert len(named.get("TrailPost", [])) == 0, (path, "ambiguous unsuffixed trail post")
     assert sum(len(named.get(f"TrailPost_{i}", [])) for i in range(1, 6)) == 5
     assert sum(len(named.get(f"TrailArrow_{i}", [])) for i in range(1, 6)) == 5
@@ -270,6 +304,36 @@ def validate(path):
         assert all(direction*centers[index][0] < direction*centers[index+1][0]
                    for index in range(len(centers)-1)), (
             path, prefix, "route must progressively branch from center"
+        )
+        assert footprint_overlap(trailhead, route[0]) >= 60, (
+            path, prefix, "trailhead-to-branch surface seam is too narrow"
+        )
+        for first, second in zip(route, route[1:]):
+            assert footprint_overlap(first, second) >= 12, (
+                path, prefix, value(first, "Name"), value(second, "Name"),
+                "branch surface seam is too narrow",
+            )
+
+        prompt_model = named[FIRST_PROMPTS[prefix]][0]
+        prompt_base = next(child for child in direct_children(prompt_model)
+                           if value(child, "Name") == "Interact")
+        horizontal, nearest = point_polyline_distance(
+            position(prompt_base), BRANCH_POINTS[prefix]
+        )
+        vertical = elevation(prompt_base)-CONSERVATIVE_PLAYER_ROOT_Y
+        approach_distance = math.hypot(horizontal, vertical)
+        assert approach_distance <= PROMPT_ACTIVATION_DISTANCE-2, (
+            path, FIRST_PROMPTS[prefix], "first prompt has insufficient route margin",
+            approach_distance, PROMPT_ACTIVATION_DISTANCE-approach_distance,
+        )
+        blockers = visual_blockers(
+            root,
+            (nearest[0], 6.0, nearest[1]),
+            position3(prompt_base),
+            prompt_model.iter("Item"),
+        )
+        assert not blockers, (
+            path, FIRST_PROMPTS[prefix], "first prompt projection is occluded", blockers
         )
     for stone_name, side in (("ForestWaystone", -1), ("QuarryWaystone", 1)):
         stones = named.get(stone_name, [])

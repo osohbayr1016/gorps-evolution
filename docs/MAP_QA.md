@@ -253,3 +253,11 @@ performance.
 through the north gate each time, then circle the fountain. Reject any spawn
 overlap, forced sidestep, camera clip, floating/embedded basin, hidden gate,
 seam, prompt obstruction or red Output error; record real-phone FPS/memory.
+
+## GE-MAP-03k — protect the first forest prompt approach
+
+- **Date / status:** 2026-10-13; P1 source milestone, Studio/device QA pending; complexity low.
+- **Confirmed source evidence:** the generated north-road→trailhead overlap is 240.00 stud²; trailhead→forest/quarry overlaps are 63.72/64.95 stud²; all adjacent branch segments overlap by at least 12.72 stud². The handoff is continuous. The first west prompt was the defect: a conservative player-root-height route approach to `Tree_001.Interact` measured 12.086 studs against its 13-stud `MaxActivationDistance`, leaving only 0.914 studs. This is deterministic geometry, not observed prompt UI or traversal.
+- **Original design action:** preserve every resource root and reshape one internal forest-ribbon control point from `(-39, 80)` to `(-39, 76)` so the material path passes the first tree comfortably. New conservative distance/margin: 9.168/3.832 studs. No new art, light, particle, script, reward, RNG draw or external asset; 70 resources and 12 plots remain.
+- **Acceptance evidence:** `scripts/verify_map_routes.py` checks source and package for the road/pad/fork footprint joints, >=12 stud² segment seams, both first prompts within 11 studs 3D of their branch centerline, and zero unintended fixed-line opaque blockers. Creator Hub [Construct your world](https://create.roblox.com/docs/tutorials/curriculums/environmental-art/construct-your-world) documents material paths as navigation communication; [Proximity prompts](https://create.roblox.com/docs/ui/proximity-prompts) documents `MaxActivationDistance` visibility range. Numeric thresholds and placement are measured/original Gorps decisions.
+- **Exact next milestone:** in Studio, walk the forest ribbon center from the gate and record where `Tree_001` first shows Harvest on keyboard and touch. Repair the first real projection, terrain-height, collision or input defect. Without engine evidence, measure the first forest resource→Moonwater turn before adding light or decorative density.
