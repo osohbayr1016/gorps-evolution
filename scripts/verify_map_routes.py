@@ -709,10 +709,33 @@ def validate(path):
     focal_caps = [part for part in named["Glowcap"]
                   if math.dist(position(part), (-219, 292)) < .01]
     assert len(focal_caps) == 1, (path, "missing north Grove focal cap")
+    backdrop_hills = named.get("GroveBackdropHill", [])
+    assert len(backdrop_hills) == 1, (path, "missing Grove backdrop relief")
+    backdrop = backdrop_hills[0]
+    assert position3(backdrop) == (-306.0, 6.5, 278.0)
+    assert size(backdrop) == (34.0, 15.0, 72.0)
+    assert value(backdrop, "Material") == "1280"
+    assert value(backdrop, "CanCollide") == "true"
+    backdrop_center = position(backdrop)
+    backdrop_half = (size(backdrop)[0] / 2, size(backdrop)[2] / 2)
+    assert abs(backdrop_center[0]) + backdrop_half[0] <= 324
+    assert abs(backdrop_center[1]) + backdrop_half[1] <= 324
+    for resource_name, resource_point in resources.items():
+        assert not (
+            abs(resource_point[0] - backdrop_center[0]) <= backdrop_half[0] + 12
+            and abs(resource_point[1] - backdrop_center[1]) <= backdrop_half[1] + 12
+        ), (path, resource_name, "Grove backdrop crowds a harvest root")
+    for stem in named.get("MushroomStem", []):
+        stem_point = position(stem)
+        assert not (
+            abs(stem_point[0] - backdrop_center[0]) <= backdrop_half[0] + 6
+            and abs(stem_point[1] - backdrop_center[1]) <= backdrop_half[1] + 6
+        ), (path, "Grove backdrop crowds a Glowcap stem", stem_point)
     fixed_sightlines = (
         ((-168, 6, 45), (-125, 6, 76), ()),
         ((-125, 6, 182), position3(guide_parts["GuideCap"]), guide_parts.values()),
         ((-183, 6, 230), position3(focal_caps[0]), (focal_caps[0],)),
+        ((-204, 6, 228), position3(focal_caps[0]), (focal_caps[0],)),
     )
     for start, end, ignored in fixed_sightlines:
         blockers = visual_blockers(root, start, end, ignored)

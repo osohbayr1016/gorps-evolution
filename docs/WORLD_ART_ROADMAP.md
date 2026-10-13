@@ -398,3 +398,32 @@ runtime base-distance safety boundary. They do not render Roblox prompt UI or
 prove touch/controller reach, camera projection, competing-prompt choice,
 respawn motion or phone cost. Studio must approach, harvest and watch
 `Crystal_006` respawn on keyboard/touch before any additional glow work.
+
+## GE-MAP-03s — preserve relief without burying the Glowcap harvest foreground
+
+**Verified design basis:** Creator Hub's [Construct your world](https://create.roblox.com/docs/tutorials/curriculums/environmental-art/construct-your-world)
+shows that construction can replace greybox geometry while preserving its
+gameplay intent, and specifically treats peaks/valleys as controls for
+sightlines and vertical experience. BIG Games' dated official [PS99 Space Mine
+post](https://www.biggames.io/post/pet-simulator-99-update-94) verifies five
+sequential mines from Moon Base to Black Hole Core and glowing ore distributed
+through those spaces. Its page images and copy are reference evidence only;
+they do not disclose a terrain mesh, root-clearance rule, device result or
+licensed layout for Gorps.
+
+**Measured implementation:** the old collidable 70×9×65 west `LowHill`
+analytically covered `Tree_025` and `Ore_060`; their interaction centers were
+0.970 and 4.507 studs below its ellipsoid surface. Its conservative oriented
+volume also blocked the player-height clearing→north focal-cap test. The same
+single part is now a narrower, taller 34×15×72 `GroveBackdropHill` at
+`(-306, 6.5, 278)`, wholly inside the map and behind the west ring. No gameplay
+identity, position, route, reward, ranch, Glowcap, light, particle, script or RNG
+changes; net part change is zero.
+
+**Evidence boundary and next step:** source/package contracts prove exact
+transform, collision/material, 12-stud conservative harvest-root margin,
+six-stud stem margin and two unobstructed fixed rays. They do not render the
+background silhouette or prove Humanoid movement, prompt legibility, terrain
+seating, streaming or phone performance. Studio must hold the focal-cap frame,
+harvest `Tree_025`/`Ore_060`, and repair the first actual burial, snag, seam or
+visibility defect before more glow or density.

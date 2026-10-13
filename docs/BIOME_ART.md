@@ -34,6 +34,10 @@ substitute for final original MeshPart/PBR production assets.
   protected center is at least 50 studs from every stem, stem pairs remain at
   least 19 studs apart, and eight height tiers rise to one north focal cap.
   The four existing grove lights and downstream world RNG boundary are unchanged.
+- The former broad west `LowHill` enclosed two nearby resource interaction
+  centers. Its one-part budget now forms a narrower/taller boundary backdrop;
+  CI keeps a conservative margin around all 70 resource roots and 16 stems and
+  preserves the clearing-to-focal-cap shoulder-height sightline.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.
@@ -48,7 +52,8 @@ substitute for final original MeshPart/PBR production assets.
 3. Enter Glowcap Grove from the new east link, stand on `GroveClearing`, and
    rotate the camera. The center must stay walkable; the north focal cap must
    read above the ring; harvest prompts must remain visible without bloom
-   whiteout. Then compare western forest, northern meadow and eastern quarry.
+   whiteout. Harvest `Tree_025` and `Ore_060`; neither body/prompt may be buried
+   in the hill. Then compare western forest, northern meadow and eastern quarry.
 4. In Device Emulator, test a representative phone in portrait and landscape.
    Record client FPS, memory and any visible pop-in using Studio profiling tools.
 5. Check Server and Client Output. The first red error, impassable collision,

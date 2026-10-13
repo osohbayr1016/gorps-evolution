@@ -26,6 +26,15 @@ The nine Crystal models now place a renderless `PromptAnchor` Attachment 4.7 stu
 
 Creator Hub's [Proximity prompts](https://create.roblox.com/docs/ui/proximity-prompts) page explicitly supports Attachment parents and documents keyboard, gamepad and touchscreen cues. Static source/package checks prove hierarchy and server ownership only. Studio must approach `Crystal_006`, harvest, and watch the complete respawn on keyboard/touch to reject crown overlap, prompt drift, competing prompts or an unreachable activation zone.
 
+## Glowcap foreground resource seating — GE-MAP-03s
+
+Generated geometry showed the old west-Grove `LowHill` surface 0.970 studs
+above `Tree_025`'s interaction center and 4.507 studs above `Ore_060`'s center.
+The resource models/IDs have not moved; the same one-part relief budget is now
+a narrower boundary backdrop with conservative clearances from all 70 roots.
+This proves static separation only. In Studio, Harvest both nodes from the Grove
+and reject a buried body/prompt, collision snag, apparent float or Output error.
+
 ## UI icons
 
 The library `src/client/Icons.lua` generates resolution-independent geometric icons as native Roblox UI. The five main dock actions and window navigation have visual icons. Wallet uses a coin icon and resource inventories show wood, stone, iron, meat, berry, crystal and fiber icons.
