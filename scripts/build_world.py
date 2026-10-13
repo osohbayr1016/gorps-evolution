@@ -592,8 +592,13 @@ for i,(x,z,sx,sz,yaw,flower_color) in enumerate(lagoon_lilies,1):
     block(lake,f"LilyFlower_{i:02d}",(x+.4,3.5,z-.2),(1.5,.9,1.5),flower_color,
           shape="Ball",solid=False)
 
+# One inclined Wood approach converts the low Ground ribbon into the bridge's
+# raised walk surface. Its fixed CFrame meets both endpoint heights; this is a
+# real collidable ramp, not a decorative flat mat or a new runtime system.
+block(lake,"ReedBridgeApproach",(-167,2.48,47),(7.5,1,9.5),(184,149,113),
+      material="Wood",rotation=(19.7,63.435,0))
 # Three shallow deck modules give the east entrance a readable cadence while
-# keeping the rise below a single stud. Rails are visual/non-colliding.
+# keeping the deck-to-deck rise below a single stud. Rails are visual/non-colliding.
 for i,(x,y,yaw) in enumerate([(-188,4.0,-3),(-180,4.3,2),(-172,4.1,-2)],1):
     block(lake,f"ReedBridgeDeck_{i:02d}",(x,y,45),(9,1,8),(184,149,113),
           material="Wood",rotation=(0,yaw,0))

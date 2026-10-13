@@ -398,9 +398,33 @@ def validate(path):
     decks = [lagoon_parts[f"ReedBridgeDeck_{index:02d}"] for index in range(1, 4)]
     assert max(elevation(part) for part in decks) - min(elevation(part) for part in decks) <= .31
     assert all(value(part, "CanCollide") == "true" for part in decks)
+    approach = lagoon_parts.get("ReedBridgeApproach")
+    assert approach is not None, (path, "bridge is missing its walkable approach")
+    assert value(approach, "Material") == "512"
+    assert value(approach, "CanCollide") == "true"
+    approach_props = properties(approach)
+    approach_frame = next(
+        prop for prop in approach_props if prop.get("name") == "CFrame"
+    )
+    approach_size = size(approach)
+    approach_y = elevation(approach)
+    local_y_to_world_y = float(approach_frame.find("R11").text)
+    local_z_to_world_y = float(approach_frame.find("R12").text)
+    low_top = (approach_y + approach_size[2]/2*local_z_to_world_y
+               + approach_size[1]/2*local_y_to_world_y)
+    high_top = (approach_y - approach_size[2]/2*local_z_to_world_y
+                + approach_size[1]/2*local_y_to_world_y)
+    link_top = elevation(named["LagoonLink_01"][0]) + size(named["LagoonLink_01"][0])[1]/2
+    deck_top = elevation(decks[-1]) + size(decks[-1])[1]/2
+    assert abs(low_top-link_top) <= .1, (
+        path, "bridge approach no longer meets LagoonLink", low_top, link_top
+    )
+    assert abs(high_top-deck_top) <= .1, (
+        path, "bridge approach no longer meets first deck", high_top, deck_top
+    )
     lagoon_lights = [item for item in lagoon.iter("Item") if item.get("class") == "PointLight"]
     assert not lagoon_lights, (path, "lagoon milestone must not add local lights")
-    for part in list(crescent_parts.values()) + decks:
+    for part in list(crescent_parts.values()) + decks + [approach]:
         part_point = position(part)
         for resource_name, resource_point in resources.items():
             assert math.dist(part_point, resource_point) >= 15, (
@@ -490,6 +514,24 @@ def validate(path):
     )
     assert not guide_blockers, (
         path, "Moonwater guide is hidden on forest approach", guide_blockers
+    )
+    crescent_blockers = visual_blockers(
+        root,
+        (guide_point[0], 6.0, guide_point[1]),
+        position3(crescent_parts["CrescentSpire"]),
+        crescent_parts.values(),
+    )
+    assert not crescent_blockers, (
+        path, "Moonwater destination is hidden after the guide", crescent_blockers
+    )
+    lagoon_route = [(-171.0, 45.0), (-155.0, 53.0), (-144.0, 61.0),
+                    (-134.0, 69.0), (-125.0, 76.0)]
+    lagoon_prompt_clearance = min(
+        point_polyline_distance(resource_point, lagoon_route)[0]
+        for resource_point in resources.values()
+    )
+    assert lagoon_prompt_clearance >= 30, (
+        path, "lagoon route crowds a harvest prompt", lagoon_prompt_clearance
     )
     assert len(named.get("Glowcap", [])) == 16
     grove_end_part = named["GroveLink_05"][0]

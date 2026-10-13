@@ -271,3 +271,24 @@ sightline—not player comprehension, terrain seating, prompt projection, avatar
 physics or device cost. Studio must follow the forest approach through the
 guide to Moonwater bridge on keyboard and touch, then repair the first observed
 direction/scale/terrain/prompt/collision defect before adding more glow.
+
+## GE-MAP-03m — grounded Moonwater bridge ascent
+
+**Verified design basis:** Creator Hub's construction curriculum preserves
+elevation as navigation information and explicitly uses wedge geometry to form
+rises between floor levels. This milestone adapts only that general principle;
+the bridge position, profile, palette and measurements remain original Gorps
+work.
+
+**Measured implementation:** the guide already sees `CrescentSpire` with zero
+opaque authored blockers, and LagoonLink's nearest harvest root is 39.37 studs
+away. The missed dimension was height: link and first deck top surfaces were
+y=1.32 and y=4.60. One collidable 7.5×1×9.5 Wood approach, pitched 19.7 degrees,
+now lands at y=1.35 and y=4.55. Cost is one anchored part and no light,
+particle, script, external asset, runtime loop or RNG change.
+
+**Evidence boundary and next step:** deterministic source/package checks prove
+the two endpoint deltas are <=0.1 studs, not that Roblox Humanoid physics feels
+safe. Studio must cross the ramp without jumping on keyboard and touch, reject
+snag/slide/float/water clipping/camera bump, and record real-phone FPS/memory.
+If clean, next measure the deck→lagoon-bank surface and safe water-edge return.
