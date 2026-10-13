@@ -368,6 +368,16 @@ def validate(path):
     assert value(water, "CanCollide") == "false", (
         path, "lagoon water cue must not become a collision shelf"
     )
+    assert value(water, "shape") == "2", (
+        path, "lagoon water must retain its level elliptical cylinder"
+    )
+    assert size(water) == (.8, 58.0, 55.0)
+    water_frame = next(
+        prop for prop in properties(water) if prop.get("name") == "CFrame"
+    )
+    assert abs(abs(float(water_frame.find("R10").text))-1) < 1e-5, (
+        path, "lagoon cylinder axis is not vertical"
+    )
     exits = [
         lagoon_parts.get("LagoonExitNorth"),
         lagoon_parts.get("LagoonExitSouth"),
@@ -389,6 +399,28 @@ def validate(path):
     rim_radius_x /= 2
     rim_radius_z /= 2
     rim_radius_y = rim_diameter_y/2
+    water_bottom = elevation(water)-size(water)[0]/2
+    water_top = elevation(water)+size(water)[0]/2
+    water_center_x, water_center_z = position(water)
+    water_radius_x = size(water)[1]/2
+    water_radius_z = size(water)[2]/2
+    perimeter_gaps = []
+    for sample_x, sample_z in (
+        (water_center_x-water_radius_x, water_center_z),
+        (water_center_x+water_radius_x, water_center_z),
+        (water_center_x, water_center_z-water_radius_z),
+        (water_center_x, water_center_z+water_radius_z),
+    ):
+        normalized = (
+            ((sample_x-rim_center_x)/rim_radius_x)**2
+            + ((sample_z-rim_center_z)/rim_radius_z)**2
+        )
+        assert normalized < 1, (path, "water footprint escapes solid rim")
+        rim_top = rim_center_y + rim_radius_y*math.sqrt(1-normalized)
+        perimeter_gaps.append(water_bottom-rim_top)
+    assert min(perimeter_gaps) >= -.15 and max(perimeter_gaps) <= .05, (
+        path, "water perimeter floats above or buries into rim", perimeter_gaps
+    )
     for exit_part in exits:
         frame = next(
             prop for prop in properties(exit_part) if prop.get("name") == "CFrame"
@@ -433,6 +465,10 @@ def validate(path):
                   for index in range(len(lily_angles)-1)]
     assert len(set(angle_gaps)) >= 4, (path, "lilies regressed to a radial grid")
     assert all(value(part, "CanCollide") == "false" for part in lilies+flowers)
+    lily_bottoms = [elevation(part)-size(part)[1]/2 for part in lilies]
+    assert all(abs(bottom-water_top) <= .02 for bottom in lily_bottoms), (
+        path, "lily pad no longer seats on level water", lily_bottoms, water_top
+    )
     crescent_models = named.get("MoonstoneCrescent", [])
     assert len(crescent_models) == 1, (path, "missing lagoon skyline landmark")
     crescent_parts = {

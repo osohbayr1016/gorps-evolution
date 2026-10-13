@@ -331,3 +331,24 @@ surface deltas, collision and material—not Humanoid locomotion, perceived wate
 depth, seams, camera behavior or phone cost. Studio must exit through each shelf
 without jumping on keyboard/touch. If clean, next inspect the curved Neon water
 cue against its solid rim before increasing glow or shoreline density.
+
+## GE-MAP-03p — level Moonwater surface and preserved silhouettes
+
+**Verified design basis:** Creator Hub describes environment construction as an
+iterative conversion of greybox intent into cohesive materials and geometry,
+followed by cross-device review. Fisch verifies an exploration/fishing theme
+only; it supplies no licensed water shape, shoreline or performance result.
+
+**Measured implementation:** the former thin Ball water cue floated 0.648–0.746
+studs over the solid rim at its cardinal edges despite intersecting at center.
+One vertical-axis elliptical Cylinder now provides a level y=2.25 surface and
+its bottom remains 0.004–0.102 studs inside the rim perimeter. Seven existing
+lilies move as a group to sit 0.005 studs into that surface. Canonical `shape`
+serialization also preserves the 698/714/95 Ball/Block/Cylinder source profile
+in the Rojo package. No part, light, particle, script or RNG increase.
+
+**Evidence boundary and next step:** analytic source/package checks prove shape,
+axis, perimeter overlap and lily seating—not final Neon/Bloom appearance,
+transparency, perceived depth, Humanoid movement or phone cost. Studio must
+orbit and cross the lagoon on keyboard/touch; if clean, next audit Glowcap and
+rare-resource visibility against the existing effect budget.

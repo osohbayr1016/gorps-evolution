@@ -42,3 +42,22 @@ def validate(records,tag):
 
 validate(src,"source world")
 validate(out,"packaged Roblox place")
+
+def planet_shape_histogram(records,tag):
+ result=Counter()
+ for path,class_name,props in records:
+  if class_name!="Part" or "PlanetVerdant" not in path:
+   continue
+  shape=next((p.text for p in props or [] if p.get("name")=="shape"),None)
+  assert shape is not None,(tag,"authored Part lost canonical shape",path)
+  result[shape]+=1
+ assert result["0"]>=600,(tag,"authored Ball silhouettes collapsed",result)
+ assert result["2"]>=80,(tag,"authored Cylinder silhouettes collapsed",result)
+ return result
+
+source_shapes=planet_shape_histogram(src,"source world")
+package_shapes=planet_shape_histogram(out,"packaged Roblox place")
+assert package_shapes==source_shapes,(
+ "package changed authored Part shapes",source_shapes,package_shapes
+)
+print(f"PASS packaged PlanetVerdant shape histogram: {dict(package_shapes)}")

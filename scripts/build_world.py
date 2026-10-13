@@ -76,7 +76,9 @@ def block(parent, name, pos, size, rgb, shape="Block", solid=True, material="Smo
     prop(props, "bool", "CanCollide", solid)
     prop(props, "bool", "CastShadow", cast_shadow)
     if part_class=="Part":
-        prop(props, "token", "Shape", {"Ball": 0, "Block": 1, "Cylinder": 2}[shape])
+        # Roblox's canonical XML property is lowercase `shape`. Rojo discards
+        # the noncanonical uppercase spelling when packaging the world.
+        prop(props, "token", "shape", {"Ball": 0, "Block": 1, "Cylinder": 2}[shape])
     # Enum.Material identifiers are stable values in Roblox.
     material_id = {"SmoothPlastic":272,"Grass":1280,"Wood":512,
                    "Slate":800,"Neon":288,"Metal":1088,"Sand":1296,
@@ -560,8 +562,11 @@ for name,pos,size,yaw in [
 ]:
     block(lake,name,pos,size,(104,137,124),shape="Ball",material="Grass",
           rotation=(0,yaw,0))
-block(lake,"GlowingWater",(-214,2.2,45),(58,.8,55),(83,190,195),
-      shape="Ball",solid=False,material="Neon")
+# A vertically oriented elliptical cylinder keeps one level waterline. The old
+# thin Ball curved upward at its perimeter, leaving a visible source-level gap
+# over the solid rim even though its center intersected the basin.
+block(lake,"GlowingWater",(-214,1.85,45),(.8,58,55),(83,190,195),
+      shape="Cylinder",solid=False,material="Neon",rotation=(0,0,90))
 
 # Two low slate shelves make the open east bank legible on either side of the
 # guarded overlook. Their water-side ends sit on the solid ellipsoid rim and
@@ -598,9 +603,9 @@ lagoon_lilies=[
     (-204,62,5.8,3.7,28,(247,194,211)),
 ]
 for i,(x,z,sx,sz,yaw,flower_color) in enumerate(lagoon_lilies,1):
-    block(lake,f"WaterLily_{i:02d}",(x,2.9,z),(sx,.45,sz),(95,171,128),
+    block(lake,f"WaterLily_{i:02d}",(x,2.47,z),(sx,.45,sz),(95,171,128),
           shape="Ball",solid=False,material="Grass",rotation=(0,yaw,0))
-    block(lake,f"LilyFlower_{i:02d}",(x+.4,3.5,z-.2),(1.5,.9,1.5),flower_color,
+    block(lake,f"LilyFlower_{i:02d}",(x+.4,3.07,z-.2),(1.5,.9,1.5),flower_color,
           shape="Ball",solid=False)
 
 # One inclined Wood approach converts the low Ground ribbon into the bridge's
