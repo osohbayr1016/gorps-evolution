@@ -87,6 +87,38 @@ def size(item):
     return tuple(float(vector.find(component).text) for component in "XYZ")
 
 
+def world_aabb(item):
+    """Return a conservative world-axis box for a rotated 3D part."""
+    props = properties(item)
+    entries = props if props is not None else []
+    frame = next((p for p in entries if p.get("name") == "CFrame"), None)
+    if frame is None:
+        raise AssertionError((value(item, "Name"), "missing CFrame"))
+    center = tuple(float(frame.find(component).text) for component in "XYZ")
+    half_size = tuple(component/2 for component in size(item))
+    extent = tuple(
+        sum(abs(float(frame.find(f"R{row}{column}").text))*half_size[column]
+            for column in range(3))
+        for row in range(3)
+    )
+    return (
+        tuple(center[axis]-extent[axis] for axis in range(3)),
+        tuple(center[axis]+extent[axis] for axis in range(3)),
+    )
+
+
+def aabb_overlap(first, second):
+    """Return positive XYZ overlap depths, or None when boxes are disjoint."""
+    first_low, first_high = world_aabb(first)
+    second_low, second_high = world_aabb(second)
+    depth = tuple(
+        min(first_high[axis], second_high[axis])
+        - max(first_low[axis], second_low[axis])
+        for axis in range(3)
+    )
+    return depth if min(depth) > 1e-3 else None
+
+
 def footprint(item):
     """Return the XZ oriented bounding box as a counter-clockwise polygon."""
     props = properties(item)
@@ -710,13 +742,20 @@ def validate(path):
                   if math.dist(position(part), (-219, 292)) < .01]
     assert len(focal_caps) == 1, (path, "missing north Grove focal cap")
     backdrop_specs = {
-        "ForestBackdropHill": ((-308.0, 6.5, 130.0), (30.0, 15.0, 54.0)),
+        "ForestBackdropHill": ((-308.0, 6.5, 131.0), (30.0, 15.0, 24.0)),
         "QuarryBackdropHill": ((286.0, 7.0, 116.0), (28.0, 16.0, 52.0)),
-        "GroveBackdropHill": ((-306.0, 6.5, 278.0), (34.0, 15.0, 72.0)),
-        "SunstoneBackdropHill": ((299.0, 7.5, 257.0), (26.0, 17.0, 48.0)),
+        "GroveBackdropHill": ((-306.0, 6.5, 291.0), (34.0, 15.0, 16.0)),
+        "SunstoneBackdropHill": ((285.0, 7.5, 257.0), (26.0, 17.0, 48.0)),
     }
     assert not named.get("LowHill"), (path, "resource-burying LowHill returned")
+    escarpment_parts = []
+    for model in root.iter("Item"):
+        if (model.get("class") == "Model"
+                and value(model, "Name", "").startswith("Escarpment_")):
+            escarpment_parts.extend(direct_children(model))
+    assert len(escarpment_parts) == 56, (path, "expected 14 four-part escarpments")
     backdrop_profiles = set()
+    backdrop_parts = {}
     for backdrop_name, (expected_position, expected_size) in backdrop_specs.items():
         backdrop_hills = named.get(backdrop_name, [])
         assert len(backdrop_hills) == 1, (
@@ -732,6 +771,20 @@ def validate(path):
         assert abs(backdrop_center[0]) + backdrop_half[0] <= 324
         assert abs(backdrop_center[1]) + backdrop_half[1] <= 324
         backdrop_profiles.add(size(backdrop))
+        backdrop_parts[backdrop_name] = backdrop
+        escarpment_overlaps = []
+        for part in escarpment_parts:
+            overlap = aabb_overlap(backdrop, part)
+            if overlap is not None:
+                escarpment_overlaps.append((value(part, "Name"), overlap))
+        assert escarpment_overlaps, (
+            path, backdrop_name, "boundary shoulder floats away from escarpment feet"
+        )
+        assert all(part_name == "RockFoot"
+                   for part_name, _ in escarpment_overlaps), (
+            path, backdrop_name, "boundary shoulder cuts through upper escarpment",
+            escarpment_overlaps,
+        )
         for resource_name, resource_point in resources.items():
             assert not (
                 abs(resource_point[0] - backdrop_center[0]) <= backdrop_half[0] + 12
@@ -746,12 +799,26 @@ def validate(path):
     assert len(backdrop_profiles) == len(backdrop_specs), (
         path, "boundary relief regressed to repeated silhouettes", backdrop_profiles
     )
+    forest_route_end = position(named["ForestRoute_06"][0])
+    quarry_route_end = position(named["QuarryRoute_06"][0])
+    boundary_sightlines = []
+    for start, backdrop_name in (
+        ((forest_route_end[0], 6.0, forest_route_end[1]), "ForestBackdropHill"),
+        ((quarry_route_end[0], 6.0, quarry_route_end[1]), "QuarryBackdropHill"),
+    ):
+        backdrop = backdrop_parts[backdrop_name]
+        center = position3(backdrop)
+        boundary_sightlines.append((
+            start,
+            (center[0], center[1]+size(backdrop)[1]/2-.5, center[2]),
+            (backdrop,),
+        ))
     fixed_sightlines = (
         ((-168, 6, 45), (-125, 6, 76), ()),
         ((-125, 6, 182), position3(guide_parts["GuideCap"]), guide_parts.values()),
         ((-183, 6, 230), position3(focal_caps[0]), (focal_caps[0],)),
         ((-204, 6, 228), position3(focal_caps[0]), (focal_caps[0],)),
-    )
+    ) + tuple(boundary_sightlines)
     for start, end, ignored in fixed_sightlines:
         blockers = visual_blockers(root, start, end, ignored)
         assert not blockers, (path, "fixed route sightline is occluded", start, end, blockers)

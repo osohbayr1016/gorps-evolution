@@ -133,14 +133,16 @@ for i in range(8):
     block(terrain, f"GardenStone_{i:02d}", (x, 1.08, z), (12, .4, 8),
           (167, 162, 151), shape="Ball")
 # Keep the four-part starter-region relief budget, but place every mass behind
-# the interactive foreground.  The former broad LowHill ellipsoids enclosed six
-# harvest roots; narrower, varied-height boundary shoulders retain collidable
-# vertical depth without moving a route, resource identity, ranch or RNG draw.
+# the interactive foreground.  The forest and Grove shoulders are narrow enough
+# to bridge only the neighboring RockFoot bases instead of cutting through two
+# CliffSlope layers; Sunstone retreats inboard to touch its RockFoot without
+# crossing the slope.  This keeps a grounded boundary silhouette without moving
+# a route, resource identity, ranch or RNG draw.
 for name, x, y, z, sx, sy, sz in [
-    ("ForestBackdropHill", -308, 6.5, 130, 30, 15, 54),
+    ("ForestBackdropHill", -308, 6.5, 131, 30, 15, 24),
     ("QuarryBackdropHill", 286, 7, 116, 28, 16, 52),
-    ("GroveBackdropHill", -306, 6.5, 278, 34, 15, 72),
-    ("SunstoneBackdropHill", 299, 7.5, 257, 26, 17, 48),
+    ("GroveBackdropHill", -306, 6.5, 291, 34, 15, 16),
+    ("SunstoneBackdropHill", 285, 7.5, 257, 26, 17, 48),
 ]:
     block(terrain, name, (x, y, z), (sx, sy, sz), (77, 131, 105),
           shape="Ball", material="Grass")

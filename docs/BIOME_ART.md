@@ -42,6 +42,10 @@ substitute for final original MeshPart/PBR production assets.
   centers by 3.160–7.140 studs. Their unchanged three-part budget now forms
   unique forest/quarry/Sunstone boundary backdrops with 15/16/17-stud height
   tiers, no covered resource roots and no new light, particle, script or RNG.
+- Conservative rotated AABBs then found forest/Grove/Sunstone shoulders cutting
+  four upper `CliffSlope` solids. The unchanged four-part shoulder budget now
+  touches only escarpment `RockFoot` bases; fixed forest/quarry route-to-crest
+  rays remain clear, and source/package checks reject an upper-layer overlap.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.

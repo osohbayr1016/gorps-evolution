@@ -450,3 +450,27 @@ rendered parallax, terrain seating, camera collision, escarpment intersection
 or phone cost. Studio must harvest all six formerly covered resources and
 compare fixed west/east skyline frames. If no engine defect is supplied, next
 measure backdrop-to-escarpment intersections before adding glow or density.
+
+## GE-MAP-03u — seat boundary shoulders into escarpment feet
+
+**Verified design basis:** Creator Hub treats elevation and perimeter massing as
+gameplay-readable composition that must be playtested before art polish. The
+official Creatures of Sonaria description verifies resource-seeking exploration
+in a vast world only; its proprietary terrain and assets are not measurements or
+templates for Gorps.
+
+**Measured implementation:** conservative world AABBs found four unwanted
+upper-cliff intersections: two at forest, one at Grove and one at Sunstone, with
+the largest depth 40.983 studs. The same four Grass parts now form measured
+RockFoot-only shoulders: forest and Grove bridge narrow gaps between adjacent
+feet, quarry retains its already-safe placement, and Sunstone retreats inboard.
+All upper-layer intersections are zero. The closest resource-box clearances are
+13.980/13.070/16.656/37.906 studs, and fixed forest/quarry route-end rays reach
+their shoulder crests without opaque blockers. Parts, lights, particles,
+scripts, routes, ranches, resources and RNG remain unchanged.
+
+**Evidence boundary and next step:** source/package contracts prove conservative
+Part AABB separation and two sightlines—not rendered seam quality, parallax,
+Humanoid collision, streaming or phone cost. Studio must compare the fixed
+forest/quarry frames and walk both Grass/RockFoot seams. If no engine defect is
+supplied, next measure these shoulders against runtime voxel Terrain fills.
