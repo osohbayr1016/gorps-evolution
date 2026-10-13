@@ -203,3 +203,27 @@ destination readability or device cost. Capture fixed spawn west/east/north
 views and walk both destination approaches in Studio. Fix the first observed
 gap, intersection or visibility defect; otherwise measure the next box-like
 foreground module in the village reveal before adding density.
+
+## GE-MAP-03i — replace cloned village boxes with one varied modular kit
+
+**Verified design basis:** Creator Hub's environment curriculum converts
+greybox architecture with reusable wall, corner and door modules, then varies
+their contextual treatment so players can orient themselves. Its modular
+environment guide supports cohesive reuse with configured variety. Theme Park
+Tycoon 2's official description confirms broad scenery/customization only; no
+proprietary building shape or layout is used here.
+
+**Measured implementation:** all four stations shared one 19×11×15 wall box,
+two 26.5×1.6×11.3 roof planes at the same pitch and one identical ridge. The
+same `hut()` authoring function now composes six named wall modules around the
+unchanged Door and applies four original shell/roof parameter sets. Ridge
+centers span 16.4–19.1 studs and every collidable shop remains at least 36.75
+studs from the central route. Cost: +20 anchored parts; zero new lights,
+particles, scripts, assets or RNG draws.
+
+**Evidence boundary and next step:** source/package checks protect module
+presence, profile variety, Door identity/collision, height hierarchy and lane
+clearance. Studio still owns facade/roof seam, prompt projection, avatar snag,
+spawn composition and real-phone performance. Without engine evidence, next
+measure the fountain/platform frame and north-gate camera corridor before any
+additional prop or glow work.

@@ -210,3 +210,25 @@ With synced main, Stop → Play and watch the server's `[Gorps World] Applied sm
 ## GE-MAP-02d real authored-map obstacle acceptance
 
 CI now extracts the exact resource/tree/handcrafted-knoll/Glowcap anchors from `world/PlanetVerdant.rbxmx`, not invented test positions, then invokes the actual pure Luau terrain planner and requires usable hills on both sides of the resource corridor. This verifies placement intent in source and packaging only. In Studio check the west and east forest/quarry contours have not buried a glowing mushroom or a harvest node, and compare phone FPS before accepting the shape changes.
+
+## GE-MAP-03i — modular village silhouettes at first spawn
+
+The four village stations previously reused the exact same monolithic `Walls`
+block, paired roof sizes/pitches and ridge elevation. Their colors and small
+icons differed, but their spawn-facing architectural masses did not. Each shop
+now uses a six-piece structural shell around the unchanged interaction Door,
+with a distinct footprint, wall height, roof depth/pitch and ridge tier. The
+four ridge centers span 16.4–19.1 studs; the nearest collidable station edge
+remains at least 36.75 studs from the central lane.
+
+This adds 20 anchored parts across the whole village and no light, particle,
+script, external asset or RNG work. `verify_map_routes.py` enforces four unique
+profiles, the modular wall kit, Door contract and central-lane clearance in
+both authored and packaged XML. It cannot see wall/roof seams, projected
+prompts, camera composition, collision feel or device performance.
+
+**One Studio test:** from default spawn rotate once through Trading Post,
+Workshop, Farmer Guild and Nursery, then activate each Door. Reject floating
+trim, roof gaps, blocked prompts, invisible collision or silhouettes that still
+read as clones; confirm the north gate remains visible and record real-phone
+FPS/memory.

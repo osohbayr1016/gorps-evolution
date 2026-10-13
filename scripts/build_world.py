@@ -161,13 +161,21 @@ block(hub, "FountainTop", (0, 11.5, 4), (5, 2.5, 5), (149, 209, 195), shape="Bal
 # Geometry is authored in Edit mode and interaction doors retain their names.
 SHOP_KIT = {
     "TradingPost": {"roof": (113, 74, 59), "trim": (227, 182, 115),
-                    "wood": (93, 68, 58), "mark": "Coin"},
+                    "wood": (93, 68, 58), "mark": "Coin",
+                    "shell": (21, 11, 14),
+                    "roof_profile": (29, 11, 15.1, 4.4, 21, 17.35)},
     "CraftingWorkshop": {"roof": (76, 91, 104), "trim": (118, 179, 190),
-                         "wood": (77, 83, 88), "mark": "Tools"},
+                         "wood": (77, 83, 88), "mark": "Tools",
+                         "shell": (18, 13, 16),
+                         "roof_profile": (25, 12.8, 16.2, 5.1, 30, 19.1)},
     "FarmerGuild": {"roof": (99, 117, 76), "trim": (194, 187, 112),
-                    "wood": (103, 90, 63), "mark": "Sheaf"},
+                    "wood": (103, 90, 63), "mark": "Sheaf",
+                    "shell": (22, 10, 17),
+                    "roof_profile": (30, 12, 14.5, 4.8, 18, 16.4)},
     "CreatureNursery": {"roof": (127, 97, 125), "trim": (222, 170, 194),
-                        "wood": (112, 82, 101), "mark": "Egg"},
+                        "wood": (112, 82, 101), "mark": "Egg",
+                        "shell": (17, 12, 15),
+                        "roof_profile": (25.5, 10.4, 15.6, 4.2, 27, 18.2)},
 }
 
 
@@ -178,10 +186,34 @@ def hut(parent, title, x, z, theme):
     timber = kit["wood"]
     accent = kit["trim"]
     roof = kit["roof"]
+    wall_width, wall_height, wall_depth = kit["shell"]
+    roof_width, roof_depth, roof_y, roof_gap, roof_pitch, ridge_y = kit["roof_profile"]
 
     # The front faces south (-Z); keep Door exactly where world shop prompts expect.
     block(h, "Floor", (x, 2, z), (24, 2, 19), stone, material="Slate")
-    block(h, "Walls", (x, 8, z), (19, 11, 15), theme, material="Wood")
+    # The old shop kit hid every station inside the exact same 19x11x15 box.
+    # Six structural wall modules now outline a real shell and door opening;
+    # per-station proportions create four silhouettes while preserving every
+    # interaction Door position and the protected central travel lane.
+    wall_y = 2.5 + wall_height / 2
+    wall_thickness = 1.1
+    front_z = z - wall_depth / 2 + wall_thickness / 2
+    rear_z = z + wall_depth / 2 - wall_thickness / 2
+    door_opening = 6.6
+    front_width = (wall_width - door_opening) / 2
+    block(h, "RearWall", (x, wall_y, rear_z),
+          (wall_width, wall_height, wall_thickness), theme, material="Wood")
+    for side, label in ((-1, "Left"), (1, "Right")):
+        block(h, f"SideWall{label}",
+              (x + side * (wall_width / 2 - wall_thickness / 2), wall_y, z),
+              (wall_thickness, wall_height, wall_depth - 2 * wall_thickness),
+              theme, material="Wood")
+        block(h, f"FrontWall{label}",
+              (x + side * (door_opening / 2 + front_width / 2), wall_y, front_z),
+              (front_width, wall_height, wall_thickness), theme, material="Wood")
+    header_height = 2.5 + wall_height - 9.0
+    block(h, "FrontHeader", (x, 9.0 + header_height / 2, front_z),
+          (door_opening, header_height, wall_thickness), theme, material="Wood")
     block(h, "PlinthFront", (x, 2.8, z-8.1), (22, 1.15, 2.8), timber, material="Wood")
     for side in (-1, 1):
         dx = side * 9.6
@@ -198,16 +230,18 @@ def hut(parent, title, x, z, theme):
         block(h, "FacadeBeam", (x, height, z-8.0), (21, .65, 1.4),
               timber, material="Wood", solid=False)
 
-    block(h, "RoofLeft", (x, 15.1, z-4.5), (26.5, 1.6, 11.3),
-          roof, material="Slate", rotation=(24, 0, 0))
-    block(h, "RoofRight", (x, 15.1, z+4.5), (26.5, 1.6, 11.3),
-          roof, material="Slate", rotation=(-24, 0, 0))
-    block(h, "RoofRidge", (x, 17.35, z), (27, 1.0, 1.7), timber, material="Wood")
+    block(h, "RoofLeft", (x, roof_y, z-roof_gap), (roof_width, 1.6, roof_depth),
+          roof, material="Slate", rotation=(roof_pitch, 0, 0))
+    block(h, "RoofRight", (x, roof_y, z+roof_gap), (roof_width, 1.6, roof_depth),
+          roof, material="Slate", rotation=(-roof_pitch, 0, 0))
+    block(h, "RoofRidge", (x, ridge_y, z), (roof_width+.5, 1.0, 1.7),
+          timber, material="Wood")
     # Distinct high roofline details read from the spawn/overview camera.
     for side in (-1, 1):
-        block(h, "RoofFinial", (x+side*12, 17.4, z), (1.2, 2.7, 1.2),
+        block(h, "RoofFinial", (x+side*(roof_width/2-.8), ridge_y+.05, z),
+              (1.2, 2.7, 1.2),
               accent, material="Wood", solid=False)
-        block(h, "EaveFront", (x+side*6.2, 13.5, z-9.2), (12.8, .5, .75),
+        block(h, "EaveFront", (x+side*6.2, roof_y-1.6, z-9.2), (12.8, .5, .75),
               timber, material="Wood", solid=False)
 
     block(h, "Door", (x, 5.5, z-8), (5, 7, .5), timber, material="Wood")

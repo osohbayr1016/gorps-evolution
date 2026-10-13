@@ -463,13 +463,49 @@ def validate(path):
             assert math.dist(boulder_point, resource_point) >= 15, (
                 path, resource_name, "quarry cluster crowds resource", boulder_point
             )
+    station_profiles = []
+    wall_names = {
+        "RearWall", "SideWallLeft", "SideWallRight",
+        "FrontWallLeft", "FrontWallRight", "FrontHeader",
+    }
     for station in ("TradingPost", "CraftingWorkshop", "FarmerGuild", "CreatureNursery"):
         model = named.get(station, [])
         assert len(model) == 1, (path, "missing village station", station)
-        roof_names = {value(child, "Name") for child in direct_children(model[0])}
+        station_parts = direct_children(model[0])
+        roof_names = {value(child, "Name") for child in station_parts}
         assert {"RoofLeft", "RoofRight", "RoofRidge"} <= roof_names, (
             path, station, "unfinished flat roof"
         )
+        assert "Walls" not in roof_names and wall_names <= roof_names, (
+            path, station, "station regressed to one box shell", roof_names
+        )
+        pieces = {name: [child for child in station_parts if value(child, "Name") == name]
+                  for name in roof_names}
+        assert all(len(pieces[name]) == 1 for name in wall_names), (
+            path, station, "missing modular wall piece"
+        )
+        door = pieces["Door"][0]
+        assert size(door) == (5.0, 7.0, 0.5), (path, station, "door contract moved")
+        assert value(door, "CanCollide") == "true"
+        profile = tuple(size(pieces[name][0]) for name in (
+            "RearWall", "SideWallLeft", "RoofLeft", "RoofRidge"
+        ))
+        station_profiles.append(profile)
+        collidable = [part for part in station_parts if value(part, "CanCollide") == "true"]
+        assert min(abs(position(part)[0]) - size(part)[0] / 2 for part in collidable) >= 24, (
+            path, station, "station crowds protected central travel lane"
+        )
+    assert len(set(station_profiles)) == 4, (
+        path, "village stations share repeated box/roof profile", station_profiles
+    )
+    ridge_tops = [
+        elevation(next(child for child in direct_children(named[station][0])
+                       if value(child, "Name") == "RoofRidge"))
+        for station in ("TradingPost", "CraftingWorkshop", "FarmerGuild", "CreatureNursery")
+    ]
+    assert len(set(ridge_tops)) == 4 and max(ridge_tops) - min(ridge_tops) >= 2.5, (
+        path, "village roof hierarchy flattened", ridge_tops
+    )
 
     for cylinder_name in ("FountainBasin", "FountainWater", "FountainColumn", "Saucer", "NorthBeacon"):
         candidates = named.get(cylinder_name, [])
@@ -484,7 +520,7 @@ def validate(path):
     print(
         f"PASS {path}: 8-node teaching circuit, 70 spaced resources, "
         "clear north route, two curved branches, paired waystones, five markers, "
-        "lagoon-to-grove handoff and distinct lagoon/quarry destinations"
+        "lagoon-to-grove handoff, four station profiles and distinct destinations"
     )
 
 
