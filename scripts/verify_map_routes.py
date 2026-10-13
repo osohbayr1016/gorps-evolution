@@ -447,6 +447,50 @@ def validate(path):
             path, value(first, "Name"), value(second, "Name"),
             "insufficient route-surface overlap", overlap,
         )
+    moonwater_guides = named.get("MoonwaterTurnGuide", [])
+    assert len(moonwater_guides) == 1, (path, "missing Moonwater turn guide")
+    moonwater_guide = {
+        value(child, "Name"): child for child in direct_children(moonwater_guides[0])
+    }
+    assert set(moonwater_guide) == {
+        "GuideFoot", "GuideStem", "GuideLens", "GuideRune"
+    }
+    assert all(value(part, "CanCollide") == "false"
+               for part in moonwater_guide.values())
+    assert value(moonwater_guide["GuideLens"], "Material") == "1568"
+    assert value(moonwater_guide["GuideRune"], "Material") == "288"
+    guide_point = position(moonwater_guide["GuideStem"])
+    assert guide_point == (-116.0, 104.0), (
+        path, "Moonwater guide left the ForestPath junction shoulder", guide_point
+    )
+    for resource_name, resource_point in resources.items():
+        assert math.dist(guide_point, resource_point) >= 20, (
+            path, resource_name, "Moonwater guide crowds resource prompt", guide_point
+        )
+    incoming = (
+        BRANCH_POINTS["ForestRoute"][-1][0]-BRANCH_POINTS["ForestRoute"][-2][0],
+        BRANCH_POINTS["ForestRoute"][-1][1]-BRANCH_POINTS["ForestRoute"][-2][1],
+    )
+    moonwater_exit = (
+        -125.0-BRANCH_POINTS["ForestRoute"][-1][0],
+        76.0-BRANCH_POINTS["ForestRoute"][-1][1],
+    )
+    turn_angle = math.degrees(math.acos(max(-1.0, min(1.0,
+        (incoming[0]*moonwater_exit[0]+incoming[1]*moonwater_exit[1])
+        / (math.hypot(*incoming)*math.hypot(*moonwater_exit))
+    ))))
+    assert 90 <= turn_angle <= 115, (
+        path, "unexpected forest-to-Moonwater junction angle", turn_angle
+    )
+    guide_blockers = visual_blockers(
+        root,
+        (-92.5, 6.0, 107.0),
+        position3(moonwater_guide["GuideLens"]),
+        moonwater_guide.values(),
+    )
+    assert not guide_blockers, (
+        path, "Moonwater guide is hidden on forest approach", guide_blockers
+    )
     assert len(named.get("Glowcap", [])) == 16
     grove_end_part = named["GroveLink_05"][0]
     grove_clearing = named.get("GroveClearing", [])

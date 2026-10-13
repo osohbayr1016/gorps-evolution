@@ -249,3 +249,25 @@ visual grounding, camera clipping, avatar physics or device cost. Run five
 default spawns, direct north-gate walks and one fountain circle; repair the
 first engine defect. Without engine evidence, next measure the gate→route-fork
 surface/view handoff before new geometry or glow.
+
+## GE-MAP-03l — local Moonwater turn landmark
+
+**Verified design basis:** Creator Hub's environment curriculum uses repeated
+area colors/materials at primary and cross-lane intersections so players can
+orient quickly. Bee Swarm's official description confirms chained resource,
+quest and exploration progression only; Gorps does not copy its mountain,
+signage, geometry or assets.
+
+**Measured implementation:** the existing surface chain is continuous, but the
+forest heading changes 102.80 degrees onto the southbound Moonwater exit with
+no local cue. One original four-piece shoulder landmark at `(-116, 104)` uses a
+Slate foot, Wood stem, Glass lens and nonblocking Neon south rune. It adds four
+anchored parts, no PointLight/particle/script/RNG work, and keeps 30.0 studs to
+the nearest starter resource root.
+
+**Evidence boundary and next step:** source/package checks prove the kit,
+collision/material policy, turn angle, resource clearance and fixed approach
+sightline—not player comprehension, terrain seating, prompt projection, avatar
+physics or device cost. Studio must follow the forest approach through the
+guide to Moonwater bridge on keyboard and touch, then repair the first observed
+direction/scale/terrain/prompt/collision defect before adding more glow.

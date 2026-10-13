@@ -617,6 +617,20 @@ trail_ribbon(handoff,"GroveLink",[
     (-125,182),(-130,195),(-139,208),(-151,219),(-165,227),(-180,230),
 ],7.5,(111,139,121))
 
+# The forest ribbon meets ForestPath north of the Moonwater cross-lane, so the
+# west route asks players for a sharp south turn at the first junction. A
+# shoulder-mounted, non-colliding guide makes that turn readable without
+# widening the route, moving a harvest prompt or adding another light source.
+moonwater_guide=group(handoff,"MoonwaterTurnGuide")
+block(moonwater_guide,"GuideFoot",(-116,1.8,104),(6.5,1.6,6.5),(111,124,119),
+      shape="Ball",material="Slate",solid=False)
+block(moonwater_guide,"GuideStem",(-116,5.0,104),(1.5,7.0,1.5),(151,123,91),
+      material="Wood",solid=False)
+block(moonwater_guide,"GuideLens",(-116,8.7,104),(5.8,3.8,2.0),(121,184,190),
+      shape="Ball",material="Glass",solid=False,rotation=(0,18,0))
+block(moonwater_guide,"GuideRune",(-116,10.7,103.4),(1.2,2.8,1.0),(112,220,206),
+      part_class="WedgePart",material="Neon",solid=False,rotation=(0,180,0))
+
 # The rotated final ribbon only touched the clearing at one narrow corner.
 # This compact threshold deliberately overlaps both footprints so the handoff
 # reads as one continuous surface without adding collision or a new route.
