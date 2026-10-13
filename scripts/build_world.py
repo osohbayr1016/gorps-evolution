@@ -132,17 +132,15 @@ for i in range(8):
     x, z = math.cos(angle)*47, math.sin(angle)*40
     block(terrain, f"GardenStone_{i:02d}", (x, 1.08, z), (12, .4, 8),
           (167, 162, 151), shape="Ball")
-# Keep the broad starter-region shoulders, but place the west-Grove mass behind
-# the activity ring rather than underneath its harvest nodes.  The previous
-# 70x65 ellipsoid at (-240, 265) enclosed Tree_025 and Ore_060 and crossed the
-# clearing-to-focal-cap camera segment.  This narrower, taller backdrop keeps
-# one collidable relief part and the same deterministic part/RNG budget while
-# leaving the playable foreground and all resource identities in place.
+# Keep the four-part starter-region relief budget, but place every mass behind
+# the interactive foreground.  The former broad LowHill ellipsoids enclosed six
+# harvest roots; narrower, varied-height boundary shoulders retain collidable
+# vertical depth without moving a route, resource identity, ranch or RNG draw.
 for name, x, y, z, sx, sy, sz in [
-    ("LowHill", -185, 4, 130, 75, 9, 65),
-    ("LowHill", 185, 4, 155, 75, 9, 70),
+    ("ForestBackdropHill", -308, 6.5, 130, 30, 15, 54),
+    ("QuarryBackdropHill", 286, 7, 116, 28, 16, 52),
     ("GroveBackdropHill", -306, 6.5, 278, 34, 15, 72),
-    ("LowHill", 246, 4, 265, 68, 9, 68),
+    ("SunstoneBackdropHill", 299, 7.5, 257, 26, 17, 48),
 ]:
     block(terrain, name, (x, y, z), (sx, sy, sz), (77, 131, 105),
           shape="Ball", material="Grass")

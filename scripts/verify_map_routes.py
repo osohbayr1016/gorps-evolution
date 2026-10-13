@@ -709,28 +709,43 @@ def validate(path):
     focal_caps = [part for part in named["Glowcap"]
                   if math.dist(position(part), (-219, 292)) < .01]
     assert len(focal_caps) == 1, (path, "missing north Grove focal cap")
-    backdrop_hills = named.get("GroveBackdropHill", [])
-    assert len(backdrop_hills) == 1, (path, "missing Grove backdrop relief")
-    backdrop = backdrop_hills[0]
-    assert position3(backdrop) == (-306.0, 6.5, 278.0)
-    assert size(backdrop) == (34.0, 15.0, 72.0)
-    assert value(backdrop, "Material") == "1280"
-    assert value(backdrop, "CanCollide") == "true"
-    backdrop_center = position(backdrop)
-    backdrop_half = (size(backdrop)[0] / 2, size(backdrop)[2] / 2)
-    assert abs(backdrop_center[0]) + backdrop_half[0] <= 324
-    assert abs(backdrop_center[1]) + backdrop_half[1] <= 324
-    for resource_name, resource_point in resources.items():
-        assert not (
-            abs(resource_point[0] - backdrop_center[0]) <= backdrop_half[0] + 12
-            and abs(resource_point[1] - backdrop_center[1]) <= backdrop_half[1] + 12
-        ), (path, resource_name, "Grove backdrop crowds a harvest root")
-    for stem in named.get("MushroomStem", []):
-        stem_point = position(stem)
-        assert not (
-            abs(stem_point[0] - backdrop_center[0]) <= backdrop_half[0] + 6
-            and abs(stem_point[1] - backdrop_center[1]) <= backdrop_half[1] + 6
-        ), (path, "Grove backdrop crowds a Glowcap stem", stem_point)
+    backdrop_specs = {
+        "ForestBackdropHill": ((-308.0, 6.5, 130.0), (30.0, 15.0, 54.0)),
+        "QuarryBackdropHill": ((286.0, 7.0, 116.0), (28.0, 16.0, 52.0)),
+        "GroveBackdropHill": ((-306.0, 6.5, 278.0), (34.0, 15.0, 72.0)),
+        "SunstoneBackdropHill": ((299.0, 7.5, 257.0), (26.0, 17.0, 48.0)),
+    }
+    assert not named.get("LowHill"), (path, "resource-burying LowHill returned")
+    backdrop_profiles = set()
+    for backdrop_name, (expected_position, expected_size) in backdrop_specs.items():
+        backdrop_hills = named.get(backdrop_name, [])
+        assert len(backdrop_hills) == 1, (
+            path, backdrop_name, "missing boundary backdrop relief"
+        )
+        backdrop = backdrop_hills[0]
+        assert position3(backdrop) == expected_position
+        assert size(backdrop) == expected_size
+        assert value(backdrop, "Material") == "1280"
+        assert value(backdrop, "CanCollide") == "true"
+        backdrop_center = position(backdrop)
+        backdrop_half = (size(backdrop)[0] / 2, size(backdrop)[2] / 2)
+        assert abs(backdrop_center[0]) + backdrop_half[0] <= 324
+        assert abs(backdrop_center[1]) + backdrop_half[1] <= 324
+        backdrop_profiles.add(size(backdrop))
+        for resource_name, resource_point in resources.items():
+            assert not (
+                abs(resource_point[0] - backdrop_center[0]) <= backdrop_half[0] + 12
+                and abs(resource_point[1] - backdrop_center[1]) <= backdrop_half[1] + 12
+            ), (path, resource_name, backdrop_name, "backdrop crowds a harvest root")
+        for stem in named.get("MushroomStem", []):
+            stem_point = position(stem)
+            assert not (
+                abs(stem_point[0] - backdrop_center[0]) <= backdrop_half[0] + 6
+                and abs(stem_point[1] - backdrop_center[1]) <= backdrop_half[1] + 6
+            ), (path, backdrop_name, "backdrop crowds a Glowcap stem", stem_point)
+    assert len(backdrop_profiles) == len(backdrop_specs), (
+        path, "boundary relief regressed to repeated silhouettes", backdrop_profiles
+    )
     fixed_sightlines = (
         ((-168, 6, 45), (-125, 6, 76), ()),
         ((-125, 6, 182), position3(guide_parts["GuideCap"]), guide_parts.values()),

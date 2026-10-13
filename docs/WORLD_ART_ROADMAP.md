@@ -427,3 +427,26 @@ background silhouette or prove Humanoid movement, prompt legibility, terrain
 seating, streaming or phone performance. Studio must hold the focal-cap frame,
 harvest `Tree_025`/`Ore_060`, and repair the first actual burial, snag, seam or
 visibility defect before more glow or density.
+
+## GE-MAP-03t — move all remaining broad relief behind interaction space
+
+**Verified design basis:** Creator Hub's greybox/environment curriculum uses
+peaks and valleys to control sightlines and scale, while perimeter massing
+communicates the playable boundary. Constructed art may replace a greybox form
+only when it preserves gameplay intent. Gorps applies that principle to its own
+measured resources; no competitor geometry or asset is used.
+
+**Measured implementation:** the three remaining broad `LowHill` ellipsoids
+covered six harvest interaction centers by 3.160–7.140 studs. The same three
+parts now form narrower boundary masses at forest, quarry and Sunstone edges,
+with unique 15/16/17-stud height tiers. Together with the Grove backdrop, all
+four stay inside the 648×648 world and outside conservative 12-stud boxes around
+all 70 roots plus six-stud boxes around 16 Glowcap stems. Part, light, particle,
+script and RNG counts do not change; 12 ranches and routes stay fixed.
+
+**Evidence boundary and next step:** source/package checks prove names,
+transforms, profile variety, collision/material, bounds and clearance—not
+rendered parallax, terrain seating, camera collision, escarpment intersection
+or phone cost. Studio must harvest all six formerly covered resources and
+compare fixed west/east skyline frames. If no engine defect is supplied, next
+measure backdrop-to-escarpment intersections before adding glow or density.

@@ -35,6 +35,16 @@ a narrower boundary backdrop with conservative clearances from all 70 roots.
 This proves static separation only. In Studio, Harvest both nodes from the Grove
 and reject a buried body/prompt, collision snag, apparent float or Output error.
 
+## Global authored-relief clearance — GE-MAP-03t
+
+The remaining three broad `LowHill` surfaces covered six interaction roots:
+`Crystal_030`, `Fiber_063`, `Rock_043`, `Wild_048`, `Crystal_054` and
+`Fiber_023`. Their measured depth below the analytic ellipsoid surfaces ranged
+from 3.160 to 7.140 studs. The roots/models were not moved; those three relief
+parts now form narrower, taller boundary backdrops with conservative 12-stud
+root exclusion. Source/package separation does not prove rendered seating or
+prompt reach. Studio must Harvest all six and reject burial, float or snag.
+
 ## UI icons
 
 The library `src/client/Icons.lua` generates resolution-independent geometric icons as native Roblox UI. The five main dock actions and window navigation have visual icons. Wallet uses a coin icon and resource inventories show wood, stone, iron, meat, berry, crystal and fiber icons.

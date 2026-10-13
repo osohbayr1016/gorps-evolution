@@ -38,6 +38,10 @@ substitute for final original MeshPart/PBR production assets.
   centers. Its one-part budget now forms a narrower/taller boundary backdrop;
   CI keeps a conservative margin around all 70 resource roots and 16 stems and
   preserves the clearing-to-focal-cap shoulder-height sightline.
+- The other three broad `LowHill` ellipsoids enclosed six more interaction
+  centers by 3.160–7.140 studs. Their unchanged three-part budget now forms
+  unique forest/quarry/Sunstone boundary backdrops with 15/16/17-stud height
+  tiers, no covered resource roots and no new light, particle, script or RNG.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.
