@@ -598,7 +598,7 @@ for i,(x,z,sx,sz,yaw,flower_color) in enumerate(lagoon_lilies,1):
 block(lake,"ReedBridgeApproach",(-167,2.48,47),(7.5,1,9.5),(184,149,113),
       material="Wood",rotation=(19.7,63.435,0))
 # Three shallow deck modules give the east entrance a readable cadence while
-# keeping the deck-to-deck rise below a single stud. Rails are visual/non-colliding.
+# keeping the deck-to-deck rise below a single stud.
 for i,(x,y,yaw) in enumerate([(-188,4.0,-3),(-180,4.3,2),(-172,4.1,-2)],1):
     block(lake,f"ReedBridgeDeck_{i:02d}",(x,y,45),(9,1,8),(184,149,113),
           material="Wood",rotation=(0,yaw,0))
@@ -606,9 +606,14 @@ for i,x in enumerate((-192,-184,-176,-168),1):
     for side,z in (("North",41),("South",49)):
         block(lake,f"BridgePost{side}_{i:02d}",(x,5.8,z),(1,3.6,1),
               (128,97,77),material="Wood")
+# A low collidable U-guard identifies this short bridge as a water overlook and
+# leaves its east approach open for a return. The seven-stud inner corridor is
+# wider than the protected player body; the higher posts remain its rhythm.
 for side,z in (("North",41),("South",49)):
-    block(lake,f"BridgeRail{side}",(-180,6.6,z),(27,1,1),(145,112,84),
-          material="Wood",solid=False)
+    block(lake,f"BridgeRail{side}",(-180,5.2,z),(27,1.2,1),(145,112,84),
+          material="Wood")
+block(lake,"BridgeRailWest",(-192.5,5.2,45),(1,1.2,9),(145,112,84),
+      material="Wood",rotation=(0,-3,0))
 
 # Two low cross-lanes connect the lagoon bridge to the existing ForestPath,
 # then peel west toward the first Glowcaps. They preserve the established road

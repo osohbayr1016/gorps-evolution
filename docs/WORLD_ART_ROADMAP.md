@@ -292,3 +292,23 @@ the two endpoint deltas are <=0.1 studs, not that Roblox Humanoid physics feels
 safe. Studio must cross the ramp without jumping on keyboard and touch, reject
 snag/slide/float/water clipping/camera bump, and record real-phone FPS/memory.
 If clean, next measure the deck→lagoon-bank surface and safe water-edge return.
+
+## GE-MAP-03n — readable, bounded Moonwater overlook
+
+**Verified design basis:** Creator Hub treats containment as part of polished
+world construction so playable areas do not permit unintended falls. Fisch's
+official description verifies water exploration/progression only; it does not
+publish a bridge, barrier, device result or licensed geometry for reuse.
+
+**Measured implementation:** the bridge's west edge stood 1.90 studs over the
+visual water and 2.78 studs over the solid rim while both long rails were
+non-colliding and the end was open. The two existing rails now sit at deck
+height and collide; one aligned west rail closes the water edge. The original
+east ramp remains the sole return opening, with a 7.0-stud inner corridor.
+Cost: +1 anchored part, zero light/particle/script/asset/RNG changes.
+
+**Evidence boundary and next step:** source/package contracts prove the rail
+kit, seating, overlap and nominal corridor width—not Humanoid turning, jumping,
+camera collision or visual weight. Studio must cross, touch the end guard,
+U-turn and return on keyboard/touch. If clean, next source audit measures the
+walkable rim/shore boundary for a deterministic water-edge trap.

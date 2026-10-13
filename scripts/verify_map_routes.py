@@ -422,6 +422,34 @@ def validate(path):
     assert abs(high_top-deck_top) <= .1, (
         path, "bridge approach no longer meets first deck", high_top, deck_top
     )
+    bridge_rails = [
+        lagoon_parts.get("BridgeRailNorth"),
+        lagoon_parts.get("BridgeRailSouth"),
+        lagoon_parts.get("BridgeRailWest"),
+    ]
+    assert all(part is not None for part in bridge_rails), (
+        path, "bridge overlook is missing its U-guard"
+    )
+    assert all(value(part, "Material") == "512" for part in bridge_rails)
+    assert all(value(part, "CanCollide") == "true" for part in bridge_rails), (
+        path, "bridge water-edge guard must remain collidable"
+    )
+    side_rails = bridge_rails[:2]
+    corridor_width = (
+        abs(position(side_rails[1])[1]-position(side_rails[0])[1])
+        - size(side_rails[0])[2]/2 - size(side_rails[1])[2]/2
+    )
+    assert corridor_width >= 6.5, (
+        path, "bridge guard makes the return corridor too narrow", corridor_width
+    )
+    rail_bottoms = [elevation(part)-size(part)[1]/2 for part in bridge_rails]
+    assert all(4.55 <= bottom <= 4.65 for bottom in rail_bottoms), (
+        path, "bridge guard no longer seats at deck height", rail_bottoms
+    )
+    assert footprint_overlap(decks[0], bridge_rails[2]) >= 3, (
+        path, "bridge end guard no longer closes the water edge",
+        footprint_overlap(decks[0], bridge_rails[2]),
+    )
     lagoon_lights = [item for item in lagoon.iter("Item") if item.get("class") == "PointLight"]
     assert not lagoon_lights, (path, "lagoon milestone must not add local lights")
     for part in list(crescent_parts.values()) + decks + [approach]:
