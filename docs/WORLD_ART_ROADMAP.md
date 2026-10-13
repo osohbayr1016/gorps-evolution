@@ -352,3 +352,27 @@ axis, perimeter overlap and lily seating—not final Neon/Bloom appearance,
 transparency, perceived depth, Humanoid movement or phone cost. Studio must
 orbit and cross the lagoon on keyboard/touch; if clean, next audit Glowcap and
 rare-resource visibility against the existing effect budget.
+
+## GE-MAP-03q — one static rare crown, zero new effect payload
+
+**Verified design basis:** Creator Hub documents lighting as a way to highlight
+important objects, but its performance guidance warns that overlapping
+transparent surfaces and particles add GPU overdraw, especially in dense
+scenes. BIG Games' official PS99 Spring Boss Chest update describes brighter
+rare/evolved variants; it does not publish a shader, map, asset, mobile budget
+or technique that Gorps can copy.
+
+**Measured implementation:** nine Crystal clusters previously contained five
+Glass tips each with no material hierarchy. The tallest existing tip is now
+pale Neon; four subordinate tips remain Glass. The starter crown at
+`(-92, 11, 122)` has a fixed unobstructed ray from `ForestRoute_05`. The world
+retains four village and four grove PointLights, total Range 136 and brightness
+4.12, with shadows disabled. Part count, prompts, rewards, cooldowns,
+ParticleEmitter/Beam/Trail count, scripts and RNG do not increase.
+
+**Evidence boundary and next step:** source/package contracts prove composition,
+ownership and static budget—not rendered brightness, Bloom halo, colorblind
+recognition, prompt competition or phone performance. Studio must compare the
+starter Crystal with Tree/Rock/Ore at graphics quality 1/10 and on touch, then
+record a real-phone frame-time/memory sample. Repair the first observed defect
+before adding another light or animated effect.

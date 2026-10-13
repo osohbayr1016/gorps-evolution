@@ -191,9 +191,21 @@ def validate(path):
             assert math.dist((x,z), position(node)) >= 27.9, (path, "knoll overlaps harvest", (x,z))
     lights = [item for item in root.iter("Item") if item.get("class") == "PointLight"]
     assert len(lights) == 8, (path, "village and grove lights must be bounded", len(lights))
+    light_names = Counter(value(light, "Name") for light in lights)
+    assert light_names == Counter({"VillageLanternLight": 4, "GroveLight": 4}), (
+        path, "local-light ownership drifted", light_names
+    )
     for light in lights:
         assert float(value(light, "Range")) <= 20
         assert value(light, "Shadows") == "false"
+    assert sum(float(value(light, "Range")) for light in lights) == 136
+    assert abs(sum(float(value(light, "Brightness")) for light in lights)-4.12) < 1e-6
+    animated_effects = [item for item in root.iter("Item")
+                        if item.get("class") in {"ParticleEmitter", "Beam", "Trail"}]
+    assert not animated_effects, (
+        path, "static world-art milestone added animated/transparent effects",
+        [value(item, "Name") for item in animated_effects],
+    )
 
     base_parts = [item for item in root.iter("Item") if item.get("class") in {"Part", "WedgePart"}]
     assert len(base_parts) <= 2350, (path, "static BasePart budget exceeded", len(base_parts))

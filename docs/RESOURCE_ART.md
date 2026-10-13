@@ -14,6 +14,12 @@ The first version relied on generic floating colored spheres. Resource nodes now
 
 Each remains a **native Roblox Part/WedgePart model**, not a Blender-created MeshPart with custom texture/UVs or skeletal animation. For mesh-quality production assets, generate licensed or original `.gltf` or `.fbx` models and import to Roblox Studio as private MeshPart assets. Asset IDs must be added after import. See Roblox Creator Hub importer documentation. We do not substitute unreviewed marketplace assets.
 
+## Restrained rare-resource cue — GE-MAP-03q
+
+Crystal is the highest-value authored harvest resource (`Config.Resources.Crystal=35`) and has the longest node cooldown (`40`), but its five tips previously shared Glass material with no visual hierarchy. Each of the nine Crystal nodes now uses one pale Neon crown only on the tallest existing spire and keeps four subordinate Glass tips. The crown is static and non-colliding: it adds no part, PointLight, ParticleEmitter, Beam, Trail, animation, script or RNG work. This is a source-authored identity cue, not proof of Studio contrast or rarity comprehension.
+
+`scripts/verify_resource_models.py` protects the one-Neon/four-Glass contract and rejects resource-owned light/particle/trail/beam effects. `scripts/verify_map_routes.py` checks that the starter crown remains visible from a fixed ForestRoute shoulder camera. Studio/device acceptance must compare Crystal against nearby common resources at quality 1/10 and reject bloom washout, color-only ambiguity, prompt overlap or mobile regression.
+
 ## UI icons
 
 The library `src/client/Icons.lua` generates resolution-independent geometric icons as native Roblox UI. The five main dock actions and window navigation have visual icons. Wallet uses a coin icon and resource inventories show wood, stone, iron, meat, berry, crystal and fiber icons.

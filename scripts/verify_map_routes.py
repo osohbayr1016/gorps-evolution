@@ -267,6 +267,29 @@ def validate(path):
         assert math.dist(actual, expected) < 0.01, (path, name, actual, expected)
         assert math.hypot(*actual) <= 170, (path, name, "outside starter circuit")
 
+    starter_crystal = named["Crystal_006"][0]
+    starter_crystal_parts = direct_children(starter_crystal)
+    rare_crowns = [part for part in starter_crystal_parts
+                   if value(part, "Name") == "CrystalTip"
+                   and value(part, "Material") == "288"]
+    assert len(rare_crowns) == 1, (
+        path, "starter crystal must expose one restrained static rare cue"
+    )
+    rare_crown = rare_crowns[0]
+    assert position3(rare_crown) == (-92.0, 11.0, 122.0), (
+        path, "starter rare cue moved off the tallest crystal spire",
+        position3(rare_crown),
+    )
+    rare_blockers = visual_blockers(
+        root,
+        (-92.5, 6.0, 107.0),
+        position3(rare_crown),
+        starter_crystal.iter("Item"),
+    )
+    assert not rare_blockers, (
+        path, "starter rare cue is occluded from ForestRoute_05", rare_blockers
+    )
+
     points = list(resources.items())
     for index, (name, (x, z)) in enumerate(points):
         assert not (abs(x) < 19 and 35 < z < 302), (

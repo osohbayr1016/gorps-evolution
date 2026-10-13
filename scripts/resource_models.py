@@ -71,9 +71,15 @@ def build_resource(node, kind, x, z, block, rng):
             part("CrystalSpire",dx,2.8+height/2,dz,(1.8,height,1.9),
                  crystal_colors[i%len(crystal_colors)],material="Glass",
                  kind_of="WedgePart",roll=angle)
+            # One static emissive crown makes the highest-value harvest node
+            # distinguishable without a PointLight, transparent particle
+            # stack, animation loop, or reduced-motion exception. The four
+            # smaller tips remain Glass so the full cluster does not bloom.
+            tip_material = "Neon" if i == 0 else "Glass"
+            tip_color = (210,221,255) if i == 0 else (183,194,239)
             part("CrystalTip",dx+math.sin(math.radians(angle))*.6,
-                 3+height,dz,(1.1,1.6,1.1),(183,194,239),
-                 material="Glass",kind_of="WedgePart",roll=angle)
+                 3+height,dz,(1.1,1.6,1.1),tip_color,
+                 material=tip_material,kind_of="WedgePart",roll=angle)
         for dx,dz in ((-2.8,-2.2),(3.1,2.2)):
             part("StoneBase",dx,1.3,dz,(2.3,1.7,2.6),(105,115,134),
                  material="Slate",kind_of="WedgePart",yaw=65)

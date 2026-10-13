@@ -18,6 +18,10 @@ REQUIREMENTS={
  "Wild":{"Interact","Neck","Snout","Eye","Leg","Hoof"}
 }
 
+def value(item, prop_name, default=None):
+  props=item.find("Properties")
+  return next((p.text for p in props or [] if p.get("name")==prop_name),default)
+
 def find_models(root):
   result={}
   def name(item):
@@ -51,6 +55,18 @@ def verify(path,expected):
     for child in children:
       if child.get("class") not in ("Part","WedgePart"):
         raise AssertionError((path,model_name,"unexpected asset type"))
+    effects=[item.get("class") for child in children for item in child.iter("Item")
+             if item.get("class") in {"PointLight","ParticleEmitter","Beam","Trail"}]
+    assert not effects,(path,model_name,"resource gained unbounded visual effects",effects)
+    if prefix=="Crystal":
+      tips=[child for child in children if value(child,"Name")=="CrystalTip"]
+      materials=Counter(value(tip,"Material") for tip in tips)
+      assert len(tips)==5,(path,model_name,"crystal tip count drifted",len(tips))
+      assert materials==Counter({"1568":4,"288":1}),(
+        path,model_name,"crystal needs one static Neon crown and four Glass tips",materials)
+      neon_tip=next(tip for tip in tips if value(tip,"Material")=="288")
+      assert value(neon_tip,"CanCollide")=="false",(
+        path,model_name,"rare-resource cue must not affect collision")
   counts=Counter(key.split("_",1)[0] for key in models)
   assert counts==expected,(path,"resource counts drifted",counts,expected)
   print("PASS",path,"70 modeled harvestables",dict(counts))
