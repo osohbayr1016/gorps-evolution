@@ -100,6 +100,12 @@ def point_light(part, name, rgb, brightness=0.65, radius=20):
     prop(properties, "bool", "Shadows", False)
 
 
+def attachment(parent, name, position):
+    """Author an explicit local interaction anchor without another Part."""
+    _, properties = item(parent, "Attachment", name)
+    vector(properties, "Position", position)
+
+
 def trail_ribbon(parent, prefix, points, width, rgb):
     """Lay a low, non-colliding segmented trail through authored waypoints."""
     for index, ((x0, z0), (x1, z1)) in enumerate(zip(points, points[1:]), 1):
@@ -516,7 +522,7 @@ for i in range(70):
             raise RuntimeError("Could not place spaced resource node")
     placed.append((x,z))
     node=group(nodes,f"{kind}_{i+1:03d}")
-    build_resource(node,kind,x,z,block,rng)
+    build_resource(node,kind,x,z,block,attachment,rng)
 
 # The starter circuit is visible from the north village exit. Mint markers
 # point to food/wood; amber markers lead to stone/ore; violet marks hunting.

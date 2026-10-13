@@ -106,8 +106,12 @@ function World.make(onGather)
    local kind=string.match(node.Name,"^([A-Za-z]+)_")
    local base=node:FindFirstChild("Interact")
    if kind and C.Nodes[kind] and base and base:IsA("BasePart") then
-    local prompt=base:FindFirstChildOfClass("ProximityPrompt")
-    if not prompt then prompt=Instance.new("ProximityPrompt");prompt.Parent=base end
+    local anchor=base:FindFirstChild("PromptAnchor")
+    local promptParent=anchor and anchor:IsA("Attachment") and anchor or base
+    local prompt=promptParent:FindFirstChildOfClass("ProximityPrompt")
+      or base:FindFirstChildOfClass("ProximityPrompt")
+    if not prompt then prompt=Instance.new("ProximityPrompt") end
+    prompt.Parent=promptParent
     prompt.ActionText=kind=="Wild" and "Hunt" or "Harvest"
     prompt.ObjectText=kind
     prompt.MaxActivationDistance=13

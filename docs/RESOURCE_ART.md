@@ -20,6 +20,12 @@ Crystal is the highest-value authored harvest resource (`Config.Resources.Crysta
 
 `scripts/verify_resource_models.py` protects the one-Neon/four-Glass contract and rejects resource-owned light/particle/trail/beam effects. `scripts/verify_map_routes.py` checks that the starter crown remains visible from a fixed ForestRoute shoulder camera. Studio/device acceptance must compare Crystal against nearby common resources at quality 1/10 and reject bloom washout, color-only ambiguity, prompt overlap or mobile regression.
 
+## Anchored Crystal interaction cue — GE-MAP-03r
+
+The nine Crystal models now place a renderless `PromptAnchor` Attachment 4.7 studs above the low Slate `Interact` center. `World.lua` parents the runtime cross-input ProximityPrompt to that anchor, so its projected cue originates at world y=6.5 beside the crystal body instead of 9.2 studs below the y=11 crown center. Harvest reward, cooldown, distance validation and depletion animation still use `Interact`; the change adds no visible Part, collision, light, particle, trail, animation or loop.
+
+Creator Hub's [Proximity prompts](https://create.roblox.com/docs/ui/proximity-prompts) page explicitly supports Attachment parents and documents keyboard, gamepad and touchscreen cues. Static source/package checks prove hierarchy and server ownership only. Studio must approach `Crystal_006`, harvest, and watch the complete respawn on keyboard/touch to reject crown overlap, prompt drift, competing prompts or an unreachable activation zone.
+
 ## UI icons
 
 The library `src/client/Icons.lua` generates resolution-independent geometric icons as native Roblox UI. The five main dock actions and window navigation have visual icons. Wallet uses a coin icon and resource inventories show wood, stone, iron, meat, berry, crystal and fiber icons.

@@ -27,6 +27,11 @@ contracts={
  "UI hatch reveal": "function UI:showHatch(pet)" in ui and "ui:showHatch(result.hatch)" in client,
  "harvest shuts off prompts": "prompt.Enabled=false" in world and "setHarvestVisibility(node,false,true)" in world,
  "harvest respawns": "setHarvestVisibility(node,true,true)" in world and 'HarvestState","Ready"' in world,
+ "rare prompt uses authored anchor without moving authoritative root":
+    'base:FindFirstChild("PromptAnchor")' in world
+    and 'anchor:IsA("Attachment")' in world
+    and 'prompt.Parent=promptParent' in world
+    and '(root.Position-base.Position).Magnitude>19' in world,
  "pickup feedback": "function UI:showPickup(reward)" in ui and "ui:showPickup(data.pickup)" in client,
  "failed hunt doesn't deplete node": "if not won then" in server and "return false" in server,
  "first session smoke tests": "Starter egg regression" in smoke and "full ranch blocks hatching" in smoke,

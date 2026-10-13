@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 
 
-def build_resource(node, kind, x, z, block, rng):
+def build_resource(node, kind, x, z, block, attachment, rng):
     def part(name, dx, y, dz, size, color, shape="Block", material="SmoothPlastic",
              solid=False, pitch=0, yaw=0, roll=0, kind_of="Part"):
         return block(node, name, (x+dx,y,z+dz), size, color, shape=shape,
@@ -63,8 +63,13 @@ def build_resource(node, kind, x, z, block, rng):
              material="Metal")
 
     elif kind == "Crystal":
-        part("Interact",0,1.8,0,(7,3.4,6.4),(101,112,131),
-             material="Slate",solid=True,kind_of="WedgePart",yaw=30)
+        interact = part("Interact",0,1.8,0,(7,3.4,6.4),(101,112,131),
+                        material="Slate",solid=True,kind_of="WedgePart",yaw=30)
+        # Keep the authoritative harvest root/security distance unchanged, but
+        # project the cross-input prompt beside the readable crystal body
+        # instead of from inside its low slate base. Attachment adds no render,
+        # collision, light, particle, animation or per-frame cost.
+        attachment(interact,"PromptAnchor",(0,4.7,0))
         crystal_colors=[(137,117,205),(98,169,215),(161,137,218),(113,184,187)]
         for i,(dx,dz,height,angle) in enumerate((
            (0,0,8,0),(-2,1,5.7,-19),(2.2,.8,6.1,20),(-.8,-2,4,-12),(2.9,-1.4,3.8,27))):

@@ -376,3 +376,25 @@ recognition, prompt competition or phone performance. Studio must compare the
 starter Crystal with Tree/Rock/Ore at graphics quality 1/10 and on touch, then
 record a real-phone frame-time/memory sample. Repair the first observed defect
 before adding another light or animated effect.
+
+## GE-MAP-03r — attach the rare prompt to its readable silhouette
+
+**Verified design basis:** Creator Hub allows ProximityPrompts to use an
+Attachment parent and defines the prompt as the cross-input communication of
+object, action and control. PS99's official update confirms visually distinct
+rare variants and a reduced-VFX mode only; it does not publish a prompt anchor
+or transferable UI treatment.
+
+**Measured implementation:** Crystal's prompt formerly originated at the
+`Interact` center y=1.8 while the crown center is y=11.0. Each of nine Crystal
+bases now owns one renderless local `(0, 4.7, 0)` `PromptAnchor`, placing the
+runtime origin at y=6.5. Server distance/reward, cooldown, identity and
+depletion remain on the original base. Common resources, parts, collisions,
+lights, particles, transparencies, scripts per frame and RNG are unchanged.
+
+**Evidence boundary and next step:** source/package tests prove nine exact
+Attachments, zero common-node anchors, no authored prompt duplicate and the
+runtime base-distance safety boundary. They do not render Roblox prompt UI or
+prove touch/controller reach, camera projection, competing-prompt choice,
+respawn motion or phone cost. Studio must approach, harvest and watch
+`Crystal_006` respawn on keyboard/touch before any additional glow work.

@@ -22,6 +22,12 @@ def value(item, prop_name, default=None):
   props=item.find("Properties")
   return next((p.text for p in props or [] if p.get("name")==prop_name),default)
 
+def vector(item, prop_name):
+  props=item.find("Properties")
+  entry=next((p for p in props or [] if p.get("name")==prop_name),None)
+  assert entry is not None,(value(item,"Name"),"missing",prop_name)
+  return tuple(float(entry.find(axis).text) for axis in "XYZ")
+
 def find_models(root):
   result={}
   def name(item):
@@ -67,6 +73,19 @@ def verify(path,expected):
       neon_tip=next(tip for tip in tips if value(tip,"Material")=="288")
       assert value(neon_tip,"CanCollide")=="false",(
         path,model_name,"rare-resource cue must not affect collision")
+      interact=next(child for child in children if value(child,"Name")=="Interact")
+      anchors=[item for item in interact if item.tag=="Item"
+               and item.get("class")=="Attachment"
+               and value(item,"Name")=="PromptAnchor"]
+      assert len(anchors)==1,(path,model_name,"needs one authored prompt anchor",len(anchors))
+      assert vector(anchors[0],"Position")== (0.0,4.7,0.0),(
+        path,model_name,"prompt anchor drifted",vector(anchors[0],"Position"))
+      assert not any(item.get("class")=="ProximityPrompt" for item in interact.iter("Item")),(
+        path,model_name,"runtime prompt must not be duplicated in authored asset")
+    else:
+      assert not any(item.get("class")=="Attachment" for child in children
+                     for item in child.iter("Item")),(
+        path,model_name,"common resource unexpectedly gained prompt anchor")
   counts=Counter(key.split("_",1)[0] for key in models)
   assert counts==expected,(path,"resource counts drifted",counts,expected)
   print("PASS",path,"70 modeled harvestables",dict(counts))
