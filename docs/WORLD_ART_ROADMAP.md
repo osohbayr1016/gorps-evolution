@@ -522,3 +522,27 @@ evidence, not a rendered voxel surface, collision playtest, streaming result or
 phone performance claim. Studio must run one clockwise no-jump walk through the
 four moved contour areas. If no engine evidence is supplied, next measure their
 actual boundary/voxel occupancy before increasing glow or decoration density.
+
+## GE-MAP-03x — keep scripted relief supported by the authored playfield
+
+**Verified design basis:** Creator Hub documents that Terrain consists of
+4×4×4-stud voxel regions and that selection bounds can snap to voxels. This
+supports a conservative half-voxel boundary guard; it does not reveal the exact
+occupancy produced by this plan without Studio. The official Grow a Garden page
+confirms the experience and creator identity but publishes no terrain dimensions
+or reusable map asset, so no competitor geometry is copied or inferred.
+
+**Measured implementation:** `EastNorthHillock` previously reached three studs
+beyond the Ground analytically, or five studs with the two-stud guard. Its
+original north/east composition stays intact at `(312,312)` with a one-stud
+narrower site, producing 9/7.38/6-stud lobes. A general planner gate now protects
+all inland candidates against ±324 rather than relying on one hard-coded fix.
+The result retains 46 fills, 12 contours split six/six, 70 resources, 12 plots,
+eight lights, zero particles and the existing 1.802/5.720-stud cliff/backdrop
+clearances.
+
+**Evidence boundary and next step:** headless math proves conservative sphere
+envelopes, not Studio's rasterized surface, collision, streaming or device cost.
+The next gate is one no-jump north/east-rim walk ending in a full circle around
+the `(312,312)` Ground/Terrain join; fix the first visible hole, seam, duplicate
+surface, snag or Output error before adding glow or decoration density.

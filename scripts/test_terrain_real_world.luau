@@ -39,6 +39,7 @@ local seen={}
 local minimumBackdropClearance=math.huge
 local minimumEscarpmentClearance=math.huge
 local minimumOuterEscarpmentClearance=math.huge
+local minimumGroundInset=math.huge
 local escarpmentIntersections={}
 local function pointEllipsoidDistance(point,ellipsoid)
  local delta={
@@ -98,6 +99,14 @@ for _,op in ipairs(writes) do
  seen[op.name]=true
  assert(op.radius>=6 and op.radius<=32,"unsafe radius")
  assert(op.y+op.radius<=12,"terrain encroaches above safe elevations")
+ local isOuter=string.match(op.name,"_Rock$") or string.match(op.name,"_Grass$")
+ if not isOuter then
+  local xInset=Plan.GROUND_HALF_EXTENT-(math.abs(op.x)+op.radius+Plan.VOXEL_GUARD)
+  local zInset=Plan.GROUND_HALF_EXTENT-(math.abs(op.z)+op.radius+Plan.VOXEL_GUARD)
+  minimumGroundInset=math.min(minimumGroundInset,xInset,zInset)
+  assert(xInset>=0 and zInset>=0,
+   "runtime inland voxel guard extends beyond authored ground: "..op.name)
+ end
  for _,backdrop in ipairs(fixture.backdrops) do
   local clearance=pointEllipsoidDistance(op,backdrop)-op.radius
   minimumBackdropClearance=math.min(minimumBackdropClearance,clearance)
@@ -107,7 +116,6 @@ for _,op in ipairs(writes) do
  end
  for _,escarpment in ipairs(fixture.escarpments) do
   local clearance=sphereBoxClearance(op,escarpment)
-  local isOuter=string.match(op.name,"_Rock$") or string.match(op.name,"_Grass$")
   if isOuter then
    -- The original perimeter Terrain deliberately seats into the authored
    -- boundary kit. Track it, but gate the new playable-area contours only.
@@ -127,6 +135,8 @@ assert(#escarpmentIntersections==0,
   ..table.concat(escarpmentIntersections,"\n"))
 assert(seen.EastEscarpmentGapHillock_Foundation,
  "safe replacement east hillock was not selected")
+assert(seen.EastNorthHillock_Foundation,
+ "ground-bounded east-north hillock was not selected")
 assert(not seen.EastRimHillock_Foundation,
  "voxel hillock returned inside QuarryBackdropHill")
 local again,totalAgain,inlandAgain=Plan.build(anchors)
@@ -142,4 +152,5 @@ print("PASS: authored-world real obstacle terrain acceptance; inland="..inland
  ..", western="..west..", eastern="..east..", fills="..#writes
  ..", minimum backdrop clearance="..string.format("%.3f",minimumBackdropClearance)
  ..", minimum inland escarpment clearance="..string.format("%.3f",minimumEscarpmentClearance)
+ ..", minimum guarded ground inset="..string.format("%.3f",minimumGroundInset)
  ..", perimeter seating="..string.format("%.3f",minimumOuterEscarpmentClearance))

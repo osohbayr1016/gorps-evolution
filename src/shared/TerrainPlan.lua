@@ -2,9 +2,12 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_06"
+Plan.VERSION="VerdantVoxelRelief_07"
 Plan.MAX_WRITES=80
 Plan.MAX_INLAND_SITES=12
+Plan.GROUND_HALF_EXTENT=324
+Plan.VOXEL_SIZE=4
+Plan.VOXEL_GUARD=Plan.VOXEL_SIZE/2
 
 -- Cliff shoulders are near the outer map edge so the spawn vista has depth.
 -- A site's actual footprint is checked against reserved routes and live world
@@ -79,12 +82,17 @@ local fallbackCandidates={
  -- solids; the old positions intersected RockFoot or CliffSlope volumes.
  {name="EastWayfinderHillock",x=38,z=305},
  {name="WestNorthHillock",x=-40,z=288},
- {name="EastNorthHillock",x=317,z=310},
+ -- A one-stud narrower footprint keeps the complete three-lobe contour plus
+ -- a conservative half-voxel guard band inside the 648-stud ground edge.
+ {name="EastNorthHillock",x=312,z=312,radius=11},
 }
 for _,site in ipairs(fallbackCandidates) do
- site.radius=12
+ site.radius=site.radius or 12
  site.buffer=4
  table.insert(Plan.inlandCandidates,site)
+end
+for _,site in ipairs(Plan.inlandCandidates) do
+ site.keepOnGround=true
 end
 
 local protectedRects={
@@ -105,11 +113,19 @@ local function distanceSquared(x1,z1,x2,z2)
 end
 function Plan.isClear(site,obstacles)
  if type(site)~="table" or type(site.x)~="number" or type(site.z)~="number"
-  or type(site.radius)~="number" or site.radius<12 or site.radius>32 then
+  or type(site.radius)~="number" or site.radius<11 or site.radius>32 then
   return false
  end
  local buffer=site.buffer or 6
  if type(buffer)~="number" or buffer<4 or buffer>6 then return false end
+ if site.keepOnGround then
+  local fillRadius=math.min(14,site.radius-2)
+  local footprint=fillRadius+Plan.VOXEL_GUARD
+  if math.abs(site.x)+footprint>Plan.GROUND_HALF_EXTENT
+   or math.abs(site.z)+footprint>Plan.GROUND_HALF_EXTENT then
+   return false
+  end
+ end
  for _,rect in ipairs(protectedRects) do
   local dx=math.max(math.abs(site.x-rect.x)-rect.halfX,0)
   local dz=math.max(math.abs(site.z-rect.z)-rect.halfZ,0)

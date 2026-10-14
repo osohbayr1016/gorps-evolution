@@ -56,6 +56,11 @@ substitute for final original MeshPart/PBR production assets.
   replacements preserve 46 fills and the 6/6 split with 1.802-stud minimum
   escarpment clearance; outer perimeter Terrain seating remains intentional and
   separately reported. Roblox Studio voxel appearance/physics are still open.
+- The east-north replacement's radius-10 foundation then proved to overrun the
+  648-stud Ground edge by three studs. It now keeps three connected lobes at
+  `(312,312)` with a one-stud narrower safety footprint. Every inland fill is
+  gated inside ±324 with a conservative two-stud half-voxel guard; the 46-fill
+  budget, 6/6 material split and 1.802-stud cliff clearance remain unchanged.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.
