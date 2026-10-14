@@ -66,7 +66,29 @@ function R.load(saved,now)
   for id in pairs(C.Workers) do
    local w=saved.Workers[id]
    if type(w)=="table" and valid(w.count,5) then
-    p.Workers[id]={count=w.count,last=valid(w.last,now) and w.last or now}
+    local fallbackLast=valid(w.last,now) and w.last or now
+    local worker={count=w.count,last=fallbackLast,cohorts={}}
+    local cohortTotal,cohortsValid=0,type(w.cohorts)=="table"
+    if cohortsValid then
+     for index,cohort in ipairs(w.cohorts) do
+      if index>5 or type(cohort)~="table" or not valid(cohort.count,5)
+       or cohort.count<1 or not valid(cohort.last,now)
+       or cohortTotal+cohort.count>w.count then
+       cohortsValid=false;break
+      end
+      cohortTotal+=cohort.count
+      table.insert(worker.cohorts,{count=cohort.count,last=cohort.last})
+     end
+     cohortsValid=cohortTotal==w.count
+    end
+    if not cohortsValid then
+     worker.cohorts={}
+     if w.count>0 then table.insert(worker.cohorts,{count=w.count,last=fallbackLast}) end
+    end
+    local earliest
+    for _,cohort in ipairs(worker.cohorts) do earliest=math.min(earliest or cohort.last,cohort.last) end
+    worker.last=earliest or now
+    p.Workers[id]=worker
    end
   end
  end

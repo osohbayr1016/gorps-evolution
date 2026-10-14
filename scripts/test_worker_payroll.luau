@@ -109,6 +109,47 @@ equal(E.tick(crew, start + 179), 2, "two workers preserve their partial minute")
 equal(crew.Coins, crewCoins - 4 * 8, "crew wages scale once per worker and batch")
 equal(crew.Inventory.Berries, crewBerries + 4 * 4, "crew output scales once per worker and batch")
 
+-- Hiring a second worker must not erase the first worker's nearly complete
+-- minute, and the new hire must not receive production earned before joining.
+local staggered = hire("Farmer")
+local staggeredCoins, staggeredBerries = staggered.Coins, staggered.Inventory.Berries
+equal(E.hire(staggered, "Farmer", start + 59), true, "hire second worker after 59 seconds")
+equal(E.tick(staggered, start + 60), 1, "existing worker keeps the minute completed before second hire")
+equal(staggered.Coins, staggeredCoins - C.Workers.Farmer.price - C.Workers.Farmer.wage,
+	"59-second additional hire charges one wage, not two")
+equal(staggered.Inventory.Berries, staggeredBerries + C.Workers.Farmer.grant.Berries,
+	"new worker receives no retroactive berries")
+equal(E.tick(staggered, start + 119), 1, "new worker completes its first minute from join time")
+equal(E.tick(staggered, start + 120), 1, "existing worker's second minute stays independent")
+equal(#staggered.Workers.Farmer.cohorts, 2, "staggered hires retain two bounded join cohorts")
+equal(staggered.Workers.Farmer.count, 2, "cohort migration preserves public worker count")
+
+local restoredStaggered = R.load(R.copy(staggered), start + 120)
+equal(#restoredStaggered.Workers.Farmer.cohorts, 2, "profile hydration preserves join cohorts")
+equal(E.tick(restoredStaggered, start + 179), 1, "hydrated new-worker cohort retains its own remainder")
+equal(E.tick(restoredStaggered, start + 180), 1, "hydrated existing-worker cohort retains its own remainder")
+
+local legacyCrew = R.load({
+	Coins = 1000,
+	Workers = { Farmer = { count = 2, last = start } },
+}, start + 59)
+equal(#legacyCrew.Workers.Farmer.cohorts, 1, "legacy worker clock hydrates as one cohort")
+equal(legacyCrew.Workers.Farmer.cohorts[1].count, 2, "legacy cohort preserves worker count")
+equal(E.tick(legacyCrew, start + 60), 2, "legacy crew keeps accrued minute after migration")
+
+local malformedCohorts = R.load({
+	Workers = { Farmer = { count = 2, last = start, cohorts = { { count = 1, last = start } } } },
+}, start + 59)
+equal(#malformedCohorts.Workers.Farmer.cohorts, 1, "incomplete cohort schema falls back atomically")
+equal(malformedCohorts.Workers.Farmer.cohorts[1].count, 2, "fallback never loses declared workers")
+
+local boundedCohorts = hire("Miner")
+for offset = 1, 4 do
+	equal(E.hire(boundedCohorts, "Miner", start + offset), true, "hire staggered bounded cohort " .. offset)
+end
+equal(#boundedCohorts.Workers.Miner.cohorts, 5, "worker cap also bounds persisted cohort count")
+equal(E.hire(boundedCohorts, "Miner", start + 5), false, "sixth cohort is rejected by worker cap")
+
 local miner = hire("Miner")
 local minerCoins, stone, iron = miner.Coins, miner.Inventory.Stone, miner.Inventory.Iron
 equal(E.tick(miner, start + 119), 1, "miner first delivery")

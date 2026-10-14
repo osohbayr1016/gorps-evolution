@@ -27,13 +27,29 @@ function E.sell(p,id,count)
  if not R.spend(p,{[id]=count}) then return false,"Not enough materials" end
  p.Coins+=count*C.Resources[id];return true,"Sold "..count.." "..id
 end
+local function cohorts(w,now)
+ if type(w.cohorts)~="table" then
+  w.cohorts={}
+  if w.count>0 then table.insert(w.cohorts,{count=w.count,last=w.last or now}) end
+ end
+ return w.cohorts
+end
+local function syncLast(w,now)
+ local earliest
+ for _,cohort in ipairs(w.cohorts) do earliest=math.min(earliest or cohort.last,cohort.last) end
+ w.last=earliest or now
+end
 function E.hire(p,id,now)
  local worker=C.Workers[id]
  if not worker then return false,"Unknown worker" end
- local old=p.Workers[id] or {count=0,last=now}
+ local old=p.Workers[id] or {count=0,last=now,cohorts={}}
  if old.count>=5 then return false,"Maximum workers hired" end
  if p.Coins<worker.price then return false,"Not enough coins" end
- p.Coins-=worker.price;old.count+=1;old.last=now;p.Workers[id]=old
+ local groups=cohorts(old,now)
+ local latest=groups[#groups]
+ if latest and latest.last==now then latest.count+=1
+ else table.insert(groups,{count=1,last=now}) end
+ p.Coins-=worker.price;old.count+=1;syncLast(old,now);p.Workers[id]=old
  R.quest(p,"Employer",1);return true,"Hired "..id
 end
 function E.tick(p,now)
@@ -41,31 +57,32 @@ function E.tick(p,now)
  for id,def in pairs(C.Workers) do
   local w=p.Workers[id]
   if w and w.count>0 then
-   local steps=math.min(60,math.floor(math.max(0,now-w.last)/60))
-   if steps>0 then
-    local payable=math.min(steps,math.floor(p.Coins/(def.wage*w.count)))
-    if payable>0 then
-     p.Coins-=def.wage*w.count*payable
-     local goods={}
-     for material,count in pairs(def.grant) do goods[material]=count*w.count*payable end
-     R.add(p,goods);completed+=payable*w.count
-     if id=="Caretaker" and #p.Pets>0 then
-      for i=1,math.min(payable*w.count,120) do
-       local pet=p.Pets[((i-1)%#p.Pets)+1]
-       local fed=R.feed(p,pet.id)
-       if not fed then break end
+   for _,cohort in ipairs(cohorts(w,now)) do
+    local elapsed=math.max(0,now-cohort.last)
+    local steps=math.min(60,math.floor(elapsed/60))
+    if steps>0 then
+     local payable=math.min(steps,math.floor(p.Coins/(def.wage*cohort.count)))
+     if payable>0 then
+      local batches=payable*cohort.count
+      p.Coins-=def.wage*batches
+      local goods={}
+      for material,count in pairs(def.grant) do goods[material]=count*batches end
+      R.add(p,goods);completed+=batches
+      if id=="Caretaker" and #p.Pets>0 then
+       for i=1,math.min(batches,120) do
+        local pet=p.Pets[((i-1)%#p.Pets)+1]
+        local fed=R.feed(p,pet.id)
+        if not fed then break end
+       end
       end
      end
-    end
-    -- Paid collections retain the sub-minute work already completed.
-    -- Unpaid whole minutes (including over-cap work) expire without debt.
-    -- A fully unpaid collection restarts work from now, as before.
-    if payable>0 then
-     w.last=now-(math.max(0,now-w.last)%60)
-    else
-     w.last=now
+     -- Paid collections retain this cohort's sub-minute work. Unpaid whole
+     -- minutes (including over-cap work) expire without becoming wage debt.
+     if payable>0 then cohort.last=now-(elapsed%60)
+     else cohort.last=now end
     end
    end
+   syncLast(w,now)
   end
  end
  return completed

@@ -54,3 +54,14 @@ beacon appear without intersecting the house or fence.
 The Python/Rojo contract proves source/package presence and removes the two
 known coordinate regressions. It does not prove final art quality, Roblox
 physics, live multiplayer placement, lighting or mobile performance.
+
+## Worker timing acceptance — GE-WORK-02
+
+In an unpublished fresh profile, hire Farmer #1 at a noted server time, hire
+Farmer #2 exactly 59 seconds later, then collect at +60, +119 and +120 seconds.
+The three collections must produce 1, 1 and 1 worker batches respectively: the
+first worker keeps accrued time, the second earns nothing before joining, and
+their next minute boundaries stay independent. Coins must charge one wage per
+delivered batch and Output must remain clean. Headless tests cover this sequence
+and legacy profile hydration, but only a private test profile/rejoin can verify
+real persistence; do not use a production profile.
