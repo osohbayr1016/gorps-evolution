@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify repository documentation integrity
+        run: python3 scripts/verify_docs.py
       - uses: ok-nick/setup-aftman@v0.4.2
       - name: Lint Luau
         run: selene src scripts/test_worker_payroll.luau scripts/test_onboarding.luau scripts/test_trade_rules.luau scripts/test_trade_receipt_policy.luau scripts/test_trade_audit.luau scripts/test_trade_retention.luau scripts/test_trade_persistence.luau scripts/test_trade_store_adapter.luau scripts/test_trade_settlement.luau scripts/test_creature_rigs.luau scripts/test_session_policy.luau scripts/test_terrain_plan.luau scripts/test_terrain_real_world.luau scripts/export_creatures.luau
