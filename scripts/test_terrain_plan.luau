@@ -16,7 +16,9 @@ expect(inland>=8,"free interior biome shoulders produce visible ridges")
 expect(inland<=Plan.MAX_INLAND_SITES,"inland site limit")
 expect(#ops==#Plan.sites*2+inland*3,"outer paired and inner triple-lobed real voxel fills")
 expect(#ops<=Plan.MAX_WRITES,"fixed maximum work per server start")
-expect(Plan.VERSION=="VerdantVoxelRelief_08","new art version invalidates old bake tag")
+expect(Plan.VERSION=="VerdantVoxelRelief_09","new art version invalidates old bake tag")
+expect(Plan.MIN_GROUND_INSET==Plan.VOXEL_SIZE,
+ "inland relief reserves one complete Terrain voxel inside authored support")
 local ids={}
 for i,site in ipairs(Plan.sites) do
  expect(Plan.isClear(site,{}),"site "..i.." avoids reserved route and ranch footprints")
@@ -86,6 +88,10 @@ expect(not Plan.isClear({x=317,z=310,radius=12,buffer=4,keepOnGround=true},{}),
  "former east-north contour cannot extend beyond the ground edge")
 expect(not Plan.isClear({x=312,z=214,radius=12,buffer=4,keepOnGround=true},{}),
  "zero-inset east boundary contour cannot return")
+expect(not Plan.isClear({x=312,z=312,radius=11,buffer=4,keepOnGround=true},{}),
+ "one-stud-inset east-north contour cannot return")
+expect(Plan.isClear({x=253,z=284,radius=10,buffer=4,keepOnGround=true},{}),
+ "measured full-voxel east-north clearing remains eligible")
 local duplicated=Plan.build({})
 for i,entry in ipairs(ops) do
  local same=duplicated[i]
@@ -99,4 +105,6 @@ expect(not Plan.isClear({x=0,z=-170,radius=22},{}),"ranch corridor protected")
 expect(not Plan.isClear({x=-215,z=45,radius=22},{}),"lagoon protected")
 expect(not Plan.isClear({x=222,z=20,radius=22},{}),"quarry protected")
 expect(not Plan.isClear({x=280,z=280,radius=12,buffer=0},{}),"invalid clearance buffer rejected")
+expect(not Plan.isClear({x=280,z=280,radius=9,buffer=4,keepOnGround=true},{}),
+ "paper-thin terrain site rejected")
 print("PASS:",checks,"terrain plan assertions; Roblox Terrain engine needs Studio QA")

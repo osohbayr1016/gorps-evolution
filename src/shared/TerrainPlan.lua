@@ -2,13 +2,16 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_08"
+Plan.VERSION="VerdantVoxelRelief_09"
 Plan.MAX_WRITES=80
 Plan.MAX_INLAND_SITES=12
 Plan.GROUND_HALF_EXTENT=324
 Plan.VOXEL_SIZE=4
 Plan.VOXEL_GUARD=Plan.VOXEL_SIZE/2
-Plan.MIN_GROUND_INSET=1
+-- Keep a complete documented Terrain voxel between every inland fill guard
+-- and the edge of the authored 648-stud support Part. This is still an
+-- analytic envelope; Studio owns the final raster/collision acceptance.
+Plan.MIN_GROUND_INSET=Plan.VOXEL_SIZE
 
 -- Cliff shoulders are near the outer map edge so the spawn vista has depth.
 -- A site's actual footprint is checked against reserved routes and live world
@@ -82,9 +85,9 @@ local fallbackCandidates={
  -- solids; the old positions intersected RockFoot or CliffSlope volumes.
  {name="EastWayfinderHillock",x=38,z=305},
  {name="WestNorthHillock",x=-40,z=288},
- -- A one-stud narrower footprint keeps the complete three-lobe contour plus
- -- a conservative half-voxel guard band inside the 648-stud ground edge.
- {name="EastNorthHillock",x=312,z=312,radius=11},
+ -- This measured northeast clearing keeps a complete voxel of authored support
+ -- beyond the half-voxel guard while also clearing the live cliff fixture.
+ {name="EastNorthClearingHillock",x=253,z=284,radius=10},
 }
 for _,site in ipairs(fallbackCandidates) do
  site.radius=site.radius or 12
@@ -113,7 +116,7 @@ local function distanceSquared(x1,z1,x2,z2)
 end
 function Plan.isClear(site,obstacles)
  if type(site)~="table" or type(site.x)~="number" or type(site.z)~="number"
-  or type(site.radius)~="number" or site.radius<11 or site.radius>32 then
+  or type(site.radius)~="number" or site.radius<10 or site.radius>32 then
   return false
  end
  local buffer=site.buffer or 6

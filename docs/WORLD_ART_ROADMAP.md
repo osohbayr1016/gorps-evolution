@@ -569,3 +569,26 @@ support, not a claim about Studio's rasterized voxel cells. Run one no-jump
 route through the two north pockets and two east pockets, orbit both eastern
 joins, and repair the first visible hole, seam, double surface, collision snag,
 cliff cut or Output error before adding glow or density.
+
+## GE-MAP-03z — reserve a full terrain voxel inside the authored support
+
+**Verified design basis:** Creator Hub documents Terrain as 4×4×4-stud voxels
+and recommends sculpting beneath the world and containing playable areas. The
+official Fisch page confirms exploration and progression across a growing world,
+but publishes no map geometry, clearance rule, asset or device benchmark. The
+numeric support rule and placement below are original Gorps measurements.
+
+**Measured implementation:** the previous positive rule still allowed one guarded
+foundation to stop only one stud inside the Ground. A fixture-backed search showed
+that a small nudge toward the old northeast edge either lost the twelfth contour
+or crossed authored cliffs. Moving that one compact contour to `(253,284)` and
+using a 10-stud site preserves three connected lobes while raising the actual
+minimum guarded inset to 7.000 studs. The 46-write budget, 12-contour 6/6 split,
+70 roots, 12 plots, eight lights and zero-particle budget remain fixed; cliff and
+backdrop minima remain 2.261 and 5.720 studs.
+
+**Evidence boundary and next step:** this is conservative source/package geometry,
+not a rendered voxel, physics, streaming or phone-performance result. Studio must
+walk the revised north/east route and orbit both joins. Fix the first visible hole,
+seam, duplicate surface, float/burial, cliff cut, snag or Output error before any
+additional glow or density.

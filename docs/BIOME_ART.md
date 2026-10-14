@@ -65,6 +65,12 @@ substitute for final original MeshPart/PBR production assets.
   compact three-lobe budget now occupies the measured east outer clearing at
   `(265,210)`; all inland relief has >=1.000-stud guarded support and >=2.261-stud
   cliff clearance without changing the 46-fill, 6/6 biome or effect budgets.
+- The remaining northeast contour then limited guarded support to one stud,
+  narrower than the documented four-stud Terrain voxel. A fixture-backed search
+  moves only that compact three-lobe layer to `(253,284)`; all inland relief now
+  has >=7.000-stud guarded support while retaining the same 46 fills, 6/6 biome
+  split and 2.261/5.720-stud cliff/backdrop minima. Studio raster/collision QA
+  remains required.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.

@@ -41,6 +41,7 @@ local minimumEscarpmentClearance=math.huge
 local minimumOuterEscarpmentClearance=math.huge
 local minimumGroundInset=math.huge
 local escarpmentIntersections={}
+local eastNorthFoundation
 local function pointEllipsoidDistance(point,ellipsoid)
  local delta={
   math.abs(point.x-ellipsoid.x),
@@ -97,6 +98,9 @@ end
 for _,op in ipairs(writes) do
  assert(not seen[op.name],"duplicated terrain operation "..op.name)
  seen[op.name]=true
+ if op.name=="EastNorthClearingHillock_Foundation" then
+  eastNorthFoundation=op
+ end
  assert(op.radius>=6 and op.radius<=32,"unsafe radius")
  assert(op.y+op.radius<=12,"terrain encroaches above safe elevations")
  local isOuter=string.match(op.name,"_Rock$") or string.match(op.name,"_Grass$")
@@ -137,10 +141,17 @@ assert(seen.EastOuterClearingHillock_Foundation,
  "positive-inset east clearing hillock was not selected")
 assert(not seen.EastEscarpmentGapHillock_Foundation,
  "zero-inset east boundary contour returned")
-assert(seen.EastNorthHillock_Foundation,
- "ground-bounded east-north hillock was not selected")
+assert(seen.EastNorthClearingHillock_Foundation,
+ "full-voxel-supported east-north clearing hillock was not selected")
+assert(eastNorthFoundation.x==253 and eastNorthFoundation.z==284
+ and eastNorthFoundation.radius==8,
+ "east-north clearing contour transform changed")
+assert(not seen.EastNorthHillock_Foundation,
+ "one-stud-inset east-north hillock returned")
 assert(not seen.EastRimHillock_Foundation,
  "voxel hillock returned inside QuarryBackdropHill")
+assert(minimumGroundInset>=Plan.VOXEL_SIZE,
+ "inland voxel support is narrower than one complete Terrain voxel")
 local again,totalAgain,inlandAgain=Plan.build(anchors)
 assert(totalAgain==accepted and inlandAgain==inland and #again==#writes,
  "terrain plan changed with identical source world")
