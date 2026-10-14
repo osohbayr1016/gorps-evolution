@@ -48,9 +48,14 @@ substitute for final original MeshPart/PBR production assets.
   rays remain clear, and source/package checks reject an upper-layer overlap.
 - The actual runtime terrain plan previously stacked all three
   `EastRimHillock` voxel lobes through `QuarryBackdropHill`. That contour now
-  occupies the measured east escarpment gap at `(312,210)`; exact generated-map
-  regression keeps every planned sphere at least 5.720 studs from all four
-  authored backdrop ellipsoids while preserving 46 fills and the 6/6 biome split.
+  initially moved into the east escarpment gap; exact generated-map regression
+  keeps every planned sphere at least 5.720 studs from all four authored
+  backdrop ellipsoids while preserving 46 fills and the 6/6 biome split.
+- Full 56-part cliff extraction then found seven conservative inland
+  sphere/OBB intersections across four contours. Their original measured
+  replacements preserve 46 fills and the 6/6 split with 1.802-stud minimum
+  escarpment clearance; outer perimeter Terrain seating remains intentional and
+  separately reported. Roblox Studio voxel appearance/physics are still open.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.

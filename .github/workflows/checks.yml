@@ -50,6 +50,10 @@ jobs:
         run: lune run scripts/export_creatures.luau
       - name: Build Roblox place file
         run: rojo build default.project.json -o GorpsEvolution.rbxlx
+      - name: Build packaged-map terrain obstacle fixture
+        run: python3 scripts/extract_terrain_obstacles.py GorpsEvolution.rbxlx terrain_obstacles.json
+      - name: Validate packaged-map voxel terrain distribution
+        run: lune run scripts/test_terrain_real_world.luau
       - name: Verify packaged fantasy lighting and art direction
         run: python3 scripts/verify_environment_lighting.py default.project.json GorpsEvolution.rbxlx
       - name: Verify authored planet model

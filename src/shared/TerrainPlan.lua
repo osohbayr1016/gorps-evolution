@@ -2,7 +2,7 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_05"
+Plan.VERSION="VerdantVoxelRelief_06"
 Plan.MAX_WRITES=80
 Plan.MAX_INLAND_SITES=12
 
@@ -68,15 +68,18 @@ local fallbackCandidates={
  {name="WestGroveHillock",x=-76,z=150},
  -- Keep the runtime contour beside the east escarpment instead of stacking
  -- three voxel lobes through the authored QuarryBackdropHill at (286,116).
- {name="EastEscarpmentGapHillock",x=312,z=210},
+ -- Its four-stud north retreat also clears Escarpment_06's real RockFoot OBB.
+ {name="EastEscarpmentGapHillock",x=312,z=214},
  {name="WestForestHillock",x=-180,z=162},
  {name="EastQuarryHillock",x=256,z=136},
  {name="WestCanopyHillock",x=-194,z=226},
  {name="EastHighHillock",x=144,z=286},
  {name="WestPineHillock",x=-160,z=230},
- {name="EastWayfinderHillock",x=70,z=290},
- {name="WestNorthHillock",x=-114,z=294},
- {name="EastNorthHillock",x=250,z=290},
+ -- Three northern pockets are measured against all 56 authored escarpment
+ -- solids; the old positions intersected RockFoot or CliffSlope volumes.
+ {name="EastWayfinderHillock",x=38,z=305},
+ {name="WestNorthHillock",x=-40,z=288},
+ {name="EastNorthHillock",x=317,z=310},
 }
 for _,site in ipairs(fallbackCandidates) do
  site.radius=12

@@ -31,6 +31,18 @@ def coords3(part):
     return tuple(float(frame.find(axis).text) for axis in "XYZ")
 
 
+def frame3(part):
+    """Return the authored center and full rotation matrix for a BasePart."""
+    frame = next((p for p in part.find("Properties") if p.get("name") == "CFrame"), None)
+    assert frame is not None, f"{name(part)} missing CFrame"
+    center = tuple(float(frame.find(axis).text) for axis in "XYZ")
+    rotation = tuple(
+        tuple(float(frame.find(f"R{row}{column}").text) for column in range(3))
+        for row in range(3)
+    )
+    return center, rotation
+
+
 def coords(part):
     x, _, z = coords3(part)
     return x, z
@@ -101,10 +113,35 @@ def main(source, output):
     counts["backdrops"] = len(backdrops)
     assert counts["backdrops"] == 4, ("backdrop coverage", counts)
 
+    escarpments = []
+    ridges = [model for model in children(relief)
+              if model.get("class") == "Model" and name(model).startswith("Escarpment_")]
+    for ridge in ridges:
+        for part in children(ridge):
+            if part.get("class") not in {"Part", "WedgePart"}:
+                continue
+            center, rotation = frame3(part)
+            sx, sy, sz = size3(part)
+            entry = {
+                "model": name(ridge), "name": name(part), "class": part.get("class"),
+                "x": center[0], "y": center[1], "z": center[2],
+                "halfX": sx / 2, "halfY": sy / 2, "halfZ": sz / 2,
+            }
+            for row in range(3):
+                for column in range(3):
+                    entry[f"r{row}{column}"] = rotation[row][column]
+            escarpments.append(entry)
+    escarpments.sort(key=lambda item: (item["model"], item["name"]))
+    counts["escarpments"] = len(escarpments)
+    assert len(ridges) == 14 and counts["escarpments"] == 56, (
+        "escarpment coverage", len(ridges), counts
+    )
+
     Path(output).write_text(json.dumps({
         "counts": counts,
         "obstacles": obstacles,
         "backdrops": backdrops,
+        "escarpments": escarpments,
     }, indent=2) + "\n", encoding="utf-8")
     print("PASS: exact map terrain obstacle fixture", counts)
 

@@ -13,6 +13,8 @@ assert(fixture.counts.trees==64,"tree roots absent")
 assert(fixture.counts.knolls>=6,"knoll roots absent")
 assert(fixture.counts.mushrooms==16,"glowcap roots absent")
 assert(fixture.counts.backdrops==4,"boundary backdrops absent")
+assert(fixture.counts.escarpments==56,"authored escarpment solids absent")
+assert(#fixture.escarpments==14*4,"fixture loses an authored escarpment layer")
 assert(#anchors==fixture.counts.resources+fixture.counts.trees+fixture.counts.knolls+fixture.counts.mushrooms,
  "fixture loses a live collision anchor")
 local writes,accepted,inland=Plan.build(anchors)
@@ -35,6 +37,9 @@ assert(west==6 and east==6,
  "world sculpt ignores one side (west="..tostring(west)..", east="..tostring(east)..")")
 local seen={}
 local minimumBackdropClearance=math.huge
+local minimumEscarpmentClearance=math.huge
+local minimumOuterEscarpmentClearance=math.huge
+local escarpmentIntersections={}
 local function pointEllipsoidDistance(point,ellipsoid)
  local delta={
   math.abs(point.x-ellipsoid.x),
@@ -70,6 +75,24 @@ local function pointEllipsoidDistance(point,ellipsoid)
  return math.sqrt(distanceSquared)
 end
 
+
+-- Conservative sphere-to-oriented-box separation. Roblox's authored Ball and
+-- WedgePart silhouettes occupy no more volume than these boxes, so a positive
+-- result guarantees that the planned voxel ball cannot cut any of the 56 live
+-- escarpment parts without pretending to simulate Studio voxel rasterization.
+local function sphereBoxClearance(sphere,box)
+ local dx=sphere.x-box.x
+ local dy=sphere.y-box.y
+ local dz=sphere.z-box.z
+ local localX=dx*box.r00+dy*box.r10+dz*box.r20
+ local localY=dx*box.r01+dy*box.r11+dz*box.r21
+ local localZ=dx*box.r02+dy*box.r12+dz*box.r22
+ local outsideX=math.max(math.abs(localX)-box.halfX,0)
+ local outsideY=math.max(math.abs(localY)-box.halfY,0)
+ local outsideZ=math.max(math.abs(localZ)-box.halfZ,0)
+ return math.sqrt(outsideX^2+outsideY^2+outsideZ^2)-sphere.radius
+end
+
 for _,op in ipairs(writes) do
  assert(not seen[op.name],"duplicated terrain operation "..op.name)
  seen[op.name]=true
@@ -82,7 +105,26 @@ for _,op in ipairs(writes) do
    "runtime voxel fill intersects authored backdrop: "..op.name.." / "
     ..backdrop.name.." clearance="..tostring(clearance))
  end
+ for _,escarpment in ipairs(fixture.escarpments) do
+  local clearance=sphereBoxClearance(op,escarpment)
+  local isOuter=string.match(op.name,"_Rock$") or string.match(op.name,"_Grass$")
+  if isOuter then
+   -- The original perimeter Terrain deliberately seats into the authored
+   -- boundary kit. Track it, but gate the new playable-area contours only.
+   minimumOuterEscarpmentClearance=math.min(minimumOuterEscarpmentClearance,clearance)
+  else
+   minimumEscarpmentClearance=math.min(minimumEscarpmentClearance,clearance)
+   if clearance<0.5 then
+    table.insert(escarpmentIntersections,
+     op.name.." / "..escarpment.model.."/"..escarpment.name
+      .." clearance="..string.format("%.3f",clearance))
+   end
+  end
+ end
 end
+assert(#escarpmentIntersections==0,
+ "runtime inland voxel fills intersect authored escarpments:\n"
+  ..table.concat(escarpmentIntersections,"\n"))
 assert(seen.EastEscarpmentGapHillock_Foundation,
  "safe replacement east hillock was not selected")
 assert(not seen.EastRimHillock_Foundation,
@@ -98,4 +140,6 @@ for i,op in ipairs(writes) do
 end
 print("PASS: authored-world real obstacle terrain acceptance; inland="..inland
  ..", western="..west..", eastern="..east..", fills="..#writes
- ..", minimum backdrop clearance="..string.format("%.3f",minimumBackdropClearance))
+ ..", minimum backdrop clearance="..string.format("%.3f",minimumBackdropClearance)
+ ..", minimum inland escarpment clearance="..string.format("%.3f",minimumEscarpmentClearance)
+ ..", perimeter seating="..string.format("%.3f",minimumOuterEscarpmentClearance))

@@ -16,7 +16,7 @@ expect(inland>=8,"free interior biome shoulders produce visible ridges")
 expect(inland<=Plan.MAX_INLAND_SITES,"inland site limit")
 expect(#ops==#Plan.sites*2+inland*3,"outer paired and inner triple-lobed real voxel fills")
 expect(#ops<=Plan.MAX_WRITES,"fixed maximum work per server start")
-expect(Plan.VERSION=="VerdantVoxelRelief_05","new art version invalidates old bake tag")
+expect(Plan.VERSION=="VerdantVoxelRelief_06","new art version invalidates old bake tag")
 local ids={}
 for i,site in ipairs(Plan.sites) do
  expect(Plan.isClear(site,{}),"site "..i.." avoids reserved route and ranch footprints")

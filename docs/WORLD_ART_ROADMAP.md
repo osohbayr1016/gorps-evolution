@@ -498,3 +498,27 @@ separation, determinism and preserved budgets, not actual voxel rasterization,
 surface blending, Humanoid collision, streaming or device performance. Studio
 must frame the quarry shoulder and walk to the new east gap contour; next
 source-only audit is contour-to-escarpment-layer separation, not more glow.
+
+## GE-MAP-03w — separate every inland contour from the authored cliff kit
+
+**Verified design basis:** Creator Hub's environmental-art curriculum treats
+construction as gameplay-supporting composition and recommends turning a
+greybox into differentiated finished areas; the official Blox Fruits page
+confirms exploration/combat progression, but publishes no reusable terrain
+geometry, clearance rule or device benchmark. Gorps therefore uses original,
+measured geometry rather than copying a map, mesh, landmark, material or effect.
+
+**Measured implementation:** the generated world now exports all 14×4 cliff
+parts with their exact rotation matrices. Conservative sphere-to-oriented-box
+tests exposed seven intersections in four inland contours, including the prior
+east-gap fix. The four centers move to `(312,214)`, `(38,305)`, `(-40,288)` and
+`(317,310)`. The resulting 36 inland spheres clear all 56 boxes by at least
+1.802 studs; the 46-write budget, 12-contour 6/6 split, 70 resource identities,
+12 plots, eight lights and zero-particle budget remain unchanged. The original
+outer Terrain still joins the boundary kit and is measured separately.
+
+**Evidence boundary and next step:** OBB separation is conservative source
+evidence, not a rendered voxel surface, collision playtest, streaming result or
+phone performance claim. Studio must run one clockwise no-jump walk through the
+four moved contour areas. If no engine evidence is supplied, next measure their
+actual boundary/voxel occupancy before increasing glow or decoration density.
