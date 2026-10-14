@@ -16,7 +16,7 @@ expect(inland>=8,"free interior biome shoulders produce visible ridges")
 expect(inland<=Plan.MAX_INLAND_SITES,"inland site limit")
 expect(#ops==#Plan.sites*2+inland*3,"outer paired and inner triple-lobed real voxel fills")
 expect(#ops<=Plan.MAX_WRITES,"fixed maximum work per server start")
-expect(Plan.VERSION=="VerdantVoxelRelief_07","new art version invalidates old bake tag")
+expect(Plan.VERSION=="VerdantVoxelRelief_08","new art version invalidates old bake tag")
 local ids={}
 for i,site in ipairs(Plan.sites) do
  expect(Plan.isClear(site,{}),"site "..i.." avoids reserved route and ranch footprints")
@@ -74,14 +74,18 @@ for _,entry in ipairs(ops) do
  if string.find(entry.name,"_Foundation",1,true)
   or string.find(entry.name,"_Hillside",1,true)
   or string.find(entry.name,"_Crest",1,true) then
-  expect(math.abs(entry.x)+entry.radius+Plan.VOXEL_GUARD<=Plan.GROUND_HALF_EXTENT,
+  expect(math.abs(entry.x)+entry.radius+Plan.VOXEL_GUARD
+    <=Plan.GROUND_HALF_EXTENT-Plan.MIN_GROUND_INSET,
    "inland fill plus half-voxel guard stays on ground X")
-  expect(math.abs(entry.z)+entry.radius+Plan.VOXEL_GUARD<=Plan.GROUND_HALF_EXTENT,
+  expect(math.abs(entry.z)+entry.radius+Plan.VOXEL_GUARD
+    <=Plan.GROUND_HALF_EXTENT-Plan.MIN_GROUND_INSET,
    "inland fill plus half-voxel guard stays on ground Z")
  end
 end
 expect(not Plan.isClear({x=317,z=310,radius=12,buffer=4,keepOnGround=true},{}),
  "former east-north contour cannot extend beyond the ground edge")
+expect(not Plan.isClear({x=312,z=214,radius=12,buffer=4,keepOnGround=true},{}),
+ "zero-inset east boundary contour cannot return")
 local duplicated=Plan.build({})
 for i,entry in ipairs(ops) do
  local same=duplicated[i]

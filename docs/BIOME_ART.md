@@ -61,6 +61,10 @@ substitute for final original MeshPart/PBR production assets.
   `(312,312)` with a one-stud narrower safety footprint. Every inland fill is
   gated inside ±324 with a conservative two-stud half-voxel guard; the 46-fill
   budget, 6/6 material split and 1.802-stud cliff clearance remain unchanged.
+- The other east boundary contour still had 0.000-stud guarded inset. Its same
+  compact three-lobe budget now occupies the measured east outer clearing at
+  `(265,210)`; all inland relief has >=1.000-stud guarded support and >=2.261-stud
+  cliff clearance without changing the 46-fill, 6/6 biome or effect budgets.
 - CI rejects a return to generic `Leaves_*` trees, missing archetypes, path
   obstruction, overlapping tree centers, excessive glow lights or more than
   2,350 packaged static BaseParts.

@@ -104,7 +104,7 @@ for _,op in ipairs(writes) do
   local xInset=Plan.GROUND_HALF_EXTENT-(math.abs(op.x)+op.radius+Plan.VOXEL_GUARD)
   local zInset=Plan.GROUND_HALF_EXTENT-(math.abs(op.z)+op.radius+Plan.VOXEL_GUARD)
   minimumGroundInset=math.min(minimumGroundInset,xInset,zInset)
-  assert(xInset>=0 and zInset>=0,
+  assert(xInset>=Plan.MIN_GROUND_INSET and zInset>=Plan.MIN_GROUND_INSET,
    "runtime inland voxel guard extends beyond authored ground: "..op.name)
  end
  for _,backdrop in ipairs(fixture.backdrops) do
@@ -133,8 +133,10 @@ end
 assert(#escarpmentIntersections==0,
  "runtime inland voxel fills intersect authored escarpments:\n"
   ..table.concat(escarpmentIntersections,"\n"))
-assert(seen.EastEscarpmentGapHillock_Foundation,
- "safe replacement east hillock was not selected")
+assert(seen.EastOuterClearingHillock_Foundation,
+ "positive-inset east clearing hillock was not selected")
+assert(not seen.EastEscarpmentGapHillock_Foundation,
+ "zero-inset east boundary contour returned")
 assert(seen.EastNorthHillock_Foundation,
  "ground-bounded east-north hillock was not selected")
 assert(not seen.EastRimHillock_Foundation,

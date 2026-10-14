@@ -2,12 +2,13 @@
 -- This is a deliberate *border* art pass: ranch, village and teaching paths stay
 -- on their validated authored ground. No random server-specific map generation.
 local Plan={}
-Plan.VERSION="VerdantVoxelRelief_07"
+Plan.VERSION="VerdantVoxelRelief_08"
 Plan.MAX_WRITES=80
 Plan.MAX_INLAND_SITES=12
 Plan.GROUND_HALF_EXTENT=324
 Plan.VOXEL_SIZE=4
 Plan.VOXEL_GUARD=Plan.VOXEL_SIZE/2
+Plan.MIN_GROUND_INSET=1
 
 -- Cliff shoulders are near the outer map edge so the spawn vista has depth.
 -- A site's actual footprint is checked against reserved routes and live world
@@ -69,10 +70,9 @@ local fallbackCandidates={
  {name="WestTrailHillock",x=-92,z=76},
  {name="EastTrailHillock",x=100,z=90},
  {name="WestGroveHillock",x=-76,z=150},
- -- Keep the runtime contour beside the east escarpment instead of stacking
- -- three voxel lobes through the authored QuarryBackdropHill at (286,116).
- -- Its four-stud north retreat also clears Escarpment_06's real RockFoot OBB.
- {name="EastEscarpmentGapHillock",x=312,z=214},
+ -- Keep this compact layer near the east outer clearing instead of letting its
+ -- voxel guard end exactly on the authored Ground boundary.
+ {name="EastOuterClearingHillock",x=265,z=210,radius=11},
  {name="WestForestHillock",x=-180,z=162},
  {name="EastQuarryHillock",x=256,z=136},
  {name="WestCanopyHillock",x=-194,z=226},
@@ -121,8 +121,9 @@ function Plan.isClear(site,obstacles)
  if site.keepOnGround then
   local fillRadius=math.min(14,site.radius-2)
   local footprint=fillRadius+Plan.VOXEL_GUARD
-  if math.abs(site.x)+footprint>Plan.GROUND_HALF_EXTENT
-   or math.abs(site.z)+footprint>Plan.GROUND_HALF_EXTENT then
+  local supportedExtent=Plan.GROUND_HALF_EXTENT-Plan.MIN_GROUND_INSET
+  if math.abs(site.x)+footprint>supportedExtent
+   or math.abs(site.z)+footprint>supportedExtent then
    return false
   end
  end

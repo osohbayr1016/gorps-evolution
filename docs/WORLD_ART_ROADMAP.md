@@ -546,3 +546,26 @@ envelopes, not Studio's rasterized surface, collision, streaming or device cost.
 The next gate is one no-jump north/east-rim walk ending in a full circle around
 the `(312,312)` Ground/Terrain join; fix the first visible hole, seam, duplicate
 surface, snag or Output error before adding glow or decoration density.
+
+## GE-MAP-03y — give every inland contour positive underlay margin
+
+**Verified design basis:** Creator Hub states that Terrain uses 4×4×4-stud
+voxels, supports scripted `FillBall()` writes, and recommends containing playable
+areas so users do not fall from the world. Bee Swarm Simulator's official page
+confirms progression farther up a mountain and hidden-map exploration, but does
+not publish its terrain geometry, clearances, assets or device results. Gorps
+therefore uses its own measured map and does not copy a competitor layout.
+
+**Measured implementation:** the previous east-gap foundation plus its
+half-voxel guard touched x=324 exactly. The same compact three-lobe budget moves
+to the authored east outer clearing at `(265,210)` as
+`EastOuterClearingHillock`; the planner now reserves a positive one-stud inset
+for every inland lobe. The contour count, 46-write budget, six/six biome split,
+70 roots, 12 plots, eight lights and zero-particle budget stay fixed. Minimum
+inland cliff clearance rises to 2.261 studs; backdrop clearance stays 5.720.
+
+**Evidence boundary and next step:** the one-stud rule is conservative analytic
+support, not a claim about Studio's rasterized voxel cells. Run one no-jump
+route through the two north pockets and two east pockets, orbit both eastern
+joins, and repair the first visible hole, seam, double surface, collision snag,
+cliff cut or Output error before adding glow or density.
