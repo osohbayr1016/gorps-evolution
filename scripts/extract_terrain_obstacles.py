@@ -25,10 +25,22 @@ def child(item, expected):
     return next((o for o in children(item) if name(o) == expected), None)
 
 
-def coords(part):
+def coords3(part):
     frame = next((p for p in part.find("Properties") if p.get("name") == "CFrame"), None)
     assert frame is not None, f"{name(part)} missing CFrame"
-    return float(frame.find("X").text), float(frame.find("Z").text)
+    return tuple(float(frame.find(axis).text) for axis in "XYZ")
+
+
+def coords(part):
+    x, _, z = coords3(part)
+    return x, z
+
+
+def size3(part):
+    vector = next((p for p in part.find("Properties")
+                   if (p.get("name") or "").lower() == "size"), None)
+    assert vector is not None, f"{name(part)} missing size"
+    return tuple(float(vector.find(axis).text) for axis in "XYZ")
 
 
 def append_obstacle(obstacles, part, radius):
@@ -45,7 +57,8 @@ def main(source, output):
     forest = child(planet, "ForestsAndWildlife")
     relief = child(planet, "WorldRelief")
     landmarks = child(planet, "SignatureLandmarks")
-    assert all(x is not None for x in (nodes, forest, relief, landmarks)), "missing terrain obstruction source"
+    terrain = child(planet, "TerrainAndPaths")
+    assert all(x is not None for x in (nodes, forest, relief, landmarks, terrain)), "missing terrain obstruction source"
     obstacles = []
     counts = {}
     for node in children(nodes):
@@ -75,7 +88,24 @@ def main(source, output):
     counts["mushrooms"] = len(obstacles) - sum(counts.values())
     assert counts["mushrooms"] == 16, ("mushroom obstacle coverage", counts)
 
-    Path(output).write_text(json.dumps({"counts": counts, "obstacles": obstacles}, indent=2) + "\n", encoding="utf-8")
+    backdrops = []
+    for part in children(terrain):
+        if part.get("class") == "Part" and name(part).endswith("BackdropHill"):
+            sx, sy, sz = size3(part)
+            x, y, z = coords3(part)
+            backdrops.append({
+                "name": name(part), "x": x, "y": y, "z": z,
+                "halfX": sx / 2, "halfY": sy / 2, "halfZ": sz / 2,
+            })
+    backdrops.sort(key=lambda item: item["name"])
+    counts["backdrops"] = len(backdrops)
+    assert counts["backdrops"] == 4, ("backdrop coverage", counts)
+
+    Path(output).write_text(json.dumps({
+        "counts": counts,
+        "obstacles": obstacles,
+        "backdrops": backdrops,
+    }, indent=2) + "\n", encoding="utf-8")
     print("PASS: exact map terrain obstacle fixture", counts)
 
 

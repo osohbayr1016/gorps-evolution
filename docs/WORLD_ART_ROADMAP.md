@@ -474,3 +474,27 @@ Part AABB separation and two sightlines—not rendered seam quality, parallax,
 Humanoid collision, streaming or phone cost. Studio must compare the fixed
 forest/quarry frames and walk both Grass/RockFoot seams. If no engine defect is
 supplied, next measure these shoulders against runtime voxel Terrain fills.
+
+## GE-MAP-03v — deconflict voxel relief and authored shoulders
+
+**Verified design basis:** Roblox documents Terrain as 4×4×4-stud voxels and
+supports scripted `FillBall` generation; the Terrain Editor separately offers
+Sculpt and Smooth tools for deliberate transitions. Theme Park Tycoon 2's
+official page confirms player-directed construction and extensive scenery only;
+it does not publish terrain dimensions or a reusable map technique. Gorps uses
+its own measured geometry and assets.
+
+**Measured implementation:** the actual-world plan placed `EastRimHillock` at
+`(288,116)` inside the authored `QuarryBackdropHill` centered at `(286,116)`.
+Exact 3D sphere-to-ellipsoid clearance was -9.918/-8.200/-6.000 studs for its
+foundation/hillside/crest. The contour is now `EastEscarpmentGapHillock` at
+`(312,210)`, with a new terrain version stamp. All 46 fills remain, including
+12 inland contours split six west/six east; the nearest fill/backdrop clearance
+is now 5.720 studs. The fixture and Luau regression derive this from the
+generated `.rbxmx`, not duplicated prose constants.
+
+**Evidence boundary and next step:** headless tests prove planned-volume
+separation, determinism and preserved budgets, not actual voxel rasterization,
+surface blending, Humanoid collision, streaming or device performance. Studio
+must frame the quarry shoulder and walk to the new east gap contour; next
+source-only audit is contour-to-escarpment-layer separation, not more glow.
