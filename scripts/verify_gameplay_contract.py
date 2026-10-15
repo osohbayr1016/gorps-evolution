@@ -41,8 +41,9 @@ contracts={
     'local statusCooldown={}',
     'if action=="WorkerStatus" then statusCooldown[player]=now',
     'statusCooldown[player]=nil',
-    'local before=E.workerStatus(p,now)',
-    'Delivery expired: earn ◆ ',
+    'local amount,before=E.collect(p,now)',
+    'Delivery held: earn ◆ ',
+    'accrued work was not reset',
     'Workers are still working - next delivery in '
  )),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,

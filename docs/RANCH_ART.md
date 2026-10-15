@@ -72,6 +72,19 @@ the same page at 375×667 touch emulation and by controller. Reject clipped text
 countdown drift across a boundary, selectable blocked collection, focus loss or
 any client/server Output error. Source tests do not satisfy this engine check.
 
+## Wage-blocked claim acceptance — GE-WORK-04
+
+Create a fresh unpublished test profile with one Farmer and zero coins before
+its +60 boundary. Leave CREW open from `WORKING` until the local button says
+`DELIVERY DUE`, then press it without reopening the page. The server must reply
+`Delivery held`, show the exact shortfall, grant nothing and charge nothing.
+Add exactly one wage through normal test gameplay, press Collect again before
+another minute elapses, and require exactly one batch and one wage. This proves
+the stale client request did not reset mature work. Repeat by controller and
+375×667 touch emulation; reject a disappearing message, duplicated reward,
+selectable fresh `WAGE BLOCKED` button or any Output error. Headless tests do
+not prove this UI/server timing path or persistent rejoin behavior.
+
 ## Worker timing acceptance — GE-WORK-02
 
 In an unpublished fresh profile, hire Farmer #1 at a noted server time, hire

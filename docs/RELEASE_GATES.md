@@ -153,6 +153,13 @@ than the empty parent button. The 68-assertion onboarding suite proves ordering
 and state priority, but Studio is still required to verify scrolling, contrast,
 focus and text fit on target devices.
 
+Worker collection now preflights the authoritative crew state before mutating
+payroll clocks. A stale client request that is fully wage-blocked is held with
+an exact shortfall instead of expiring mature work; early/empty checks are also
+non-mutating. Headless payroll tests retain the existing partial-pay and
+60-minute-cap behavior, but Studio stale-button timing and the separate direct
+automatic settlement on player initialization remain open acceptance gates.
+
 The controller follow-up now uses the player's preferred input, assigns a valid
 selection when the collection or hatch UI opens, restores selection after live
 page reconstruction, skips disabled actions, and provides Y menu / B back

@@ -151,6 +151,14 @@ function E.workerStatus(p,now)
  elseif hasWorkers then result.state="working" end
  return result
 end
+function E.collect(p,now)
+ local before=E.workerStatus(p,now)
+ -- Collection is an explicit claim. A stale client may believe the crew is
+ -- ready even after another action spends the last wage coins, so only the
+ -- authoritative ready state may advance cohort clocks.
+ if before.state~="ready" then return 0,before end
+ return E.tick(p,now),before
+end
 function E.claim(p,id)
  local q=C.Quests[id]
  if not q then return false,"Unknown mission" end

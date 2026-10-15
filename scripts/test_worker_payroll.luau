@@ -68,6 +68,29 @@ equal(blockedStatus.state, "blocked", "mature unfunded crew reports wage block")
 equal(blockedStatus.payable, 0, "wage-blocked status promises no payable batch")
 equal(blockedStatus.shortfall, C.Workers.Farmer.wage, "wage block reports exact coin shortfall")
 
+-- Explicit collection preflights the current authoritative state. A stale
+-- ready button must never turn a later wage-blocked request into clock expiry.
+local held = hire("Farmer")
+local heldBerries = held.Inventory.Berries
+held.Coins = 0
+local heldLast = held.Workers.Farmer.cohorts[1].last
+local heldAmount, heldStatus = E.collect(held, start + 119)
+equal(heldAmount, 0, "fully blocked collect grants no production")
+equal(heldStatus.state, "blocked", "collect returns the authoritative blocked state")
+equal(held.Workers.Farmer.cohorts[1].last, heldLast, "blocked collect preserves mature work")
+equal(held.Inventory.Berries, heldBerries, "blocked collect preserves inventory")
+held.Coins = C.Workers.Farmer.wage
+equal(E.collect(held, start + 119), 1, "funding the held delivery makes it collectible")
+equal(held.Inventory.Berries, heldBerries + C.Workers.Farmer.grant.Berries,
+	"held mature work is delivered exactly once")
+
+local earlyCollect = hire("Farmer")
+local earlyLast = earlyCollect.Workers.Farmer.cohorts[1].last
+local earlyAmount, earlyStatus = E.collect(earlyCollect, start + 59)
+equal(earlyAmount, 0, "early collect grants no production")
+equal(earlyStatus.state, "working", "early collect returns working state")
+equal(earlyCollect.Workers.Farmer.cohorts[1].last, earlyLast, "early collect preserves accrued seconds")
+
 local legacyStatusProfile = {
 	Coins = 100,
 	Workers = { Farmer = { count = 1, last = start } },
@@ -138,7 +161,9 @@ equal(unpaid.Coins, 92, "resumed production charges one wage")
 local partial = hire("Farmer")
 local partialBerries = partial.Inventory.Berries
 partial.Coins = 8
-equal(E.tick(partial, start + 179), 1, "only affordable batch produced")
+local partialAmount, partialStatus = E.collect(partial, start + 179)
+equal(partialStatus.state, "ready", "partial wallet still exposes one payable batch")
+equal(partialAmount, 1, "only affordable batch produced")
 equal(partial.Coins, 0, "affordable wage exhausts wallet without debt")
 equal(partial.Inventory.Berries, partialBerries + 4, "unpaid batch is not granted")
 partial.Coins = 80

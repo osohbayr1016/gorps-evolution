@@ -121,14 +121,13 @@ local function act(player,action,payload)
  elseif action=="Hire" then return E.hire(p,payload.id,os.time())
  elseif action=="Collect" then
   local now=os.time()
-  local before=E.workerStatus(p,now)
-  local amount=E.tick(p,now)
+  local amount,before=E.collect(p,now)
   if amount>0 then return true,"Workers produced "..amount.." batches" end
-  if before.state=="empty" then return true,"Hire a ranch worker to begin production" end
+  if before.state=="empty" then return false,"Hire a ranch worker to begin production" end
   if before.state=="blocked" then
-   return true,"Delivery expired: earn ◆ "..before.shortfall.." more before the next wage check"
+   return false,"Delivery held: earn ◆ "..before.shortfall.." more; accrued work was not reset"
   end
-  return true,"Workers are still working - next delivery in "..math.ceil(before.nextIn or 60).."s"
+  return false,"Workers are still working - next delivery in "..math.ceil(before.nextIn or 60).."s"
  elseif action=="Claim" then return E.claim(p,payload.id)
  elseif action=="Wheel" then return E.wheel(p,os.time(),math.random(1,4))
  elseif action=="TradeUp" then return E.tradeUp(p,payload.rarity,C.SpeciesOrder[math.random(1,#C.SpeciesOrder)])
