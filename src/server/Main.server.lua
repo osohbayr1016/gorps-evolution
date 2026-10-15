@@ -12,6 +12,7 @@ local folder=Instance.new("Folder");folder.Name="GorpsRemotes";folder.Parent=Rep
 local invoke=Instance.new("RemoteFunction");invoke.Name="Action";invoke.Parent=folder
 local notify=Instance.new("RemoteEvent");notify.Name="Update";notify.Parent=folder
 local cooldown={}
+local statusCooldown={}
 local wildCooldown={}
 local TRADE_OPS={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
 local function tradeState(player)
@@ -19,10 +20,16 @@ local function tradeState(player)
  state.available=Data.supportsTrading()
  return state
 end
+local function publicProfile(p)
+ if not p then return nil end
+ local snapshot=R.copy(p)
+ snapshot.WorkerStatus=E.workerStatus(p,os.time())
+ return snapshot
+end
 local function send(player,message)
  local p=Data.get(player)
  if p and player.Parent==Players then
-  notify:FireClient(player,{profile=p,trade=tradeState(player),message=message})
+  notify:FireClient(player,{profile=publicProfile(p),trade=tradeState(player),message=message})
  end
 end
 local function changed(player,message,visual)
@@ -83,6 +90,7 @@ local function act(player,action,payload)
  local p=Data.get(player)
  if not p then return false,"Profile loading" end
  if action=="State" then return true,"Ready" end
+ if action=="WorkerStatus" then return true,nil end
  if action=="Rankings" then return true,"Rankings refreshed",Leaderboards.top() end
  if type(payload)~="table" then return false,"Invalid request" end
  if not Data.canMutate(player) then return false,"Profile is busy; please retry" end
@@ -112,8 +120,15 @@ local function act(player,action,payload)
  elseif action=="Sell" then return E.sell(p,payload.id,payload.amount)
  elseif action=="Hire" then return E.hire(p,payload.id,os.time())
  elseif action=="Collect" then
-  local amount=E.tick(p,os.time())
-  return true,amount>0 and ("Workers produced "..amount.." batches") or "Nothing collected yet (60s intervals)"
+  local now=os.time()
+  local before=E.workerStatus(p,now)
+  local amount=E.tick(p,now)
+  if amount>0 then return true,"Workers produced "..amount.." batches" end
+  if before.state=="empty" then return true,"Hire a ranch worker to begin production" end
+  if before.state=="blocked" then
+   return true,"Delivery expired: earn ◆ "..before.shortfall.." more before the next wage check"
+  end
+  return true,"Workers are still working - next delivery in "..math.ceil(before.nextIn or 60).."s"
  elseif action=="Claim" then return E.claim(p,payload.id)
  elseif action=="Wheel" then return E.wheel(p,os.time(),math.random(1,4))
  elseif action=="TradeUp" then return E.tradeUp(p,payload.rarity,C.SpeciesOrder[math.random(1,#C.SpeciesOrder)])
@@ -136,16 +151,19 @@ end
 invoke.OnServerInvoke=function(player,action,payload)
  if type(action)~="string" or #action>32 then return {ok=false,message="Invalid action"} end
  local now=os.clock()
- if action~="State" and now-(cooldown[player] or 0)<0.2 then
+ if action=="WorkerStatus" and now-(statusCooldown[player] or 0)<0.2 then
+  return {ok=false,message="Slow down"}
+ elseif action~="State" and action~="WorkerStatus" and now-(cooldown[player] or 0)<0.2 then
   return {ok=false,message="Slow down"}
  end
- cooldown[player]=now
+ if action=="WorkerStatus" then statusCooldown[player]=now
+ elseif action~="State" then cooldown[player]=now end
  local success,ok,message,rankings=pcall(act,player,action,payload or {})
  if not success then
   warn("[Gorps] Action failed:",action,ok)
   return {ok=false,message="Could not complete that action"}
  end
- if ok and action~="State" and action~="Rankings" and not TRADE_OPS[action] then
+ if ok and action~="State" and action~="WorkerStatus" and action~="Rankings" and not TRADE_OPS[action] then
   local visual=action=="Expand" or action=="SelectPet" or action=="Hatch" or action=="TradeUp"
    or action=="Feed" or action=="Evolve" or action=="Hire" or action=="Wheel" or action=="HatchEgg"
   changed(player,message,visual)
@@ -154,7 +172,7 @@ invoke.OnServerInvoke=function(player,action,payload)
   end
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
- return {ok=ok,message=message,profile=Data.get(player),trade=tradeState(player),
+ return {ok=ok,message=message,profile=publicProfile(Data.get(player)),trade=tradeState(player),
   rankings=action=="Rankings" and rankings or nil,
   hatch=ok and action=="HatchEgg" and rankings or nil}
 end
@@ -209,6 +227,7 @@ Players.PlayerRemoving:Connect(function(player)
  if p then task.spawn(Leaderboards.write,player,R.copy(p)) end
  Data.unload(player)
  cooldown[player]=nil
+ statusCooldown[player]=nil
  wildCooldown[player]=nil
 end)
 

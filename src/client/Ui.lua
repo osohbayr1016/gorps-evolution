@@ -310,7 +310,27 @@ function UI.new(send)
  if camera then camera:GetPropertyChangedSignal("ViewportSize"):Connect(resize) end
  workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(resize)
  resize()
+ task.spawn(function()
+  while gui.Parent do
+   task.wait(1)
+   self:updateWorkerCountdowns()
+  end
+ end)
  return self
+end
+function UI:updateWorkerCountdowns()
+ if not self.open or self.tab~="Workers" then return end
+ local now=workspace:GetServerTimeNow()
+ for _,object in ipairs(self.page:GetDescendants()) do
+  local readyAt=object:GetAttribute("WorkerReadyAt")
+  local prefix=object:GetAttribute("WorkerCountdownPrefix")
+  local due=object:GetAttribute("WorkerCountdownDue")
+  if type(readyAt)=="number" and type(prefix)=="string" and type(due)=="string"
+   and (object:IsA("TextLabel") or object:IsA("TextButton")) then
+   local seconds=math.max(0,math.ceil(readyAt-now))
+   object.Text=seconds>0 and (prefix..seconds.."s") or due
+  end
+ end
 end
 function UI:usesController()
  local preferred=UserInputService.PreferredInput
@@ -367,6 +387,11 @@ function UI:openTab(tab)
  self.tab=tab
  self:setOpen(true)
  if switched then self.page.CanvasPosition=Vector2.zero end
+ if tab=="Workers" then
+  task.defer(function()
+   if self.open and self.tab=="Workers" then self.send("WorkerStatus",{}) end
+  end)
+ end
 end
 function UI:toastMessage(message)
  if not message or message=="" then return end

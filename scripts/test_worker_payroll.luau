@@ -38,6 +38,60 @@ local function hire(id, count)
 	return p
 end
 
+local emptyStatus = E.workerStatus(R.new(start), start + 600)
+equal(emptyStatus.state, "empty", "status reports no hired crew")
+equal(emptyStatus.payable, 0, "empty status has no payable batches")
+
+local statusCrew = hire("Farmer")
+equal(E.hire(statusCrew, "Farmer", start + 59), true, "status crew hires staggered farmer")
+local firstLast = statusCrew.Workers.Farmer.cohorts[1].last
+local secondLast = statusCrew.Workers.Farmer.cohorts[2].last
+local statusCoins = statusCrew.Coins
+local workingStatus = E.workerStatus(statusCrew, start + 59)
+equal(workingStatus.state, "working", "crew reports working before first boundary")
+equal(workingStatus.nextIn, 1, "crew reports exact next delivery second")
+equal(workingStatus.nextAt, start + 60, "crew exposes an absolute server delivery boundary")
+equal(workingStatus.byId.Farmer.state, "working", "farmer card reports working")
+equal(workingStatus.byId.Farmer.count, 2, "farmer status preserves public count")
+local readyStatus = E.workerStatus(statusCrew, start + 60)
+equal(readyStatus.state, "ready", "crew reports ready at first boundary")
+equal(readyStatus.due, 1, "only existing farmer is mature at first boundary")
+equal(readyStatus.payable, 1, "one mature batch is payable")
+equal(readyStatus.byId.Farmer.nextIn, 59, "new farmer retains independent countdown")
+equal(readyStatus.byId.Farmer.nextAt, start + 119, "new farmer exposes its own absolute boundary")
+equal(statusCrew.Coins, statusCoins, "status calculation never spends coins")
+equal(statusCrew.Workers.Farmer.cohorts[1].last, firstLast, "status calculation never advances first clock")
+equal(statusCrew.Workers.Farmer.cohorts[2].last, secondLast, "status calculation never advances second clock")
+statusCrew.Coins = 0
+local blockedStatus = E.workerStatus(statusCrew, start + 60)
+equal(blockedStatus.state, "blocked", "mature unfunded crew reports wage block")
+equal(blockedStatus.payable, 0, "wage-blocked status promises no payable batch")
+equal(blockedStatus.shortfall, C.Workers.Farmer.wage, "wage block reports exact coin shortfall")
+
+local legacyStatusProfile = {
+	Coins = 100,
+	Workers = { Farmer = { count = 1, last = start } },
+}
+local legacyStatus = E.workerStatus(legacyStatusProfile, start + 60)
+equal(legacyStatus.state, "ready", "status reads a legacy worker clock")
+equal(legacyStatusProfile.Workers.Farmer.cohorts, nil, "status does not migrate or mutate legacy state")
+
+local orderedCrew = R.new(start)
+orderedCrew.Coins = 10000
+equal(E.hire(orderedCrew, "Miner", start), true, "hire miner for deterministic wage order")
+equal(E.hire(orderedCrew, "Farmer", start), true, "hire farmer for deterministic wage order")
+local orderedBerries = orderedCrew.Inventory.Berries
+local orderedStone = orderedCrew.Inventory.Stone
+orderedCrew.Coins = C.Workers.Farmer.wage
+local orderedStatus = E.workerStatus(orderedCrew, start + 60)
+equal(orderedStatus.payable, 1, "status allocates shared coins to one exact batch")
+equal(orderedStatus.byId.Farmer.payable, 1, "sorted farmer receives affordable wage first")
+equal(orderedStatus.byId.Miner.payable, 0, "later miner is reported wage-blocked")
+equal(E.tick(orderedCrew, start + 60), orderedStatus.payable, "tick matches server-derived payable count")
+equal(orderedCrew.Inventory.Berries, orderedBerries + C.Workers.Farmer.grant.Berries,
+	"deterministic status predicts farmer output")
+equal(orderedCrew.Inventory.Stone, orderedStone, "deterministic status predicts no miner output")
+
 -- Off-minute claims used to erase paid work and lose the second delivery.
 local p = hire("Farmer")
 local coins, berries, meat = p.Coins, p.Inventory.Berries, p.Inventory.Meat

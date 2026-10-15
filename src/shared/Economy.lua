@@ -39,6 +39,17 @@ local function syncLast(w,now)
  for _,cohort in ipairs(w.cohorts) do earliest=math.min(earliest or cohort.last,cohort.last) end
  w.last=earliest or now
 end
+local function workerIds()
+ local ids={}
+ for id in pairs(C.Workers) do table.insert(ids,id) end
+ table.sort(ids)
+ return ids
+end
+local function readCohorts(w,now)
+ if type(w.cohorts)=="table" then return w.cohorts end
+ if w.count>0 then return {{count=w.count,last=w.last or now}} end
+ return {}
+end
 function E.hire(p,id,now)
  local worker=C.Workers[id]
  if not worker then return false,"Unknown worker" end
@@ -54,7 +65,8 @@ function E.hire(p,id,now)
 end
 function E.tick(p,now)
  local completed=0
- for id,def in pairs(C.Workers) do
+ for _,id in ipairs(workerIds()) do
+  local def=C.Workers[id]
   local w=p.Workers[id]
   if w and w.count>0 then
    for _,cohort in ipairs(cohorts(w,now)) do
@@ -86,6 +98,58 @@ function E.tick(p,now)
   end
  end
  return completed
+end
+function E.workerStatus(p,now)
+ local result={state="empty",due=0,payable=0,nextIn=nil,nextAt=nil,shortfall=0,byId={}}
+ local remainingCoins=p.Coins
+ local hasWorkers=false
+ local minimumShortfall
+ for _,id in ipairs(workerIds()) do
+  local def=C.Workers[id]
+  local w=p.Workers[id]
+  local count=w and w.count or 0
+  local item={state="empty",count=count,due=0,payable=0,nextIn=nil,shortfall=0}
+  if w and count>0 then
+   hasWorkers=true
+   local itemShortfall
+   for _,cohort in ipairs(readCohorts(w,now)) do
+    local elapsed=math.max(0,now-cohort.last)
+    local steps=math.min(60,math.floor(elapsed/60))
+    if steps>0 then
+     local due=steps*cohort.count
+     local wagePerStep=def.wage*cohort.count
+     local payableSteps=math.min(steps,math.floor(remainingCoins/wagePerStep))
+     local payable=payableSteps*cohort.count
+     item.due+=due
+     item.payable+=payable
+     remainingCoins-=def.wage*payable
+     if payableSteps<steps then
+      local shortfall=math.max(0,wagePerStep-remainingCoins)
+      itemShortfall=math.min(itemShortfall or shortfall,shortfall)
+      minimumShortfall=math.min(minimumShortfall or shortfall,shortfall)
+     end
+    else
+     local nextIn=math.max(1,60-elapsed)
+     item.nextIn=math.min(item.nextIn or nextIn,nextIn)
+     result.nextIn=math.min(result.nextIn or nextIn,nextIn)
+    end
+   end
+   item.shortfall=itemShortfall or 0
+   if item.nextIn then item.nextAt=now+item.nextIn end
+   if item.payable>0 then item.state="ready"
+   elseif item.due>0 then item.state="blocked"
+   else item.state="working" end
+   result.due+=item.due
+   result.payable+=item.payable
+  end
+  result.byId[id]=item
+ end
+ result.shortfall=minimumShortfall or 0
+ if result.nextIn then result.nextAt=now+result.nextIn end
+ if result.payable>0 then result.state="ready"
+ elseif result.due>0 then result.state="blocked"
+ elseif hasWorkers then result.state="working" end
+ return result
 end
 function E.claim(p,id)
  local q=C.Quests[id]

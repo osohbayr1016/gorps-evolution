@@ -55,6 +55,23 @@ The Python/Rojo contract proves source/package presence and removes the two
 known coordinate regressions. It does not prove final art quality, Roblox
 physics, live multiplayer placement, lighting or mobile performance.
 
+## Worker status acceptance — GE-WORK-03
+
+Open CREW immediately after hiring a Farmer. It must show `WORKING` and a
+one-second countdown without redrawing the page, jumping scroll position or
+losing controller focus. At the exact minute boundary the local label may say
+delivery due, but only a fresh server response may call a batch payable. With
+enough coins, reopening CREW must show `READY` and the server-derived payable
+batch count. With no wage coins, it must show `WAGE BLOCKED`, the exact shortfall
+and a disabled collection action. Existing unpaid whole-minute expiry remains
+in force; this milestone explains that outcome but does not change the economy.
+
+Test Farmer #1 at +0, Farmer #2 at +59, then open/collect at +60, +119 and +120.
+Expected delivered batch sequence remains 1, 1, 1 with one wage per batch. Run
+the same page at 375×667 touch emulation and by controller. Reject clipped text,
+countdown drift across a boundary, selectable blocked collection, focus loss or
+any client/server Output error. Source tests do not satisfy this engine check.
+
 ## Worker timing acceptance — GE-WORK-02
 
 In an unpublished fresh profile, hire Farmer #1 at a noted server time, hire

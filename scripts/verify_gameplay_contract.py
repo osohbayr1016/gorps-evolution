@@ -35,6 +35,16 @@ contracts={
  "pickup feedback": "function UI:showPickup(reward)" in ui and "ui:showPickup(data.pickup)" in client,
  "failed hunt doesn't deplete node": "if not won then" in server and "return false" in server,
  "first session smoke tests": "Starter egg regression" in smoke and "full ranch blocks hatching" in smoke,
+ "server-derived worker status": all(token in server for token in (
+    'snapshot.WorkerStatus=E.workerStatus(p,os.time())',
+    'if action=="WorkerStatus" then return true,nil end',
+    'local statusCooldown={}',
+    'if action=="WorkerStatus" then statusCooldown[player]=now',
+    'statusCooldown[player]=nil',
+    'local before=E.workerStatus(p,now)',
+    'Delivery expired: earn ◆ ',
+    'Workers are still working - next delivery in '
+ )),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

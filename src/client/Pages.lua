@@ -211,12 +211,44 @@ local function shop(parent,p,send)
 end
 local function workers(parent,p,send)
  heading(parent,"RANCH CREW","Helpers produce resources each minute. Wages are charged per delivery.")
- action(parent,"COLLECT WORKER DELIVERIES",function() send("Collect",{}) end,true,C.gold)
+ local status=p.WorkerStatus or {state="empty",payable=0,nextIn=nil,nextAt=nil,shortfall=0,byId={}}
+ local collectText="HIRE A WORKER TO START"
+ local canCollect=false
+ if status.state=="ready" then
+  collectText="COLLECT "..status.payable.." READY BATCH"..(status.payable==1 and "" or "ES")
+  canCollect=true
+ elseif status.state=="blocked" then
+  collectText="WAGES BLOCKED  ·  NEED ◆ "..status.shortfall
+ elseif status.state=="working" then
+  collectText="CHECK CREW  ·  NEXT IN "..math.ceil(status.nextIn or 60).."s"
+  canCollect=true
+ end
+ local collect=action(parent,collectText,function() send("Collect",{}) end,canCollect,C.gold)
+ if status.state=="working" and status.nextAt then
+  collect:SetAttribute("WorkerReadyAt",status.nextAt)
+  collect:SetAttribute("WorkerCountdownPrefix","CHECK CREW  ·  NEXT IN ")
+  collect:SetAttribute("WorkerCountdownDue","CHECK CREW  ·  DELIVERY DUE")
+ end
  for _,id in ipairs(keys(Config.Workers)) do
   local worker=Config.Workers[id]
   local owned=p.Workers[id] and p.Workers[id].count or 0
+  local workerStatus=status.byId and status.byId[id]
   local card=W.card(parent,id.."  ·  "..owned.."/5",
    "Wage: ◆ "..worker.wage.." per worker / min")
+  if workerStatus and workerStatus.state=="ready" then
+   descriptor(card,"READY  ·  "..workerStatus.payable.." payable batch"..(workerStatus.payable==1 and "" or "es"))
+  elseif workerStatus and workerStatus.state=="blocked" then
+   descriptor(card,"WAGE BLOCKED  ·  Need ◆ "..workerStatus.shortfall.." more")
+  elseif workerStatus and workerStatus.state=="working" then
+   local countdown=descriptor(card,"WORKING  ·  Next delivery in "..math.ceil(workerStatus.nextIn or 60).."s")
+   if workerStatus.nextAt then
+    countdown:SetAttribute("WorkerReadyAt",workerStatus.nextAt)
+    countdown:SetAttribute("WorkerCountdownPrefix","WORKING  ·  Next delivery in ")
+    countdown:SetAttribute("WorkerCountdownDue","READY  ·  Check crew")
+   end
+  else
+   descriptor(card,"NOT HIRED")
+  end
   descriptor(card,"Production:  "..countCost(worker.grant))
   action(card,p.Coins>=worker.price and "HIRE FOR ◆ "..worker.price or "NEED ◆ "..worker.price,
    function() send("Hire",{id=id}) end,p.Coins>=worker.price and owned<5,C.mint)

@@ -77,6 +77,15 @@ checks={
      ("Eggs","Creatures","Backpack","Quests","Ranch","Coins","Wood","Stone","Iron","Berries")),
  "resource preview in inventory": 'function W.resourceIcon(parent,id,size)' in widgets
    and 'W.resourceIcon(header,id,42)' in pages,
+ "worker state feedback refreshes from server": all(token in pages for token in (
+   'p.WorkerStatus or','status.state=="ready"','status.state=="blocked"',
+   'status.state=="working"','WAGES BLOCKED','Next delivery in ',
+   'collect:SetAttribute("WorkerReadyAt",status.nextAt)',
+   'countdown:SetAttribute("WorkerReadyAt",workerStatus.nextAt)'
+  )) and all(token in ui for token in (
+   'self.send("WorkerStatus",{})','function UI:updateWorkerCountdowns()',
+   'workspace:GetServerTimeNow()','task.wait(1)'
+  )),
  "creature model retained":'function Factory.create(pet,origin,parent)' in factory,
 }
 for name,valid in checks.items():
