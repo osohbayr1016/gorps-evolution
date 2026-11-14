@@ -125,6 +125,21 @@ contracts={
     'send("__refreshPage",{})',
  )) and 'elseif action=="__refreshPage" then' in ui
     and Path("scripts/test_creature_view.luau").exists(),
+ "trade offer freezes pet identity and progression": all(token in trade for token in (
+    's.offers[id]={kind="Pet",id=pet.id,pet=R.copy(pet)}',
+    'emit(otherPlayer,"Trade not completed; review offers and accept again")',
+ )) and all(token in Path("src/shared/TradeRules.lua").read_text() for token in (
+    'if offer.pet~=nil then',
+    'snapshot.rarity~=pet.rarity',
+    'snapshot.level~=pet.level',
+    'snapshot.xp~=pet.xp',
+    'snapshot.evolved~=pet.evolved',
+ )) and all(token in pages for token in (
+    'tostring(x.pet.rarity)',
+    'tostring(x.pet.species)',
+    'tostring(x.pet.level)',
+    'tostring(x.pet.evolved)',
+ )) and 'mutated offered creature cannot settle' in Path("scripts/test_trade_rules.luau").read_text(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

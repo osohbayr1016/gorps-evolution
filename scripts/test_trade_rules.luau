@@ -93,4 +93,31 @@ equal(overflowB.Inventory.Wood,1000000,"overflow rejection preserves receiver")
 equal(TradeRules.exchange(left,left,{kind="Material",id="Wood",amount=1},
  {kind="Material",id="Stone",amount=1}),false,"self trade is rejected")
 
+-- A pet accepted at a particular level/rarity/evolution must remain
+-- identical at the moment of transfer. Changing it requires a fresh offer.
+local frozenLeft,frozenRight=profile(),profile()
+Rules.addPet(frozenLeft,"Shade")
+local offeredPet=frozenLeft.Pets[2]
+local frozen={kind="Pet",id=offeredPet.id,pet=Rules.copy(offeredPet)}
+local payment={kind="Material",id="Stone",amount=1}
+local beforeStone=frozenRight.Inventory.Stone
+offeredPet.xp+=35
+local changedOK,changedMessage=TradeRules.exchange(frozenLeft,frozenRight,frozen,payment)
+equal(changedOK,false,"mutated offered creature cannot settle")
+equal(changedMessage,"Offered creature changed; refresh your offer and accept again",
+ "changed creature returns an actionable consent error")
+equal(#frozenLeft.Pets,2,"rejected changed offer preserves sending creatures")
+equal(#frozenRight.Pets,1,"rejected changed offer preserves receiving creatures")
+equal(frozenRight.Inventory.Stone,beforeStone,"rejected changed offer preserves payment")
+frozen.pet=Rules.copy(offeredPet)
+local freshOK=TradeRules.exchange(frozenLeft,frozenRight,frozen,payment)
+equal(freshOK,true,"fresh confirmed snapshot can trade")
+equal(frozenRight.Pets[2].species,"Shade","recipient gets freshly described creature")
+equal(frozenRight.Pets[2].xp,35,"recipient gets exact newly accepted XP")
+local malformedA,malformedB=profile(),profile()
+Rules.addPet(malformedA,"Shade")
+local bad={kind="Pet",id=malformedA.Pets[2].id,pet="bad"}
+equal(TradeRules.exchange(malformedA,malformedB,bad,payment),false,
+ "malformed pet snapshot cannot bypass strict offer verification")
+
 print("PASS: "..checks.." safe-context trade assertions (persistent trading remains closed).")

@@ -109,7 +109,9 @@ function Trade.action(player,action,payload,get,changed,emit,settle)
  elseif action=="OfferPet" then
   local pet=R.pet(get(player),payload.id)
   if not pet or pet.id==get(player).ActiveId or #get(player).Pets<2 then return false,"Cannot offer that creature" end
-  s.offers[id]={kind="Pet",id=pet.id}
+  -- Freeze exactly what both players are consenting to. Later feeding or
+  -- evolution must not silently change an accepted creature offer.
+  s.offers[id]={kind="Pet",id=pet.id,pet=R.copy(pet)}
  elseif action=="Accept" then
   s.accepted[id]=true
   local otherPlayer=other(s,player)
@@ -117,6 +119,7 @@ function Trade.action(player,action,payload,get,changed,emit,settle)
    local p1,p2=get(s.a),get(s.b)
    if not p1 or not p2 or not s.offers[uid(s.a)] or not s.offers[uid(s.b)] then
     s.accepted={}
+    emit(otherPlayer,"Trade could not complete; review offers and accept again")
     return false,"Both players must offer assets"
    end
    -- The persistence settlement may yield across several DataStore operations.
@@ -131,6 +134,9 @@ function Trade.action(player,action,payload,get,changed,emit,settle)
    if not callOK or not settled then
     s.settling=false
     s.accepted={}
+    if otherPlayer.Parent==Players then
+     emit(otherPlayer,"Trade not completed; review offers and accept again")
+    end
     return false,callOK and (message or "Trade not completed") or "Trade could not be finalized"
    end
    if not settle then changed(s.a);changed(s.b) end
