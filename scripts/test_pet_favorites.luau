@@ -100,6 +100,8 @@ equal(right.Pets[2].species,"Shade","recipient receives exact traded pet")
 
 -- Max-level training and crafting do not accumulate unpersistable XP.
 local maxed=profile()
+maxed.Inventory.Meat=30
+maxed.Inventory.Berries=30
 maxed.Pets[1].level=25
 maxed.Pets[1].xp=0
 for _=1,5 do
