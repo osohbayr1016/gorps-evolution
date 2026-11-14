@@ -567,6 +567,11 @@ function UI:render()
   self.tabLabels[key].TextColor3=active and C.deep or C.light
  end
  local selected=GuiService.SelectedObject
+ local focused=UserInputService:GetFocusedTextBox()
+ local restoreTextFocus=focused~=nil and focused:IsDescendantOf(self.page)
+ local focusedName=restoreTextFocus and focused.Name or nil
+ local textCursor=restoreTextFocus and focused.CursorPosition or nil
+ local textSelection=restoreTextFocus and focused.SelectionStart or nil
  local restorePageSelection=self:usesController() and selected~=nil
   and selected:IsDescendantOf(self.page)
  local oldPosition=self.page.CanvasPosition
@@ -584,7 +589,25 @@ function UI:render()
   end
  end,self.rankings)
  self.page.CanvasPosition=oldPosition
- if restorePageSelection then self:restorePageFocus() end
+ if restoreTextFocus and focusedName then
+  local replacement=self.page:FindFirstChild(focusedName,true)
+  if replacement and replacement:IsA("TextBox") then
+   task.defer(function()
+    if not replacement.Parent or not self.open then return end
+    local current=UserInputService:GetFocusedTextBox()
+    if current and current~=replacement then return end
+    replacement:CaptureFocus()
+    if type(textCursor)=="number" and textCursor>0 then
+     replacement.CursorPosition=math.min(textCursor,#replacement.Text+1)
+    end
+    if type(textSelection)=="number" and textSelection>0 then
+     replacement.SelectionStart=math.min(textSelection,#replacement.Text+1)
+    end
+   end)
+  end
+ elseif restorePageSelection then
+  self:restorePageFocus()
+ end
 end
 return UI
 
