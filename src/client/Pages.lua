@@ -10,6 +10,9 @@ local creatureRole="All"
 -- The menu rebuilds after profile pushes: keep unsent invite text outside
 -- transient TextBox instances so live multiplayer updates cannot erase it.
 local tradeInviteDraft=""
+-- A deliberate second tap is required to sell an entire resource stack.
+-- The review expires quickly and is never treated as server authorization.
+local bulkSaleReview=nil
 
 local function keys(source)
  local ids={}
@@ -205,9 +208,31 @@ local function backpack(parent,p,send)
   action(card,canSellFive and "SELL 5 FOR ◆ "..5*value or
    count<5 and "COLLECT 5 TO SELL" or "COIN WALLET TOO FULL FOR 5",
    function() send("Sell",{id=id,amount=5}) end,canSellFive,C.gold)
-  action(card,maximum>0 and "SELL MAX  ·  "..fmt(maximum).." FOR ◆ "..fmt(maximum*value)
-   or count<1 and "NO MATERIALS TO SELL" or "COIN WALLET FULL",
-   function() send("SellMax",{id=id}) end,maximum>0,C.blue)
+  local payout=maximum*value
+  local confirmed=bulkSaleReview and bulkSaleReview.id==id
+   and bulkSaleReview.amount==maximum and bulkSaleReview.payout==payout
+   and os.clock()<bulkSaleReview.expiresAt
+  if confirmed then
+   descriptor(card,"Confirm selling "..fmt(maximum).." "..id.." for ◆ "..fmt(payout)..".")
+  end
+  action(card,maximum<=0 and (count<1 and "NO MATERIALS TO SELL" or "COIN WALLET FULL")
+   or confirmed and "CONFIRM SELL MAX  ·  "..fmt(maximum).." FOR ◆ "..fmt(payout)
+   or "REVIEW SELL MAX  ·  "..fmt(maximum).." FOR ◆ "..fmt(payout),
+   function()
+    if confirmed then
+     bulkSaleReview=nil
+     send("SellMax",{id=id,expectedAmount=maximum})
+    else
+     bulkSaleReview={id=id,amount=maximum,payout=payout,expiresAt=os.clock()+15}
+     send("__refreshPage",{})
+    end
+   end,maximum>0,confirmed and C.gold or C.blue)
+  if confirmed then
+   action(card,"CANCEL BULK SALE",function()
+    bulkSaleReview=nil
+    send("__refreshPage",{})
+   end,true,C.blue)
+  end
  end
  heading(parent,"CRAFTED INVENTORY")
  if not next(p.Items) then descriptor(parent,"Your crafted equipment will appear here.") end
