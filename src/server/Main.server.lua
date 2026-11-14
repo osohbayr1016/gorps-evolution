@@ -12,6 +12,7 @@ local folder=Instance.new("Folder");folder.Name="GorpsRemotes";folder.Parent=Rep
 local invoke=Instance.new("RemoteFunction");invoke.Name="Action";invoke.Parent=folder
 local notify=Instance.new("RemoteEvent");notify.Name="Update";notify.Parent=folder
 local cooldown={}
+local stateCooldown={}
 local statusCooldown={}
 local wildCooldown={}
 local TRADE_OPS={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
@@ -150,13 +151,16 @@ end
 invoke.OnServerInvoke=function(player,action,payload)
  if type(action)~="string" or #action>32 then return {ok=false,message="Invalid action"} end
  local now=os.clock()
- if action=="WorkerStatus" and now-(statusCooldown[player] or 0)<0.2 then
+ if action=="State" and now-(stateCooldown[player] or -100)<0.5 then
+  return {ok=false,message="Slow down"}
+ elseif action=="WorkerStatus" and now-(statusCooldown[player] or 0)<0.2 then
   return {ok=false,message="Slow down"}
  elseif action~="State" and action~="WorkerStatus" and now-(cooldown[player] or 0)<0.2 then
   return {ok=false,message="Slow down"}
  end
- if action=="WorkerStatus" then statusCooldown[player]=now
- elseif action~="State" then cooldown[player]=now end
+ if action=="State" then stateCooldown[player]=now
+ elseif action=="WorkerStatus" then statusCooldown[player]=now
+ else cooldown[player]=now end
  local success,ok,message,rankings=pcall(act,player,action,payload or {})
  if not success then
   warn("[Gorps] Action failed:",action,ok)
@@ -231,6 +235,7 @@ Players.PlayerRemoving:Connect(function(player)
  if p then task.spawn(Leaderboards.write,player,R.copy(p)) end
  Data.unload(player)
  cooldown[player]=nil
+ stateCooldown[player]=nil
  statusCooldown[player]=nil
  wildCooldown[player]=nil
 end)

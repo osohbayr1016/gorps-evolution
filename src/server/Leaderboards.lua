@@ -6,9 +6,11 @@ local Players=game:GetService("Players")
 local Ranking={}
 local studio=RunService:IsStudio()
 local stores={}
-local cache={}
+local cache={Coins={},Wins={},Minutes={}}
 local names={}
 local lastRefresh=0
+local initialized=false
+local refreshing=false
 local function store(id)
  if studio then return nil end
  if stores[id] then return stores[id] end
@@ -32,32 +34,53 @@ function Ranking.write(player,p)
 end
 function Ranking.top()
  if studio then return {Coins={},Wins={},Minutes={}} end
- if os.time()-lastRefresh<180 and next(cache) then return cache end
- local entries={}
- for _,id in ipairs({"Coins","Wins","Minutes"}) do
-  entries[id]={}
-  local s=store(id)
-  if s then
-   local ok,page=pcall(function() return s:GetSortedAsync(false,10) end)
-   if ok then
-    for rank,value in ipairs(page:GetCurrentPage()) do
-     local name=names[value.key]
-     if not name then
-      local idNumber=tonumber(value.key)
-      local success,found=pcall(function() return Players:GetNameFromUserIdAsync(idNumber) end)
-      name=success and found or ("User "..value.key)
-      names[value.key]=name
+ local now=os.time()
+ -- OrderedDataStore queries yield; concurrent calls use a safe stale snapshot.
+ if refreshing or (initialized and now-lastRefresh<180) then return cache end
+ refreshing=true
+ local ok,entriesOrError=pcall(function()
+  local entries={}
+  for _,id in ipairs({"Coins","Wins","Minutes"}) do
+   entries[id]={}
+   local s=store(id)
+   if s then
+    local readOk,page=pcall(function() return s:GetSortedAsync(false,10) end)
+    if readOk then
+     local pageOk,rows=pcall(function() return page:GetCurrentPage() end)
+     if pageOk and type(rows)=="table" then
+      for rank,value in ipairs(rows) do
+       local name=names[value.key]
+       if not name then
+        local idNumber=tonumber(value.key)
+        local success,found=pcall(function()
+         if not idNumber then error("Invalid ordered leaderboard user ID") end
+         return Players:GetNameFromUserIdAsync(idNumber)
+        end)
+        name=success and found or ("User "..value.key)
+        names[value.key]=name
+       end
+       table.insert(entries[id],{rank=rank,name=name,score=value.value})
+      end
+     else
+      warn("[Gorps Rankings] Page failed:",id,rows)
+      entries[id]=cache[id] or {}
      end
-     table.insert(entries[id],{rank=rank,name=name,score=value.value})
+    else
+     warn("[Gorps Rankings] Read failed:",id,page)
+     entries[id]=cache[id] or {}
     end
-   else
-    warn("[Gorps Rankings] Read failed:",id,page)
-    entries[id]=cache[id] or {}
    end
   end
+  return entries
+ end)
+ refreshing=false
+ lastRefresh=now
+ initialized=true
+ if not ok then
+  warn("[Gorps Rankings] Refresh failed:",entriesOrError)
+  return cache
  end
- cache=entries
- lastRefresh=os.time()
+ cache=entriesOrError
  return cache
 end
 function Ranking.start(Data)

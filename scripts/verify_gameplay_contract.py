@@ -56,6 +56,19 @@ contracts={
     'local inviter=pendingSender(player);pending[id]=nil',
     'lastInvite[uid(player)]=nil'
  )) and Path("scripts/test_trade_invites.luau").exists(),
+ "state snapshot request limited": all(token in server for token in (
+    'local stateCooldown={}',
+    'if action=="State" and now-(stateCooldown[player] or -100)<0.5 then',
+    'if action=="State" then stateCooldown[player]=now',
+    'stateCooldown[player]=nil',
+ )),
+ "leaderboard singleflight and stale snapshot": all(token in Path("src/server/Leaderboards.lua").read_text() for token in (
+    'local refreshing=false',
+    'if refreshing or (initialized and now-lastRefresh<180) then return cache end',
+    'refreshing=true',
+    'refreshing=false',
+    'entries[id]=cache[id] or {}',
+ )) and Path("scripts/test_leaderboards.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
