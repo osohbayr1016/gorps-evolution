@@ -35,6 +35,7 @@ local function player()
  return p
 end
 local p=player()
+p.Inventory.Berries=0
 equal(R.canAdd(p,{Berries=1000000}),true,"preflight allows exact capacity from zero")
 equal(R.canAdd(p,{Berries=1000001}),false,"preflight rejects excessive grant")
 equal(R.canAdd(p,{UnlistedItem=1}),false,"preflight rejects unrecognized item")
