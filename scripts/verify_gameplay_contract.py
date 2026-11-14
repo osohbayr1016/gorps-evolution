@@ -236,6 +236,19 @@ contracts={
     'only latest buffered snapshot is flushed',
     'separate player',
  )) ,
+ "mission ClaimAll is atomic and wallet-safe": all(token in Path("src/shared/Economy.lua").read_text() for token in (
+    'function E.claimAll(p)',
+    'if not R.canCreditCoins(p,total) then',
+    'for _,id in ipairs(ready) do p.Claimed[id]=true end',
+    'R.creditCoins(p,total)',
+ )) and all(token in server for token in (
+    'elseif action=="ClaimAll" then return E.claimAll(p)',
+    'resumeStatus.storageBlocked',
+ )) and all(token in pages for token in (
+    'send("ClaimAll",{})',
+    'ready>=2',
+    'Rules.MAX_COINS',
+ )) and Path("scripts/test_claim_all_quests.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
