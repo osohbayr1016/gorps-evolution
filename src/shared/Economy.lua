@@ -26,14 +26,33 @@ function E.buy(p,id)
  p.Coins-=item.price;R.add(p,item.grant)
  return true,"Purchased "..id
 end
-function E.sell(p,id,count)
- if not C.Resources[id] then return false,"Unknown material" end
- if type(count)~="number" or count%1~=0 or count<1 or count>100 then return false,"Invalid quantity" end
+-- One authoritative sale routine for small manual sales and bounded bulk sales.
+-- A failed wallet or inventory preflight never removes goods.
+local function sellAmount(p,id,count)
  if not R.canCreditCoins(p,count*C.Resources[id]) then
   return false,"Coin wallet full: spend coins before selling"
  end
  if not R.spend(p,{[id]=count}) then return false,"Not enough materials" end
- R.creditCoins(p,count*C.Resources[id]);return true,"Sold "..count.." "..id
+ R.creditCoins(p,count*C.Resources[id])
+ return true,"Sold "..count.." "..id
+end
+function E.sell(p,id,count)
+ if not C.Resources[id] then return false,"Unknown material" end
+ if type(count)~="number" or count%1~=0 or count<1 or count>100 then return false,"Invalid quantity" end
+ return sellAmount(p,id,count)
+end
+function E.sellMax(p,id)
+ local price=C.Resources[id]
+ if not price then return false,"Unknown material" end
+ local owned=p.Inventory[id] or 0
+ if type(owned)~="number" or owned%1~=0 or owned<1 or owned>1000000 then
+  return false,"No materials to sell"
+ end
+ -- Respect the exact persisted wallet ceiling; sell only the subset that fits.
+ local walletRoom=math.max(0,R.MAX_COINS-p.Coins)
+ local count=math.min(owned,math.floor(walletRoom/price))
+ if count<1 then return false,"Coin wallet full: spend coins before selling" end
+ return sellAmount(p,id,count)
 end
 local function cohorts(w,now)
  if type(w.cohorts)~="table" then

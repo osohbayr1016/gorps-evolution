@@ -195,8 +195,16 @@ local function backpack(parent,p,send)
   itemName.TextSize=17
   itemName.Font=Enum.Font.GothamBold
   itemName.Parent=header
-  action(card,count>=5 and "SELL 5 FOR ◆ "..5*Config.Resources[id] or "COLLECT 5 TO SELL",
-   function() send("Sell",{id=id,amount=5}) end,count>=5,C.gold)
+  local value=Config.Resources[id]
+  local headroom=math.max(0,Rules.MAX_COINS-p.Coins)
+  local canSellFive=count>=5 and headroom>=5*value
+  local maximum=math.min(count,math.floor(headroom/value))
+  action(card,canSellFive and "SELL 5 FOR ◆ "..5*value or
+   count<5 and "COLLECT 5 TO SELL" or "COIN WALLET TOO FULL FOR 5",
+   function() send("Sell",{id=id,amount=5}) end,canSellFive,C.gold)
+  action(card,maximum>0 and "SELL MAX  ·  "..fmt(maximum).." FOR ◆ "..fmt(maximum*value)
+   or count<1 and "NO MATERIALS TO SELL" or "COIN WALLET FULL",
+   function() send("SellMax",{id=id}) end,maximum>0,C.blue)
  end
  heading(parent,"CRAFTED INVENTORY")
  if not next(p.Items) then descriptor(parent,"Your crafted equipment will appear here.") end

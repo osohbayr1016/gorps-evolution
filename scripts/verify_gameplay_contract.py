@@ -182,6 +182,14 @@ contracts={
     and 'View.SortModes={"Acquired","Favorites","Level","Rarity","Species"}'
         in Path("src/shared/CreatureView.lua").read_text()
     and Path("scripts/test_pet_favorites.luau").exists(),
+ "bounded SellMax is authoritative and visible": all(token in Path("src/shared/Economy.lua").read_text() for token in (
+    'function E.sellMax(p,id)',
+    'local walletRoom=math.max(0,R.MAX_COINS-p.Coins)',
+    'return sellAmount(p,id,count)',
+ )) and 'elseif action=="SellMax" then return E.sellMax(p,payload.id)' in server
+    and 'send("SellMax",{id=id})' in pages
+    and 'maximum=math.min(count,math.floor(headroom/value))' in pages
+    and Path("scripts/test_sell_max.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
