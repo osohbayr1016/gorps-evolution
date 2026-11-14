@@ -117,6 +117,14 @@ contracts={
     and 'before.storageBlocked' in server
     and 'status.storageBlocked' in pages
     and Path("scripts/test_reward_capacity.luau").exists(),
+ "creature collection client-only view": all(token in pages for token in (
+    'local CreatureView=require(',
+    'CreatureView.list(p.Pets,creatureSort,creatureRole)',
+    'CreatureView.nextSort(creatureSort)',
+    'CreatureView.nextRole(creatureRole)',
+    'send("__refreshPage",{})',
+ )) and 'elseif action=="__refreshPage" then' in ui
+    and Path("scripts/test_creature_view.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
