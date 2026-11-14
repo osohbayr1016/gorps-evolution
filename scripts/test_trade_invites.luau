@@ -173,4 +173,40 @@ equal(successMessage,"Trade completed","successful settlement response")
 equal(Trade.status(bob).partner,nil,"successful settlement removes first session")
 equal(Trade.status(cara).partner,nil,"successful settlement removes second session")
 
+-- Real router offers must show immutable creature attributes to both
+-- players and refuse finalization if a creature was trained after approval.
+now=1110
+equal(action(bob,"Invite",{target="Cara"}),true,"new pet trade invitation sent")
+equal(action(cara,"Join"),true,"pet trade invitation joined")
+local bProfile=get(bob)
+local cProfile=get(cara)
+equal(Rules.addPet(bProfile,"Shade"),true,"sender owns an inactive offered pet")
+local petId=bProfile.Pets[#bProfile.Pets].id
+equal(action(bob,"OfferPet",{id=petId}),true,"sender offers exact pet snapshot")
+local mine=Trade.status(bob).mine
+local theirs=Trade.status(cara).theirs
+equal(mine.pet.species,"Shade","server records offered creature species")
+equal(theirs.pet.rarity,"Uncommon","recipient sees offered creature rarity")
+equal(theirs.pet.level,1,"recipient sees agreed creature level")
+equal(theirs.pet.evolved,0,"recipient sees agreed evolution tier")
+equal(action(cara,"OfferMaterial",{resource="Stone",amount=1}),true,
+ "partner offers material for pet")
+equal(action(cara,"Accept"),true,"partner accepts the original creature offer")
+local stoneBefore=cProfile.Inventory.Stone
+bProfile.Pets[#bProfile.Pets].xp+=35
+local denied,deniedMessage=action(bob,"Accept")
+equal(denied,false,"trade cannot settle a modified pet")
+equal(deniedMessage,"Offered creature changed; refresh your offer and accept again",
+ "recipient receives explicit changed-offer warning")
+equal(cProfile.Inventory.Stone,stoneBefore,"failed consent never spends partner material")
+equal(#bProfile.Pets,2,"failed consent preserves sender pet")
+equal(Trade.status(cara).acceptedMine,false,"failed consent resets partner acceptance")
+equal(action(bob,"OfferPet",{id=petId}),true,"sender refreshes modified offer")
+equal(Trade.status(cara).theirs.pet.xp,35,"recipient sees new pet XP")
+equal(action(cara,"Accept"),true,"partner accepts updated pet details")
+equal(action(bob,"Accept"),true,"unchanged snapshot settles successfully")
+equal(cProfile.Pets[2].species,"Shade","recipient receives exact named creature")
+equal(cProfile.Pets[2].xp,35,"received pet retains accepted XP")
+equal(Trade.status(bob).partner,nil,"completed pet trade clears both sessions")
+
 print("PASS: "..checks.." trade invitation assertions (Studio multiplayer QA remains pending).")
