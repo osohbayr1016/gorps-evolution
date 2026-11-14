@@ -45,7 +45,7 @@ function Adventure.hunt(profile,enemyLevel)
  end
  local coins=12+enemyLevel*6
  Rules.add(profile,{Meat=meat})
- profile.Coins+=coins
+ Rules.creditCoins(profile,coins)
  Rules.xp(profile,10+enemyLevel*5)
  Rules.quest(profile,"Explorer",1)
  Rules.quest(profile,"Gatherer",meat)
