@@ -229,7 +229,7 @@ local function initializePlayer(player)
 end
 Players.PlayerRemoving:Connect(function(player)
  starting[player]=nil
- Trade.disconnect(player,function(who,msg) send(who,msg) end)
+ Trade.leave(player,function(who,msg) send(who,msg) end)
  World.release(player)
  -- Final whole seconds belong to this player's actual session, not to the
  -- server's shared autosave timer. Snapshot rankings after final credit.
