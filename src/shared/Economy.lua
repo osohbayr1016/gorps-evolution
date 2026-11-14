@@ -41,7 +41,7 @@ function E.sell(p,id,count)
  if type(count)~="number" or count%1~=0 or count<1 or count>100 then return false,"Invalid quantity" end
  return sellAmount(p,id,count)
 end
-function E.sellMax(p,id)
+function E.sellMax(p,id,expectedAmount)
  local price=C.Resources[id]
  if not price then return false,"Unknown material" end
  local owned=p.Inventory[id] or 0
@@ -52,6 +52,12 @@ function E.sellMax(p,id)
  local walletRoom=math.max(0,R.MAX_COINS-p.Coins)
  local count=math.min(owned,math.floor(walletRoom/price))
  if count<1 then return false,"Coin wallet full: spend coins before selling" end
+ -- The client confirmation must match the exact currently sellable amount.
+ -- Never sell more than was reviewed before a concurrent wallet/inventory
+ -- change; old internal callers may omit the optional expectedAmount.
+ if expectedAmount~=nil and expectedAmount~=count then
+  return false,"Bulk sale preview changed: review the updated amount"
+ end
  return sellAmount(p,id,count)
 end
 local function cohorts(w,now)
