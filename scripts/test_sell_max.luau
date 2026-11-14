@@ -81,4 +81,38 @@ eq(Economy.sell(legacy,"Iron",100),true,"old Sell action still supports 100")
 eq(legacy.Inventory.Iron,100,"old Sell action removes only requested count")
 eq(legacy.Coins,100*Config.Resources.Iron,"old Sell pays same catalog price")
 
+-- A reviewed bulk sale is valid only for the exact currently sellable
+-- quantity. Delayed confirmation cannot sell more after inventory changes.
+local quoted=fresh()
+quoted.Inventory.Wood=12
+eq(Economy.sellMax(quoted,"Wood",11),false,"stale 11-item preview is rejected")
+eq(quoted.Inventory.Wood,12,"stale preview preserves inventory")
+eq(quoted.Coins,0,"stale preview preserves coins")
+eq(Economy.sellMax(quoted,"Wood","12"),false,"string preview cannot bypass quote check")
+eq(quoted.Inventory.Wood,12,"malformed quote never consumes goods")
+eq(Economy.sellMax(quoted,"Wood",12),true,"exact reviewed amount succeeds")
+eq(quoted.Inventory.Wood,0,"confirmed preview sells only reviewed materials")
+eq(quoted.Coins,12*Config.Resources.Wood,"confirmed preview receives exact payout")
+
+local changedInventory=fresh()
+changedInventory.Inventory.Iron=20
+changedInventory.Inventory.Iron=17
+eq(Economy.sellMax(changedInventory,"Iron",20),false,
+ "older client preview cannot dispose of changed inventory")
+eq(changedInventory.Inventory.Iron,17,"inventory mismatch preserves remaining goods")
+eq(Economy.sellMax(changedInventory,"Iron",17),true,"reviewed new count succeeds")
+eq(changedInventory.Coins,17*Config.Resources.Iron,"refreshed preview receives exact payout")
+
+local changedWallet=fresh()
+changedWallet.Inventory.Wood=50
+changedWallet.Coins=Rules.MAX_COINS-30
+changedWallet.Coins=Rules.MAX_COINS-15
+eq(Economy.sellMax(changedWallet,"Wood",10),false,
+ "new wallet headroom invalidates prior sell preview")
+eq(changedWallet.Inventory.Wood,50,"stale wallet preview does not remove materials")
+eq(Economy.sellMax(changedWallet,"Wood",5),true,
+ "updated wallet-limited quote sells safe count")
+eq(changedWallet.Coins,Rules.MAX_COINS,"updated quote fills wallet exactly")
+eq(changedWallet.Inventory.Wood,45,"unsold resources remain in inventory")
+
 print("PASS: "..checks.." authoritative lossless SellMax assertions (Studio QA pending).")
