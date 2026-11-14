@@ -116,15 +116,20 @@ function E.tick(p,now)
  return completed
 end
 function E.workerStatus(p,now)
- local result={state="empty",due=0,payable=0,nextIn=nil,nextAt=nil,shortfall=0,byId={}}
+ local result={state="empty",due=0,payable=0,nextIn=nil,nextAt=nil,shortfall=0,
+  storageBlocked=false,byId={}}
  local remainingCoins=p.Coins
+ -- Simulate actual sorted payroll grants and caretaker feed consumption without
+ -- altering the live profile. Status and collection must agree at capacity.
+ local inventory=R.copy(p.Inventory)
  local hasWorkers=false
  local minimumShortfall
  for _,id in ipairs(workerIds()) do
   local def=C.Workers[id]
   local w=p.Workers[id]
   local count=w and w.count or 0
-  local item={state="empty",count=count,due=0,payable=0,nextIn=nil,shortfall=0}
+  local item={state="empty",count=count,due=0,payable=0,nextIn=nil,shortfall=0,
+   storageBlocked=false}
   if w and count>0 then
    hasWorkers=true
    local itemShortfall
@@ -134,15 +139,29 @@ function E.workerStatus(p,now)
     if steps>0 then
      local due=steps*cohort.count
      local wagePerStep=def.wage*cohort.count
-     local payableSteps=math.min(steps,math.floor(remainingCoins/wagePerStep))
+     local wageSteps=math.min(steps,math.floor(remainingCoins/wagePerStep))
+     local capacity=storageSteps(inventory,def,cohort.count)
+     local payableSteps=math.min(wageSteps,capacity)
      local payable=payableSteps*cohort.count
      item.due+=due
      item.payable+=payable
      remainingCoins-=def.wage*payable
-     if payableSteps<steps then
+     if capacity<wageSteps then
+      item.storageBlocked=true
+      result.storageBlocked=true
+     end
+     if wageSteps<steps then
       local shortfall=math.max(0,wagePerStep-remainingCoins)
       itemShortfall=math.min(itemShortfall or shortfall,shortfall)
       minimumShortfall=math.min(minimumShortfall or shortfall,shortfall)
+     end
+     for material,amount in pairs(def.grant) do
+      inventory[material]=(inventory[material] or 0)+amount*payable
+     end
+     if id=="Caretaker" and #p.Pets>0 and payable>0 then
+      local fed=math.min(payable,120,inventory.Meat or 0,inventory.Berries or 0)
+      inventory.Meat-=fed
+      inventory.Berries-=fed
      end
     else
      local nextIn=math.max(1,60-elapsed)
