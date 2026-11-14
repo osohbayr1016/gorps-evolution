@@ -50,9 +50,19 @@ end
 function Trade.disconnect(player,emit,force)
  local s=sessions[uid(player)]
  if s and s.settling and not force then return false,"Trade is finalizing" end
+ local incoming=pending[uid(player)]
  pending[uid(player)]=nil
+ if incoming and incoming.sender~=player and incoming.sender.Parent==Players then
+  emit(incoming.sender,player.Name.." declined your trade invitation")
+ end
  for id,invitation in pairs(pending) do
-  if invitation.sender==player then pending[id]=nil end
+  if invitation.sender==player then
+   pending[id]=nil
+   local recipient=invitation.recipient
+   if recipient and recipient~=player and recipient.Parent==Players then
+    emit(recipient,player.Name.." withdrew the trade invitation")
+   end
+  end
  end
  if not s then return true end
  if sessions[uid(s.a)]==s then sessions[uid(s.a)]=nil end
