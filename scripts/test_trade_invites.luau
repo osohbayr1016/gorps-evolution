@@ -118,10 +118,13 @@ equal(action(bob,"Invite",{target="Eve"}),false,"cancel cannot bypass sender coo
 equal(#messages,notified,"cancel and immediate resend never spam recipient")
 now=1049
 equal(action(cara,"Invite",{target="Eve"}),true,"other inviter can invite independently")
-eve.Parent=nil
 equal(Trade.status(eve).pendingFrom,"Cara","recipient can read pending state before leave")
+eve.Parent=nil
+equal(Trade.status(eve).pendingFrom,nil,"disconnected recipient cannot retain invitation")
 cara.Parent=nil
 equal(Trade.status(eve).pendingFrom,nil,"disconnected sender invalidates invitation")
+eve.Parent=players
+cara.Parent=players
 -- Re-enter each action from inside an asynchronous settlement callback to
 -- simulate concurrent RemoteFunction invocations while the trade is pending.
 now=1060
