@@ -140,6 +140,18 @@ contracts={
     'tostring(x.pet.level)',
     'tostring(x.pet.evolved)',
  )) and 'mutated offered creature cannot settle' in Path("scripts/test_trade_rules.luau").read_text(),
+ "explicit hunt report and preflighted storage": all(token in Path("src/shared/Adventure.lua").read_text() for token in (
+    'outcome="storage_full"',
+    'outcome="defeat"',
+    'outcome="victory"',
+    'turns=0',
+ )) and all(token in server for token in (
+    'local won,message,combat=Adventure.hunt(p,enemyLevel)',
+    'if not combat or combat.outcome=="storage_full" then wildCooldown[player]=nil end',
+    'notify:FireClient(player,{combat=combat})',
+ )) and 'function UI:showCombat(result)' in ui
+    and 'if data.combat then ui:showCombat(data.combat) end' in client
+    and Path("scripts/test_adventure_feedback.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
