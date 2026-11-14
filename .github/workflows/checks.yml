@@ -2,6 +2,8 @@ name: Roblox validation
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -11,13 +13,15 @@ jobs:
         run: python3 scripts/verify_docs.py
       - uses: ok-nick/setup-aftman@v0.4.2
       - name: Lint Luau
-        run: selene src scripts/test_worker_payroll.luau scripts/test_onboarding.luau scripts/test_trade_rules.luau scripts/test_trade_receipt_policy.luau scripts/test_trade_audit.luau scripts/test_trade_retention.luau scripts/test_trade_persistence.luau scripts/test_trade_store_adapter.luau scripts/test_trade_settlement.luau scripts/test_creature_rigs.luau scripts/test_session_policy.luau scripts/test_terrain_plan.luau scripts/test_terrain_real_world.luau scripts/export_creatures.luau
+        run: selene src scripts/test_worker_payroll.luau scripts/test_onboarding.luau scripts/test_trade_rules.luau scripts/test_trade_invites.luau scripts/test_trade_receipt_policy.luau scripts/test_trade_audit.luau scripts/test_trade_retention.luau scripts/test_trade_persistence.luau scripts/test_trade_store_adapter.luau scripts/test_trade_settlement.luau scripts/test_creature_rigs.luau scripts/test_session_policy.luau scripts/test_terrain_plan.luau scripts/test_terrain_real_world.luau scripts/export_creatures.luau
       - name: Run worker payroll regressions (headless Luau)
         run: lune run scripts/test_worker_payroll.luau
       - name: Run first-session objective regressions (headless Luau)
         run: lune run scripts/test_onboarding.luau
       - name: Run safe-context trade regressions (headless Luau)
         run: lune run scripts/test_trade_rules.luau
+      - name: Test trade invitation consent and expiry (headless Luau)
+        run: lune run scripts/test_trade_invites.luau
       - name: Fault-inject durable trade receipt state machine (headless Luau)
         run: lune run scripts/test_trade_receipt_policy.luau
       - name: Verify restart-safe trade lifecycle audit (headless Luau)

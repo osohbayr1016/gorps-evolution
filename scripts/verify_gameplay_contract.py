@@ -46,6 +46,16 @@ contracts={
     'accrued work was not reset',
     'Workers are still working - next delivery in '
  )),
+ "wage-safe automatic rejoin": 'local _,resumeStatus=E.collect(p,os.time())' in server
+    and 'resumeStatus.state=="blocked"' in server
+    and 'unfunded rejoin does not erase accrued work' in Path("scripts/test_worker_payroll.luau").read_text(),
+ "expiring rate-limited trade invitations": all(token in trade for token in (
+    'INVITE_TTL=30','INVITE_COOLDOWN=3',
+    'if now-(lastInvite[id] or -100)<INVITE_COOLDOWN then',
+    'if pendingSender(target) then',
+    'local inviter=pendingSender(player);pending[id]=nil',
+    'lastInvite[uid(player)]=nil'
+ )) and Path("scripts/test_trade_invites.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

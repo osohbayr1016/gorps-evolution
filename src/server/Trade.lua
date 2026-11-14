@@ -6,11 +6,27 @@ local TradeRules=require(ReplicatedStorage.Shared.TradeRules)
 local Trade={}
 local sessions={}
 local pending={}
+local lastInvite={}
+local INVITE_TTL=30
+local INVITE_COOLDOWN=3
 local function uid(player) return player.UserId end
+-- Resolve lazily so an expired or disconnected sender can never be joined.
+local function pendingSender(player)
+ local invitation=pending[uid(player)]
+ if not invitation then return nil end
+ if os.clock()>=invitation.expiresAt or invitation.sender.Parent~=Players then
+  pending[uid(player)]=nil
+  return nil
+ end
+ return invitation.sender
+end
 local function other(session,player) return session.a==player and session.b or session.a end
 function Trade.status(player)
  local s=sessions[uid(player)]
- if not s then return {pendingFrom=pending[uid(player)] and pending[uid(player)].Name or nil} end
+ if not s then
+  local inviter=pendingSender(player)
+  return {pendingFrom=inviter and inviter.Name or nil}
+ end
  local partner=other(s,player)
  return {partner=partner.Name, mine=s.offers[uid(player)], theirs=s.offers[uid(partner)],
   acceptedMine=s.accepted[uid(player)]==true,acceptedTheirs=s.accepted[uid(partner)]==true}
@@ -18,7 +34,10 @@ end
 function Trade.disconnect(player,emit)
  local s=sessions[uid(player)]
  pending[uid(player)]=nil
- for id,inviter in pairs(pending) do if inviter==player then pending[id]=nil end end
+ lastInvite[uid(player)]=nil
+ for id,invitation in pairs(pending) do
+  if invitation.sender==player then pending[id]=nil end
+ end
  if not s then return end
  sessions[uid(s.a)]=nil;sessions[uid(s.b)]=nil
  local partner=other(s,player)
@@ -30,10 +49,17 @@ function Trade.action(player,action,payload,get,changed,emit,settle)
   if sessions[id] then return false,"Already trading" end
   local target=Players:FindFirstChild(tostring(payload.target or ""))
   if not target or target==player or sessions[uid(target)] or not get(target) then return false,"Player unavailable" end
-  pending[uid(target)]=player;emit(target,player.Name.." invited you to trade")
+  local now=os.clock()
+  if now-(lastInvite[id] or -100)<INVITE_COOLDOWN then
+   return false,"Wait before sending another invitation"
+  end
+  if pendingSender(target) then return false,"Player already has a trade invitation" end
+  pending[uid(target)]={sender=player,expiresAt=now+INVITE_TTL}
+  lastInvite[id]=now
+  emit(target,player.Name.." invited you to trade (30 seconds)")
   return true,"Trade invitation sent"
  elseif action=="Join" then
-  local inviter=pending[id];pending[id]=nil
+  local inviter=pendingSender(player);pending[id]=nil
   if not inviter or inviter.Parent~=Players or sessions[id] or sessions[uid(inviter)] then return false,"Invitation expired" end
   local s={a=inviter,b=player,offers={},accepted={}}
   sessions[id]=s;sessions[uid(inviter)]=s
