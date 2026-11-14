@@ -225,6 +225,17 @@ contracts={
     'local pending=p.WheelPending',
     '"CLAIM RESERVED REWARD"',
  )) and Path("scripts/test_wheel_reservations.luau").exists(),
+ "leaderboard writes serialize same-user updates": all(token in Path("src/server/Leaderboards.lua").read_text() for token in (
+    'local writers={}',
+    'local BOARD_IDS={"Coins","Wins","Minutes"}',
+    'state.latest=snapshot',
+    'while state.latest do',
+    'writers[key]=nil',
+ )) and all(token in Path("scripts/test_leaderboard_writes.luau").read_text() for token in (
+    'latest Coins survive old write finishing late',
+    'only latest buffered snapshot is flushed',
+    'separate player',
+ )) ,
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

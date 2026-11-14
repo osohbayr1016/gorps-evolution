@@ -11,6 +11,11 @@ local names={}
 local lastRefresh=0
 local initialized=false
 local refreshing=false
+-- Each user's writes may arrive from the five-minute timer and PlayerRemoving
+-- while OrderedDataStore calls yield. Serialize and coalesce them so a late
+-- older callback cannot overwrite a newer snapshot in the same server.
+local writers={}
+local BOARD_IDS={"Coins","Wins","Minutes"}
 local function store(id)
  if studio then return nil end
  if stores[id] then return stores[id] end
@@ -23,14 +28,29 @@ local function store(id)
 end
 function Ranking.write(player,p)
  if studio or not p then return end
- local values={Coins=p.Coins,Wins=p.Wins,Minutes=math.floor(p.Seconds/60)}
- for id,value in pairs(values) do
-  local s=store(id)
-  if s then
-   local ok,err=pcall(function() s:SetAsync(tostring(player.UserId),value) end)
-   if not ok then warn("[Gorps Rankings] Write failed:",id,err) end
+ local key=tostring(player.UserId)
+ -- Snapshot values before any yielded I/O. A later call replaces, rather than
+ -- queues behind, a stale snapshot while the current write is still running.
+ local snapshot={Coins=p.Coins,Wins=p.Wins,Minutes=math.floor(p.Seconds/60)}
+ local state=writers[key]
+ if state then
+  state.latest=snapshot
+  return
+ end
+ state={latest=snapshot}
+ writers[key]=state
+ while state.latest do
+  local values=state.latest
+  state.latest=nil
+  for _,id in ipairs(BOARD_IDS) do
+   local s=store(id)
+   if s then
+    local ok,err=pcall(function() s:SetAsync(key,values[id]) end)
+    if not ok then warn("[Gorps Rankings] Write failed:",id,err) end
+   end
   end
  end
+ writers[key]=nil
 end
 function Ranking.top()
  if studio then return {Coins={},Wins={},Minutes={}} end
