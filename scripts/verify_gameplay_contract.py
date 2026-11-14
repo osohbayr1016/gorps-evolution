@@ -79,6 +79,12 @@ contracts={
  )) and 'Data.accountPlaytime(player)' in server
     and 'p.Seconds+=60' not in data
     and Path("scripts/test_playtime_clock.luau").exists(),
+ "trade cancel cannot bypass invitation throttle": all(token in trade for token in (
+    'function Trade.leave(player,emit)',
+    'Trade.disconnect(player,emit)',
+    'lastInvite[uid(player)]=nil',
+ )) and 'Trade.leave(player,function(who,msg) send(who,msg) end)' in server
+    and 'cancel cannot bypass sender cooldown' in Path("scripts/test_trade_invites.luau").read_text(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
