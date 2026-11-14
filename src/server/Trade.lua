@@ -34,7 +34,6 @@ end
 function Trade.disconnect(player,emit)
  local s=sessions[uid(player)]
  pending[uid(player)]=nil
- lastInvite[uid(player)]=nil
  for id,invitation in pairs(pending) do
   if invitation.sender==player then pending[id]=nil end
  end
@@ -42,6 +41,12 @@ function Trade.disconnect(player,emit)
  sessions[uid(s.a)]=nil;sessions[uid(s.b)]=nil
  local partner=other(s,player)
  if partner.Parent==Players then emit(partner,"Trade cancelled") end
+end
+-- An ordinary Cancel must not reset anti-spam timing. Only a real departure
+-- discards the per-player timestamp and any pending invitations.
+function Trade.leave(player,emit)
+ Trade.disconnect(player,emit)
+ lastInvite[uid(player)]=nil
 end
 function Trade.action(player,action,payload,get,changed,emit,settle)
  local id=uid(player)

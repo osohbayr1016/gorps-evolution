@@ -95,12 +95,21 @@ now=1044
 equal(action(alice,"Invite",{target="Cara"}),true,"sender can invite another player after cooldown")
 equal(Trade.status(bob).pendingFrom,"Alice","first pending recipient remains assigned")
 equal(Trade.status(cara).pendingFrom,"Alice","second pending recipient remains assigned")
-Trade.disconnect(alice,emit)
+alice.Parent=nil
+Trade.leave(alice,emit)
 equal(Trade.status(bob).pendingFrom,nil,"disconnect invalidates first pending invite")
 equal(Trade.status(cara).pendingFrom,nil,"disconnect invalidates second pending invite")
 equal(action(bob,"Join"),false,"recipient cannot join disconnected inviter")
 equal(action(cara,"Join"),false,"second recipient cannot join disconnected inviter")
+-- Cancel only withdraws pending invites; it cannot erase anti-spam history.
 now=1045
+equal(action(bob,"Invite",{target="Eve"}),true,"invite before cancellation succeeds")
+equal(action(bob,"Cancel"),true,"cancelling outgoing invite succeeds")
+local notified=#messages
+now=1045.25
+equal(action(bob,"Invite",{target="Eve"}),false,"cancel cannot bypass sender cooldown")
+equal(#messages,notified,"cancel and immediate resend never spam recipient")
+now=1049
 equal(action(cara,"Invite",{target="Eve"}),true,"other inviter can invite independently")
 eve.Parent=nil
 equal(Trade.status(eve).pendingFrom,"Cara","recipient can read pending state before leave")
