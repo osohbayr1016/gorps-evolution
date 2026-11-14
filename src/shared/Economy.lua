@@ -230,33 +230,69 @@ function E.claim(p,id)
  p.Claimed[id]=true;R.creditCoins(p,q.reward)
  return true,"Quest reward: "..q.reward.." coins"
 end
-function E.wheel(p,now,roll)
- if now-p.LastWheel<86400 then return false,"Wheel is on cooldown" end
- if type(roll)~="number" or roll<1 or roll>4 or roll%1~=0 then return false,"Invalid roll" end
- if roll==2 and not R.canAdd(p,{Meat=6,Berries=8}) then
-  return false,"Backpack full: free space before claiming food"
- end
- if roll==3 and not R.canAdd(p,{Crystal=2}) then
-  return false,"Backpack full: free space before claiming crystals"
- end
- local canAwardPet=#p.Pets<R.capacity(p) and R.canCreatePet(p)
- if (roll==1 and not R.canCreditCoins(p,100))
-  or (roll==4 and not canAwardPet and not R.canCreditCoins(p,250)) then
-  return false,"Coin wallet full: spend coins before spinning again"
- end
- p.LastWheel=now
- if roll==1 then R.creditCoins(p,100)
- elseif roll==2 then R.add(p,{Meat=6,Berries=8})
- elseif roll==3 then R.add(p,{Crystal=2})
- else
-  if canAwardPet then
-   local species=C.SpeciesOrder[math.random(1,#C.SpeciesOrder)]
-   R.addPet(p,species)
-   return true,"Daily wheel pet: "..species
+-- Freeze an outcome at draw time so a full inventory cannot be used to
+-- reject unwanted rolls repeatedly. Unclaimed prizes survive profile reloads.
+local function wheelDescription(reserved)
+ if reserved.roll==1 then return "100 coins" end
+ if reserved.roll==2 then return "6 meat and 8 berries" end
+ if reserved.roll==3 then return "2 crystals" end
+ if reserved.fallback then return "250 coins" end
+ return reserved.species.." creature"
+end
+local function claimReservedWheel(p,reserved)
+ if reserved.roll==1 then
+  if not R.canCreditCoins(p,100) then
+   return false,"Coin wallet full: spend coins to claim 100 coins"
+  end
+  R.creditCoins(p,100)
+ elseif reserved.roll==2 then
+  if not R.canAdd(p,{Meat=6,Berries=8}) then
+   return false,"Backpack full: free space to claim your food bundle"
+  end
+  R.add(p,{Meat=6,Berries=8})
+ elseif reserved.roll==3 then
+  if not R.canAdd(p,{Crystal=2}) then
+   return false,"Backpack full: free space to claim your crystals"
+  end
+  R.add(p,{Crystal=2})
+ elseif reserved.fallback then
+  if not R.canCreditCoins(p,250) then
+   return false,"Coin wallet full: spend coins to claim 250 coins"
   end
   R.creditCoins(p,250)
+ else
+  if #p.Pets>=R.capacity(p) then
+   return false,"Ranch full: expand before claiming your creature"
+  end
+  local ok,message=R.addPet(p,reserved.species)
+  if not ok then return false,message end
  end
- return true,({"100 coins!","Food bundle!","2 crystals!","250 coins!"})[roll]
+ p.WheelPending=nil
+ return true,"Daily reward claimed: "..wheelDescription(reserved)
+end
+function E.wheel(p,now,roll)
+ if p.WheelPending then
+  -- Ignore the caller's new random roll. Only the original pending prize
+  -- may be claimed, even after days offline or a profile migration.
+  return claimReservedWheel(p,p.WheelPending)
+ end
+ if now-p.LastWheel<86400 then return false,"Wheel is on cooldown" end
+ if type(roll)~="number" or roll<1 or roll>4 or roll%1~=0 then return false,"Invalid roll" end
+ local reserved={roll=roll}
+ if roll==4 then
+  if #p.Pets<R.capacity(p) and R.canCreatePet(p) then
+   reserved.species=C.SpeciesOrder[math.random(1,#C.SpeciesOrder)]
+  else
+   reserved.fallback=true
+  end
+ end
+ p.LastWheel=now
+ p.WheelPending=reserved
+ local claimed,message=claimReservedWheel(p,reserved)
+ if claimed then return true,message end
+ -- This is a state change, not a failed roll: the reserved outcome and
+ -- spin timestamp must be persisted by the normal successful action path.
+ return true,"Daily reward reserved ("..wheelDescription(reserved).."): "..message
 end
 function E.tradeUp(p,rarity,species)
  local tier=table.find(C.Rarities,rarity)

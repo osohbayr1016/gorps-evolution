@@ -161,7 +161,7 @@ contracts={
  )) and all(token in Path("src/shared/Economy.lua").read_text() for token in (
     'Coin wallet full: spend coins before selling',
     'Coin wallet full: spend coins before claiming',
-    'local canAwardPet=#p.Pets<R.capacity(p) and R.canCreatePet(p)',
+    'if #p.Pets<R.capacity(p) and R.canCreatePet(p) then',
     'if not R.canCreatePet(p) then return false',
  )) and 'Rules.creditCoins(profile,coins)' in Path("src/shared/Adventure.lua").read_text()
     and server.count('if not R.canCreatePet(p) then return false')>=2
@@ -211,6 +211,20 @@ contracts={
     'decline clears sender\'s waiting screen',
     'declined invitation cannot be joined',
  )),
+ "wheel locks original outcome across reconnect": all(token in rules for token in (
+    'local reserved=saved.WheelPending',
+    'p.WheelPending={roll=reserved.roll}',
+    'p.WheelPending={roll=4,fallback=true}',
+ )) and all(token in Path("src/shared/Economy.lua").read_text() for token in (
+    'local function claimReservedWheel(p,reserved)',
+    'if p.WheelPending then',
+    'p.LastWheel=now',
+    'p.WheelPending=reserved',
+    'return true,"Daily reward reserved ("',
+ )) and all(token in pages for token in (
+    'local pending=p.WheelPending',
+    '"CLAIM RESERVED REWARD"',
+ )) and Path("scripts/test_wheel_reservations.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

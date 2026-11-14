@@ -59,12 +59,14 @@ equal(quest.Claimed.Gatherer,true,"successful claim marks completion once")
 
 local spin=profile()
 spin.Coins=R.MAX_COINS
-equal(E.wheel(spin,now,1),false,"full wallet blocks coin wheel outcome")
-equal(spin.LastWheel,0,"blocked coin spin does not consume daily entitlement")
+equal(E.wheel(spin,now,1),true,"full wallet reserves coin wheel outcome")
+equal(spin.LastWheel,now,"blocked coin prize locks one daily draw")
+equal(spin.WheelPending.roll,1,"original coin roll is preserved")
 spin.Coins=R.MAX_COINS-100
-equal(E.wheel(spin,now,1),true,"exact wallet space permits coin wheel outcome")
+equal(E.wheel(spin,now,4),true,"reserved coin prize claims without rerolling")
 equal(spin.Coins,R.MAX_COINS,"coin wheel respects persisted cap")
-equal(spin.LastWheel,now,"successful wheel records one claim")
+equal(spin.WheelPending,nil,"claim clears reserved coin prize")
+equal(spin.LastWheel,now,"successful wheel keeps initial draw timestamp")
 
 local level=profile()
 level.Coins=R.MAX_COINS
@@ -96,15 +98,20 @@ local wheelMessage
 local wheelOK
 wheelOK,wheelMessage=E.wheel(exhausted,now,4)
 equal(wheelOK,true,"pet wheel fallback succeeds for exhausted pet IDs")
-equal(wheelMessage,"250 coins!","exhausted pet ID wheel uses truthful coin fallback")
+equal(wheelMessage,"Daily reward claimed: 250 coins","exhausted pet ID wheel uses truthful coin fallback")
 equal(#exhausted.Pets,petsBefore,"fallback does not create an unaddressable pet")
 equal(exhausted.Coins,coinsBefore+250,"fallback pays full alternative coins")
 
 local fullWheel=profile()
 fullWheel.Coins=R.MAX_COINS
 fullWheel.NextId=R.MAX_PET_ID+1
-equal(E.wheel(fullWheel,now,4),false,"full wallet and exhausted pets block wheel without loss")
-equal(fullWheel.LastWheel,0,"failed fallback keeps wheel available")
+equal(E.wheel(fullWheel,now,4),true,"full wallet reserves the fixed 250-coin fallback")
+equal(fullWheel.LastWheel,now,"blocked fallback locks the daily draw")
+equal(fullWheel.WheelPending.fallback,true,"wheel reserves coin fallback instead of rerolling")
+fullWheel.Coins=R.MAX_COINS-250
+equal(E.wheel(fullWheel,now,1),true,"pending fallback claims exactly 250 after freeing wallet")
+equal(fullWheel.Coins,R.MAX_COINS,"pending fallback credits exact safe coins")
+equal(fullWheel.WheelPending,nil,"completed fallback clears reservation")
 local lastID=profile()
 lastID.NextId=R.MAX_PET_ID
 equal(R.addPet(lastID,"Shade"),true,"final in-range ID can be minted")

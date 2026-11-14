@@ -41,6 +41,19 @@ function R.load(saved,now)
  p.Level=math.clamp(p.Level,1,100)
  p.CraftLevel=math.clamp(p.CraftLevel,1,20)
  p.EggInfusion=math.clamp(p.EggInfusion,0,3)
+ -- A reserved daily wheel result is part of the player's owned entitlement:
+ -- never redraw it on reconnect when inventory/wallet was full.
+ local reserved=saved.WheelPending
+ if type(reserved)=="table" and valid(reserved.roll,4) and reserved.roll>=1 then
+  if reserved.roll~=4 then
+   p.WheelPending={roll=reserved.roll}
+  elseif reserved.fallback==true and reserved.species==nil then
+   p.WheelPending={roll=4,fallback=true}
+  elseif type(reserved.species)=="string" and C.Species[reserved.species]
+   and reserved.fallback~=true then
+   p.WheelPending={roll=4,species=reserved.species}
+  end
+ end
  p.NextId=math.max(2,p.NextId)
  for id in pairs(C.Resources) do
   if type(saved.Inventory)=="table" and valid(saved.Inventory[id]) then p.Inventory[id]=saved.Inventory[id] end
