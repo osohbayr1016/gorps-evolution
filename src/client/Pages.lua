@@ -1,9 +1,12 @@
 local Config=require(game:GetService("ReplicatedStorage").Shared.Config)
 local Rules=require(game:GetService("ReplicatedStorage").Shared.Rules)
 local Onboarding=require(game:GetService("ReplicatedStorage").Shared.Onboarding)
+local CreatureView=require(game:GetService("ReplicatedStorage").Shared.CreatureView)
 local W=require(script.Parent.Widgets)
 local C=W.colors
 local Pages={}
+local creatureSort="Acquired"
+local creatureRole="All"
 
 local function keys(source)
  local ids={}
@@ -82,7 +85,17 @@ end
 local function pets(parent,p,send)
  heading(parent,"YOUR TEAM",#p.Pets.." / "..math.min(40,3+(p.BaseLevel-1)*2)..
   " creature slots filled. Only your active companion follows you.")
- for _,pet in ipairs(p.Pets) do
+ local visible=CreatureView.list(p.Pets,creatureSort,creatureRole)
+ action(parent,"SORT BY  ·  "..string.upper(creatureSort).."  (TAP TO CHANGE)",function()
+  creatureSort=CreatureView.nextSort(creatureSort)
+  send("__refreshPage",{})
+ end,true,C.blue)
+ action(parent,"ROLE FILTER  ·  "..string.upper(creatureRole).."  (TAP TO CHANGE)",function()
+  creatureRole=CreatureView.nextRole(creatureRole)
+  send("__refreshPage",{})
+ end,true,C.gold)
+ descriptor(parent,"Showing "..#visible.." of "..#p.Pets.." creatures. Filtering never changes your saved team.")
+ for _,pet in ipairs(visible) do
   local def=Config.Species[pet.species]
   if def then
    local active=pet.id==p.ActiveId
