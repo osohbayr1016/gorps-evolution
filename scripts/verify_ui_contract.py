@@ -62,6 +62,19 @@ checks={
  "correct ranking function binding":'renderRankings(parent,rankings,route)' in pages,
  "hatch result and equip":'function UI:showHatch(pet)' in ui
     and 'self.send("SelectPet",{id=pet.id})' in ui,
+ "trade invite draft and focus survive asynchronous UI refresh": all(token in pages for token in (
+    'local tradeInviteDraft=""',
+    'box.PlaceholderText="Roblox username";box.Text=tradeInviteDraft',
+    'box:GetPropertyChangedSignal("Text"):Connect(function()',
+    'tradeInviteDraft=box.Text',
+ )) and all(token in ui for token in (
+    'UserInputService:GetFocusedTextBox()',
+    'local restoreTextFocus=focused~=nil and focused:IsDescendantOf(self.page)',
+    'self.page:FindFirstChild(focusedName,true)',
+    'replacement:CaptureFocus()',
+    'replacement.CursorPosition=math.min(textCursor,#replacement.Text+1)',
+    'replacement.SelectionStart=math.min(textSelection,#replacement.Text+1)',
+ )),
  "gameplay controls preserved":all(k in pages for k in (
     '"HatchEgg"','"Feed"','"Evolve"','"Expand"','"Craft"',
     '"Buy"','"Sell"','"Hire"','"Claim"','"OfferPet"','"Accept"'

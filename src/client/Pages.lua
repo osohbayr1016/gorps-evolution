@@ -7,6 +7,9 @@ local C=W.colors
 local Pages={}
 local creatureSort="Acquired"
 local creatureRole="All"
+-- The menu rebuilds after profile pushes: keep unsent invite text outside
+-- transient TextBox instances so live multiplayer updates cannot erase it.
+local tradeInviteDraft=""
 
 local function keys(source)
  local ids={}
@@ -362,9 +365,12 @@ local function trade(parent,p,tradeState,send)
    box.Name="PlayerName";box.Size=UDim2.new(1,-2,0,44)
    box.BackgroundColor3=C.deep
    box.TextColor3=C.light;box.PlaceholderColor3=C.muted
-   box.PlaceholderText="Roblox username";box.Text=""
+   box.PlaceholderText="Roblox username";box.Text=tradeInviteDraft
    box.Font=Enum.Font.GothamMedium;box.TextSize=15
    box.ClearTextOnFocus=false;box.Parent=card;W.order(card,box)
+   box:GetPropertyChangedSignal("Text"):Connect(function()
+    tradeInviteDraft=box.Text
+   end)
    W.round(box,10)
    action(card,"SEND TRADE INVITE",function() send("Invite",{target=box.Text}) end,true,C.gold)
   end
