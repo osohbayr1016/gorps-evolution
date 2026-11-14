@@ -293,6 +293,20 @@ local function workers(parent,p,send)
 end
 local function quests(parent,p,send)
  heading(parent,"MISSIONS","Play your way and claim rewards when goals are complete.")
+ local ready,total=0,0
+ for id,q in pairs(Config.Quests) do
+  if not (p.Claimed and p.Claimed[id]) and (p.Quests and p.Quests[id] or 0)>=q.goal then
+   ready+=1;total+=q.reward
+  end
+ end
+ if ready>=2 then
+  local overview=W.card(parent,"REWARDS READY",
+   ready.." completed missions  ·  ◆ "..fmt(total).." total")
+  local fits=p.Coins+total<=Rules.MAX_COINS
+  action(overview,fits and "CLAIM ALL  ·  ◆ "..fmt(total) or "COIN WALLET TOO FULL",
+   function() send("ClaimAll",{}) end,fits,C.gold)
+  if not fits then descriptor(overview,"Spend coins first or claim individual missions.") end
+ end
  local labels={Gatherer="Collect materials",Provider="Feed your Gorps",
   Maker="Craft equipment",Employer="Hire a ranch worker",Explorer="Hunt wild creatures"}
  local objective=Onboarding.resolve(p)

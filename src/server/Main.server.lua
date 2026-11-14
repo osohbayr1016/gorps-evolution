@@ -146,6 +146,7 @@ local function act(player,action,payload)
   end
   return false,"Workers are still working - next delivery in "..math.ceil(before.nextIn or 60).."s"
  elseif action=="Claim" then return E.claim(p,payload.id)
+ elseif action=="ClaimAll" then return E.claimAll(p)
  elseif action=="Wheel" then return E.wheel(p,os.time(),math.random(1,4))
  elseif action=="TradeUp" then return E.tradeUp(p,payload.rarity,C.SpeciesOrder[math.random(1,#C.SpeciesOrder)])
  elseif action=="Hatch" then
@@ -239,9 +240,13 @@ local function initializePlayer(player)
    if starting[player]==token and player.Parent==Players then movement(player) end
   end
   if starting[player]==token and player.Parent==Players then
-   send(player,resumeStatus.state=="blocked"
-    and "Welcome back! Crew delivery held until wages are funded."
-    or "Welcome to Chaos Galaxy!")
+   local welcome="Welcome to Chaos Galaxy!"
+   if resumeStatus.state=="blocked" then
+    welcome=resumeStatus.storageBlocked
+     and "Welcome back! Crew delivery held until backpack space is available."
+     or "Welcome back! Crew delivery held until wages are funded."
+   end
+   send(player,welcome)
    print("[Gorps Server] Player ready:",player.UserId)
   end
  end)
