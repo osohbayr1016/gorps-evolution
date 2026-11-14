@@ -121,7 +121,7 @@ function E.workerStatus(p,now)
  local remainingCoins=p.Coins
  -- Simulate actual sorted payroll grants and caretaker feed consumption without
  -- altering the live profile. Status and collection must agree at capacity.
- local inventory=R.copy(p.Inventory)
+ local inventory=R.copy(p.Inventory or {})
  local hasWorkers=false
  local minimumShortfall
  for _,id in ipairs(workerIds()) do
@@ -158,7 +158,7 @@ function E.workerStatus(p,now)
      for material,amount in pairs(def.grant) do
       inventory[material]=(inventory[material] or 0)+amount*payable
      end
-     if id=="Caretaker" and #p.Pets>0 and payable>0 then
+     if id=="Caretaker" and type(p.Pets)=="table" and #p.Pets>0 and payable>0 then
       local fed=math.min(payable,120,inventory.Meat or 0,inventory.Berries or 0)
       inventory.Meat-=fed
       inventory.Berries-=fed
