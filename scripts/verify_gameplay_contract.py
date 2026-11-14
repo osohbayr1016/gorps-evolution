@@ -161,7 +161,7 @@ contracts={
  )) and all(token in Path("src/shared/Economy.lua").read_text() for token in (
     'Coin wallet full: spend coins before selling',
     'Coin wallet full: spend coins before claiming',
-    'local canAwardPet=#p.Pets<R.capacity(p) and R.canCreatePet(p)',
+    'if #p.Pets<R.capacity(p) and R.canCreatePet(p) then',
     'if not R.canCreatePet(p) then return false',
  )) and 'Rules.creditCoins(profile,coins)' in Path("src/shared/Adventure.lua").read_text()
     and server.count('if not R.canCreatePet(p) then return false')>=2
