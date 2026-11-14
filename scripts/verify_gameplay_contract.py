@@ -105,6 +105,18 @@ contracts={
     'if tradeState.finalizing then',
     'not tradeState.finalizing',
  )) and 'concurrent double accept denied during finalization' in Path("scripts/test_trade_invites.luau").read_text(),
+ "lossless capacity preflight": all(token in rules for token in (
+    'function R.canAdd(p,goods)',
+    'Backpack full: sell or spend materials before harvesting',
+ )) and all(token in Path("src/shared/Economy.lua").read_text() for token in (
+    'not R.canAdd(p,recipe.grant)',
+    'not R.canAdd(p,item.grant)',
+    'local capacity=storageSteps(p.Inventory,def,cohort.count)',
+    'storageBlocked=false',
+ )) and 'not Rules.canAdd(profile,{Meat=meat})' in Path("src/shared/Adventure.lua").read_text()
+    and 'before.storageBlocked' in server
+    and 'status.storageBlocked' in pages
+    and Path("scripts/test_reward_capacity.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

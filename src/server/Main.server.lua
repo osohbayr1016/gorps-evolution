@@ -126,6 +126,9 @@ local function act(player,action,payload)
   if amount>0 then return true,"Workers produced "..amount.." batches" end
   if before.state=="empty" then return false,"Hire a ranch worker to begin production" end
   if before.state=="blocked" then
+   if before.storageBlocked then
+    return false,"Delivery held: make backpack space; accrued work was not reset"
+   end
    return false,"Delivery held: earn ◆ "..before.shortfall.." more; accrued work was not reset"
   end
   return false,"Workers are still working - next delivery in "..math.ceil(before.nextIn or 60).."s"

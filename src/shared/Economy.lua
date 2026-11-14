@@ -5,6 +5,7 @@ function E.craft(p,id)
  local recipe=C.Recipes[id]
  if not recipe then return false,"Unknown recipe" end
  if p.CraftLevel<recipe.level then return false,"Crafting level too low" end
+ if not R.canAdd(p,recipe.grant) then return false,"Inventory full: cannot craft without losing items" end
  if not R.spend(p,recipe.cost) then return false,"Missing materials" end
  R.add(p,recipe.grant)
  p.CraftXP+=25
@@ -18,6 +19,7 @@ function E.buy(p,id)
  local item=C.Shop[id]
  if not item then return false,"Unknown item" end
  if p.Coins<item.price then return false,"Not enough coins" end
+ if not R.canAdd(p,item.grant) then return false,"Inventory full: purchase would lose items" end
  p.Coins-=item.price;R.add(p,item.grant)
  return true,"Purchased "..id
 end
@@ -50,6 +52,15 @@ local function readCohorts(w,now)
  if w.count>0 then return {{count=w.count,last=w.last or now}} end
  return {}
 end
+-- A paid delivery must fit in the destination inventory in full.
+local function storageSteps(inventory,worker,count)
+ local capacity=60
+ for id,amount in pairs(worker.grant) do
+  local available=1000000-(inventory[id] or 0)
+  capacity=math.min(capacity,math.max(0,math.floor(available/(amount*count))))
+ end
+ return capacity
+end
 function E.hire(p,id,now)
  local worker=C.Workers[id]
  if not worker then return false,"Unknown worker" end
@@ -73,7 +84,9 @@ function E.tick(p,now)
     local elapsed=math.max(0,now-cohort.last)
     local steps=math.min(60,math.floor(elapsed/60))
     if steps>0 then
-     local payable=math.min(steps,math.floor(p.Coins/(def.wage*cohort.count)))
+     local wages=math.floor(p.Coins/(def.wage*cohort.count))
+     local capacity=storageSteps(p.Inventory,def,cohort.count)
+     local payable=math.min(steps,wages,capacity)
      if payable>0 then
       local batches=payable*cohort.count
       p.Coins-=def.wage*batches
@@ -88,9 +101,12 @@ function E.tick(p,now)
        end
       end
      end
-     -- Paid collections retain this cohort's sub-minute work. Unpaid whole
-     -- minutes (including over-cap work) expire without becoming wage debt.
-     if payable>0 then cohort.last=now-(elapsed%60)
+     -- Inventory congestion is not permission to charge wages for lost goods.
+     -- Hold storage-blocked accrued minutes up to the existing 60-minute cap.
+     -- Unfunded wage minutes keep their existing no-debt expiration policy.
+     if capacity<math.min(steps,wages) then
+      cohort.last=math.max(cohort.last+payable*60,now-3600-(elapsed%60))
+     elseif payable>0 then cohort.last=now-(elapsed%60)
      else cohort.last=now end
     end
    end
@@ -100,15 +116,20 @@ function E.tick(p,now)
  return completed
 end
 function E.workerStatus(p,now)
- local result={state="empty",due=0,payable=0,nextIn=nil,nextAt=nil,shortfall=0,byId={}}
+ local result={state="empty",due=0,payable=0,nextIn=nil,nextAt=nil,shortfall=0,
+  storageBlocked=false,byId={}}
  local remainingCoins=p.Coins
+ -- Simulate actual sorted payroll grants and caretaker feed consumption without
+ -- altering the live profile. Status and collection must agree at capacity.
+ local inventory=R.copy(p.Inventory or {})
  local hasWorkers=false
  local minimumShortfall
  for _,id in ipairs(workerIds()) do
   local def=C.Workers[id]
   local w=p.Workers[id]
   local count=w and w.count or 0
-  local item={state="empty",count=count,due=0,payable=0,nextIn=nil,shortfall=0}
+  local item={state="empty",count=count,due=0,payable=0,nextIn=nil,shortfall=0,
+   storageBlocked=false}
   if w and count>0 then
    hasWorkers=true
    local itemShortfall
@@ -118,15 +139,29 @@ function E.workerStatus(p,now)
     if steps>0 then
      local due=steps*cohort.count
      local wagePerStep=def.wage*cohort.count
-     local payableSteps=math.min(steps,math.floor(remainingCoins/wagePerStep))
+     local wageSteps=math.min(steps,math.floor(remainingCoins/wagePerStep))
+     local capacity=storageSteps(inventory,def,cohort.count)
+     local payableSteps=math.min(wageSteps,capacity)
      local payable=payableSteps*cohort.count
      item.due+=due
      item.payable+=payable
      remainingCoins-=def.wage*payable
-     if payableSteps<steps then
+     if capacity<wageSteps then
+      item.storageBlocked=true
+      result.storageBlocked=true
+     end
+     if wageSteps<steps then
       local shortfall=math.max(0,wagePerStep-remainingCoins)
       itemShortfall=math.min(itemShortfall or shortfall,shortfall)
       minimumShortfall=math.min(minimumShortfall or shortfall,shortfall)
+     end
+     for material,amount in pairs(def.grant) do
+      inventory[material]=(inventory[material] or 0)+amount*payable
+     end
+     if id=="Caretaker" and type(p.Pets)=="table" and #p.Pets>0 and payable>0 then
+      local fed=math.min(payable,120,inventory.Meat or 0,inventory.Berries or 0)
+      inventory.Meat-=fed
+      inventory.Berries-=fed
      end
     else
      local nextIn=math.max(1,60-elapsed)
@@ -170,6 +205,12 @@ end
 function E.wheel(p,now,roll)
  if now-p.LastWheel<86400 then return false,"Wheel is on cooldown" end
  if type(roll)~="number" or roll<1 or roll>4 or roll%1~=0 then return false,"Invalid roll" end
+ if roll==2 and not R.canAdd(p,{Meat=6,Berries=8}) then
+  return false,"Backpack full: free space before claiming food"
+ end
+ if roll==3 and not R.canAdd(p,{Crystal=2}) then
+  return false,"Backpack full: free space before claiming crystals"
+ end
  p.LastWheel=now
  if roll==1 then p.Coins+=100
  elseif roll==2 then R.add(p,{Meat=6,Berries=8})

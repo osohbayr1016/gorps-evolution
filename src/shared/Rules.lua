@@ -118,6 +118,21 @@ function R.spend(p,cost)
  end
  return true
 end
+-- Exact-grant preflight for purchases, crafting, hunting and harvesting.
+-- Costs must not be consumed when a capped inventory would truncate rewards.
+function R.canAdd(p,goods)
+ if type(goods)~="table" then return false end
+ for id,n in pairs(goods) do
+  if type(id)~="string" or not valid(n)
+   or (not C.Resources[id] and not C.Recipes[id] and id~="DecorationLamp") then
+   return false
+  end
+  local container=C.Resources[id] and p.Inventory or p.Items
+  local current=container[id] or 0
+  if not valid(current) or current>1000000-n then return false end
+ end
+ return true
+end
 function R.add(p,goods)
  for id,n in pairs(goods) do
   local container=C.Resources[id] and p.Inventory or p.Items
@@ -167,6 +182,9 @@ function R.gather(p,id)
  if role=="Support" and id=="Bush" then extra=1 end
  if (role=="Assassin" or role=="Ranged" or role=="Tank") and id=="Wild" then extra=2 end
  local amount=node[2]+extra
+ if not R.canAdd(p,{[node[1]]=amount}) then
+  return false,"Backpack full: sell or spend materials before harvesting"
+ end
  R.add(p,{[node[1]]=amount});p.Coins+=id=="Wild" and 8 or 2;R.xp(p,5)
  R.quest(p,"Gatherer",amount)
  if id=="Wild" then R.quest(p,"Explorer",1) end
