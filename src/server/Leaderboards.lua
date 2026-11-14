@@ -28,11 +28,14 @@ function Ranking.write(player,p)
   local s=store(id)
   if s then
    local ok,err=pcall(function() s:SetAsync(tostring(player.UserId),value) end)
-   if notfunction Ranking.top()
+   if not ok then warn("[Gorps Rankings] Write failed:",id,err) end
+  end
+ end
+end
+function Ranking.top()
  if studio then return {Coins={},Wins={},Minutes={}} end
  local now=os.time()
- -- GetSortedAsync and user-name lookups yield. Return the last safe snapshot
- -- to concurrent readers instead of issuing duplicate OrderedDataStore queries.
+ -- OrderedDataStore queries yield; concurrent calls use a safe stale snapshot.
  if refreshing or (initialized and now-lastRefresh<180) then return cache end
  refreshing=true
  local ok,entriesOrError=pcall(function()
@@ -50,7 +53,7 @@ function Ranking.write(player,p)
        if not name then
         local idNumber=tonumber(value.key)
         local success,found=pcall(function()
-         if not idNumber then error("Invalid user ID in ordered leaderboard") end
+         if not idNumber then error("Invalid ordered leaderboard user ID") end
          return Players:GetNameFromUserIdAsync(idNumber)
         end)
         name=success and found or ("User "..value.key)
@@ -78,13 +81,6 @@ function Ranking.write(player,p)
   return cache
  end
  cache=entriesOrError
- return cache
-end
-   end
-  end
- end
- cache=entries
- lastRefresh=os.time()
  return cache
 end
 function Ranking.start(Data)
