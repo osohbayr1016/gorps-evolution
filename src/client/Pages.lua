@@ -105,7 +105,8 @@ local function pets(parent,p,send)
    local header=Instance.new("TextLabel")
    header.Name="PetName";header.BackgroundTransparency=1
    header.Position=UDim2.fromOffset(120,5);header.Size=UDim2.new(1,-124,0,33)
-   header.Text=pet.species.."  "..(active and "✓" or "")
+   header.Text=pet.species.."  "..(active and "✓" or "")..
+    (pet.favorite==true and "  ★" or "")
    header.TextXAlignment=Enum.TextXAlignment.Left;header.Font=Enum.Font.GothamBold
    header.TextSize=21;header.TextColor3=C.light;header.Parent=row
    local rarity=Instance.new("TextLabel")
@@ -127,6 +128,8 @@ local function pets(parent,p,send)
    if not active then
     action(card,"EQUIP AS COMPANION",function() send("SelectPet",{id=pet.id}) end,true,C.gold)
    end
+   action(card,pet.favorite==true and "REMOVE FAVORITE PROTECTION" or "MARK AS FAVORITE",
+    function() send("ToggleFavorite",{id=pet.id}) end,true,C.blue)
    local hasFood=(p.Inventory.Meat or 0)>0 and (p.Inventory.Berries or 0)>0
    action(card,hasFood and ((active and "FEED & WATCH" or "FEED").."  ·  1 MEAT + 1 BERRY") or "NEED MEAT + BERRIES TO FEED",
     function() send("Feed",{id=pet.id}) end,hasFood,C.mint)
@@ -331,7 +334,7 @@ local function trade(parent,p,tradeState,send)
    end
   end
   for _,pet in ipairs(p.Pets) do
-   if pet.id~=p.ActiveId then
+   if pet.id~=p.ActiveId and pet.favorite~=true then
     action(parent,"OFFER "..pet.species.." #"..pet.id,
      function() send("OfferPet",{id=pet.id}) end,not tradeState.finalizing,C.blue)
    end
