@@ -124,6 +124,7 @@ local function act(player,action,payload)
  elseif action=="Craft" then return E.craft(p,payload.id)
  elseif action=="Buy" then return E.buy(p,payload.id)
  elseif action=="Sell" then return E.sell(p,payload.id,payload.amount)
+ elseif action=="SellMax" then return E.sellMax(p,payload.id)
  elseif action=="Hire" then return E.hire(p,payload.id,os.time())
  elseif action=="Collect" then
   local now=os.time()
