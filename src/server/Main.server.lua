@@ -15,6 +15,12 @@ local cooldown={}
 local stateCooldown={}
 local statusCooldown={}
 local wildCooldown={}
+local snapshotSerial={}
+local function nextSnapshotSerial(player)
+ local nextValue=(snapshotSerial[player] or 0)+1
+ snapshotSerial[player]=nextValue
+ return nextValue
+end
 local TRADE_OPS={Invite=true,Join=true,Cancel=true,OfferMaterial=true,OfferPet=true,Accept=true}
 local function tradeState(player)
  local state=Trade.status(player)
@@ -30,7 +36,8 @@ end
 local function send(player,message)
  local p=Data.get(player)
  if p and player.Parent==Players then
-  notify:FireClient(player,{profile=publicProfile(p),trade=tradeState(player),message=message})
+  notify:FireClient(player,{sequence=nextSnapshotSerial(player),
+   profile=publicProfile(p),trade=tradeState(player),message=message})
  end
 end
 local function changed(player,message,visual)
@@ -186,7 +193,8 @@ invoke.OnServerInvoke=function(player,action,payload)
   end
   if action=="SelectPet" or action=="Evolve" then movement(player) end
  end
- return {ok=ok,message=message,profile=publicProfile(Data.get(player)),trade=tradeState(player),
+ return {ok=ok,message=message,sequence=nextSnapshotSerial(player),
+  profile=publicProfile(Data.get(player)),trade=tradeState(player),
   rankings=action=="Rankings" and rankings or nil,
   hatch=ok and action=="HatchEgg" and rankings or nil}
 end
@@ -252,6 +260,7 @@ Players.PlayerRemoving:Connect(function(player)
  stateCooldown[player]=nil
  statusCooldown[player]=nil
  wildCooldown[player]=nil
+ snapshotSerial[player]=nil
 end)
 
 
