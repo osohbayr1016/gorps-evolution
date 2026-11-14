@@ -184,13 +184,21 @@ contracts={
         in Path("src/shared/CreatureView.lua").read_text()
     and Path("scripts/test_pet_favorites.luau").exists(),
  "bounded SellMax is authoritative and visible": all(token in Path("src/shared/Economy.lua").read_text() for token in (
-    'function E.sellMax(p,id)',
+    'function E.sellMax(p,id,expectedAmount)',
     'local walletRoom=math.max(0,R.MAX_COINS-p.Coins)',
+    'if expectedAmount~=nil and expectedAmount~=count then',
     'return sellAmount(p,id,count)',
- )) and 'elseif action=="SellMax" then return E.sellMax(p,payload.id)' in server
-    and 'send("SellMax",{id=id})' in pages
-    and 'maximum=math.min(count,math.floor(headroom/value))' in pages
-    and Path("scripts/test_sell_max.luau").exists(),
+ )) and all(token in server for token in (
+    'elseif action=="SellMax" then',
+    'type(payload.expectedAmount)~="number"',
+    'return E.sellMax(p,payload.id,payload.expectedAmount)',
+ )) and all(token in pages for token in (
+    'maximum=math.min(count,math.floor(headroom/value))',
+    'local bulkSaleReview=nil',
+    '"CONFIRM SELL MAX',
+    'send("SellMax",{id=id,expectedAmount=maximum})',
+    'bulkSaleReview=nil',
+ )) and 'stale wallet preview does not remove materials' in Path("scripts/test_sell_max.luau").read_text(),
  "ordered client snapshots and independent visual events": all(token in server for token in (
     'local snapshotSerial={}',
     'local function nextSnapshotSerial(player)',
