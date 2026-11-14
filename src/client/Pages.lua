@@ -294,32 +294,41 @@ local function trade(parent,p,tradeState,send)
   textRow(offer,"Them: "..offerText(tradeState.theirs))
   textRow(offer,"Your confirmation: "..(tradeState.acceptedMine and "READY" or "WAITING"))
   textRow(offer,"Their confirmation: "..(tradeState.acceptedTheirs and "READY" or "WAITING"))
-  action(offer,"ACCEPT TRADE",function() send("Accept",{}) end,true,C.mint)
-  action(offer,"CANCEL",function() send("Cancel",{}) end,true,Color3.fromRGB(225,139,136))
+  if tradeState.finalizing then descriptor(offer,"Finalizing trade. Offers are temporarily locked.") end
+  action(offer,"ACCEPT TRADE",function() send("Accept",{}) end,not tradeState.finalizing,C.mint)
+  action(offer,"CANCEL",function() send("Cancel",{}) end,not tradeState.finalizing,Color3.fromRGB(225,139,136))
   heading(parent,"OFFER MATERIALS")
   for _,id in ipairs(keys(Config.Resources)) do
    if (p.Inventory[id] or 0)>=5 then
     action(parent,"OFFER 5 "..string.upper(id),
-     function() send("OfferMaterial",{resource=id,amount=5}) end,true,C.blue)
+     function() send("OfferMaterial",{resource=id,amount=5}) end,not tradeState.finalizing,C.blue)
    end
   end
   for _,pet in ipairs(p.Pets) do
    if pet.id~=p.ActiveId then
     action(parent,"OFFER "..pet.species.." #"..pet.id,
-     function() send("OfferPet",{id=pet.id}) end,true,C.blue)
+     function() send("OfferPet",{id=pet.id}) end,not tradeState.finalizing,C.blue)
    end
   end
  else
-  local card=W.card(parent,"INVITE A PLAYER","Enter the exact Roblox username of a player in your server.")
-  local box=Instance.new("TextBox")
-  box.Name="PlayerName";box.Size=UDim2.new(1,-2,0,44)
-  box.BackgroundColor3=C.deep
-  box.TextColor3=C.light;box.PlaceholderColor3=C.muted
-  box.PlaceholderText="Roblox username";box.Text=""
-  box.Font=Enum.Font.GothamMedium;box.TextSize=15
-  box.ClearTextOnFocus=false;box.Parent=card;W.order(card,box)
-  W.round(box,10)
-  action(card,"SEND TRADE INVITE",function() send("Invite",{target=box.Text}) end,true,C.gold)
+  if tradeState.pendingTo then
+   local waiting=W.card(parent,"INVITATION PENDING",
+    "Waiting for "..tradeState.pendingTo.." (expires after 30 seconds).")
+   action(waiting,"CANCEL INVITATION",function() send("Cancel",{}) end,true,
+    Color3.fromRGB(225,139,136))
+  else
+   local card=W.card(parent,"INVITE A PLAYER",
+    "Enter the exact Roblox username of a player in your server.")
+   local box=Instance.new("TextBox")
+   box.Name="PlayerName";box.Size=UDim2.new(1,-2,0,44)
+   box.BackgroundColor3=C.deep
+   box.TextColor3=C.light;box.PlaceholderColor3=C.muted
+   box.PlaceholderText="Roblox username";box.Text=""
+   box.Font=Enum.Font.GothamMedium;box.TextSize=15
+   box.ClearTextOnFocus=false;box.Parent=card;W.order(card,box)
+   W.round(box,10)
+   action(card,"SEND TRADE INVITE",function() send("Invite",{target=box.Text}) end,true,C.gold)
+  end
   if tradeState.pendingFrom then
    local incoming=W.card(parent,"TRADE INVITATION",
     tradeState.pendingFrom.." wants to trade.")
