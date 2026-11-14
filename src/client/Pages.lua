@@ -218,7 +218,11 @@ local function workers(parent,p,send)
   collectText="COLLECT "..status.payable.." READY BATCH"..(status.payable==1 and "" or "ES")
   canCollect=true
  elseif status.state=="blocked" then
-  collectText="WAGES BLOCKED  ·  NEED ◆ "..status.shortfall
+  if status.storageBlocked then
+   collectText="STORAGE FULL  ·  FREE BACKPACK SPACE"
+  else
+   collectText="WAGES BLOCKED  ·  NEED ◆ "..status.shortfall
+  end
  elseif status.state=="working" then
   collectText="CHECK CREW  ·  NEXT IN "..math.ceil(status.nextIn or 60).."s"
   canCollect=true
@@ -238,7 +242,11 @@ local function workers(parent,p,send)
   if workerStatus and workerStatus.state=="ready" then
    descriptor(card,"READY  ·  "..workerStatus.payable.." payable batch"..(workerStatus.payable==1 and "" or "es"))
   elseif workerStatus and workerStatus.state=="blocked" then
-   descriptor(card,"WAGE BLOCKED  ·  Need ◆ "..workerStatus.shortfall.." more")
+   if workerStatus.storageBlocked then
+    descriptor(card,"STORAGE FULL  ·  Sell or spend materials")
+   else
+    descriptor(card,"WAGE BLOCKED  ·  Need ◆ "..workerStatus.shortfall.." more")
+   end
   elseif workerStatus and workerStatus.state=="working" then
    local countdown=descriptor(card,"WORKING  ·  Next delivery in "..math.ceil(workerStatus.nextIn or 60).."s")
    if workerStatus.nextAt then
