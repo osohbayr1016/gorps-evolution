@@ -261,4 +261,32 @@ equal(E.tick(backwards, start - 10), 0, "backwards clock gives no production")
 equal(backwards.Coins, backwardsCoins, "backwards clock charges no wage")
 equal(E.tick(backwards, start + 60), 1, "backwards clock does not erase progress")
 equal(E.tick(R.new(start), start + 600), 0, "profile without workers produces nothing")
+-- Rejoin is an automatic settlement, not permission to discard wage-blocked
+-- work. Round-trip through the real profile loader before its server-side claim.
+local rejoin = hire("Farmer")
+local rejoinBerries = rejoin.Inventory.Berries
+rejoin.Coins = 0
+local reloaded = R.load(R.copy(rejoin), start + 119)
+local heldClock = reloaded.Workers.Farmer.cohorts[1].last
+local resumed, resumeStatus = E.collect(reloaded, start + 119)
+equal(resumed, 0, "unfunded rejoin grants no delivery")
+equal(resumeStatus.state, "blocked", "unfunded rejoin reports wages blocked")
+equal(reloaded.Workers.Farmer.cohorts[1].last, heldClock, "unfunded rejoin does not erase accrued work")
+equal(reloaded.Inventory.Berries, rejoinBerries, "unfunded rejoin leaves inventory unchanged")
+local again = R.load(R.copy(reloaded), start + 120)
+equal(E.collect(again, start + 120), 0, "second unfunded join still preserves earned minutes")
+equal(again.Workers.Farmer.cohorts[1].last, heldClock, "held work survives repeated save hydration")
+again.Coins = C.Workers.Farmer.wage
+equal(E.collect(again, start + 120), 1, "funded return settles only affordable mature work")
+equal(again.Inventory.Berries, rejoinBerries + C.Workers.Farmer.grant.Berries,
+ "funded return grants one exact farmer batch")
+equal(E.collect(again, start + 120), 0, "funded return cannot claim twice at the same timestamp")
+
+local premature = hire("Farmer")
+local prematureClock = premature.Workers.Farmer.cohorts[1].last
+equal(E.collect(premature, start + 59), 0, "rejoin before first minute does not deliver early")
+equal(premature.Workers.Farmer.cohorts[1].last, prematureClock,
+ "rejoin before first minute preserves countdown")
+equal(E.collect(premature, start + 60), 1, "fully funded rejoin settles at first valid minute")
+
 print("PASS: " .. checks .. " worker payroll assertions (headless Luau; Studio QA remains pending).")
