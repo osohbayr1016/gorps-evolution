@@ -230,6 +230,25 @@ function E.claim(p,id)
  p.Claimed[id]=true;R.creditCoins(p,q.reward)
  return true,"Quest reward: "..q.reward.." coins"
 end
+-- Claim ready missions atomically. Never mark any as claimed when a wallet
+-- cannot fit the complete combined reward; players can still claim one by one.
+function E.claimAll(p)
+ local ready={}
+ local total=0
+ for id,q in pairs(C.Quests) do
+  if p.Claimed[id]~=true and (p.Quests[id] or 0)>=q.goal then
+   table.insert(ready,id)
+   total+=q.reward
+  end
+ end
+ if #ready==0 then return false,"No completed unclaimed missions" end
+ if not R.canCreditCoins(p,total) then
+  return false,"Coin wallet full: spend coins before claiming all rewards"
+ end
+ for _,id in ipairs(ready) do p.Claimed[id]=true end
+ R.creditCoins(p,total)
+ return true,"Claimed "..#ready.." missions for "..total.." coins"
+end
 -- Freeze an outcome at draw time so a full inventory cannot be used to
 -- reject unwanted rolls repeatedly. Unclaimed prizes survive profile reloads.
 local function wheelDescription(reserved)
