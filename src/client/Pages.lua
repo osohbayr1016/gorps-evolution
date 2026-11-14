@@ -309,6 +309,11 @@ local function trade(parent,p,tradeState,send)
   local function offerText(x)
    if type(x)~="table" then return "Nothing offered" end
    if x.kind=="Material" then return x.amount.." "..x.id end
+   if x.kind=="Pet" and type(x.pet)=="table" then
+    return tostring(x.pet.rarity).." "..tostring(x.pet.species)
+     .." Lv."..tostring(x.pet.level).." E"..tostring(x.pet.evolved)
+     .." (#"..tostring(x.id)..")"
+   end
    return "Creature #"..tostring(x.id)
   end
   textRow(offer,"You: "..offerText(tradeState.mine))
