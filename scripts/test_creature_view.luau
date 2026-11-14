@@ -17,7 +17,7 @@ local view=luau.load(fs.readFile("src/shared/CreatureView.lua"),{
 local pets={
  {id=5,species="Shade",rarity="Uncommon",level=3},
  {id=2,species="Gorp",rarity="Common",level=10},
- {id=9,species="Bloom",rarity="Rare",level=4},
+ {id=9,species="Bloom",rarity="Rare",level=4,favorite=true},
  {id=3,species="Mole",rarity="Common",level=8},
 }
 local checks=0
@@ -32,6 +32,7 @@ local function order(mode,role,expected)
  return result
 end
 local acquired=order("Acquired","All",{2,3,5,9})
+order("Favorites","All",{9,2,3,5})
 order("Level","All",{2,3,9,5})
 order("Rarity","All",{9,5,2,3})
 order("Species","All",{9,2,3,5})
@@ -44,7 +45,8 @@ order("Unknown","Unlisted",{2,3,5,9})
 equal(acquired~=pets,true,"sorted list never aliases authoritative collection")
 equal(pets[1].id,5,"sorting never mutates first saved pet")
 equal(pets[2].id,2,"sorting never mutates second saved pet")
-equal(view.nextSort("Acquired"),"Level","sort cycle begins with strongest level")
+equal(view.nextSort("Acquired"),"Favorites","sort cycle begins with protected favorites")
+equal(view.nextSort("Favorites"),"Level","favorites sort cycles to strongest level")
 equal(view.nextSort("Level"),"Rarity","sort cycle reaches rarity")
 equal(view.nextSort("Rarity"),"Species","sort cycle reaches species")
 equal(view.nextSort("Species"),"Acquired","sort cycle wraps")

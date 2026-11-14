@@ -166,6 +166,22 @@ contracts={
  )) and 'Rules.creditCoins(profile,coins)' in Path("src/shared/Adventure.lua").read_text()
     and server.count('if not R.canCreatePet(p) then return false')>=2
     and Path("scripts/test_progression_limits.luau").exists(),
+ "favorites persist and protect valuable creatures": all(token in rules for token in (
+    'favorite=pet.favorite==true',
+    'function R.toggleFavorite(p,id)',
+    'pet.favorite=pet.favorite~=true',
+    'function R.xp(p,n)',
+ )) and all(token in Path("src/shared/Economy.lua").read_text() for token in (
+    'pet.favorite~=true',
+    'if p.CraftLevel<20 then',
+ )) and 'pet.favorite==true' in Path("src/shared/TradeRules.lua").read_text()
+    and 'if pet.favorite==true then return false' in trade
+    and 'ToggleFavorite' in server
+    and 'CreatureView.nextSort(creatureSort)' in pages
+    and 'REMOVE FAVORITE PROTECTION' in pages
+    and 'View.SortModes={"Acquired","Favorites","Level","Rarity","Species"}'
+        in Path("src/shared/CreatureView.lua").read_text()
+    and Path("scripts/test_pet_favorites.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

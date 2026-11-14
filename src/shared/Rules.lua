@@ -58,7 +58,8 @@ function R.load(saved,now)
     seen[pet.id]=true
     table.insert(pets,{id=pet.id,species=pet.species,rarity=table.find(C.Rarities,pet.rarity) and pet.rarity or "Common",
      level=valid(pet.level,25) and math.max(pet.level,1) or 1,
-     xp=valid(pet.xp) and pet.xp or 0,evolved=valid(pet.evolved,2) and pet.evolved or 0})
+     xp=valid(pet.xp) and pet.xp or 0,evolved=valid(pet.evolved,2) and pet.evolved or 0,
+     favorite=pet.favorite==true})
    end
   end
   if #pets>0 then p.Pets=pets end
@@ -152,12 +153,20 @@ function R.creditCoins(p,amount)
  return true
 end
 function R.xp(p,n)
+ if p.Level>=100 then p.XP=0;return end
  p.XP+=n
  while p.Level<100 and p.XP>=p.Level*50 do
   p.XP-=p.Level*50;p.Level+=1;R.creditCoins(p,15)
  end
+ if p.Level>=100 then p.XP=0 end
 end
 function R.quest(p,id,n) p.Quests[id]=math.min(1000000,(p.Quests[id] or 0)+n) end
+function R.toggleFavorite(p,id)
+ local pet=R.pet(p,id)
+ if not pet then return false,"Creature missing" end
+ pet.favorite=pet.favorite~=true
+ return true,pet.favorite and "Creature protected as favorite" or "Creature removed from favorites"
+end
 function R.canCreatePet(p)
  return type(p)=="table" and valid(p.NextId,R.MAX_PET_ID) and p.NextId>=1
 end
@@ -177,6 +186,7 @@ function R.feed(p,id)
  if pet.level<25 then
   pet.xp+=35
   while pet.level<25 and pet.xp>=pet.level*45 do pet.xp-=pet.level*45;pet.level+=1 end
+  if pet.level>=25 then pet.xp=0 end
  end
  R.quest(p,"Provider",1);R.xp(p,8);return true,"Creature fed"
 end

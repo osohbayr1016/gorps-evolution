@@ -113,6 +113,7 @@ local function act(player,action,payload)
   local total=0
   for _,entry in ipairs(egg.pool) do total+=entry.weight end
   return R.hatchEgg(p,payload.id,math.random(1,total))
+ elseif action=="ToggleFavorite" then return R.toggleFavorite(p,payload.id)
  elseif action=="Feed" then return R.feed(p,payload.id)
  elseif action=="Evolve" then return R.evolve(p,payload.id)
  elseif action=="InfuseEgg" then return R.infuse(p)

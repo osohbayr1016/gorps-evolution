@@ -8,9 +8,12 @@ function E.craft(p,id)
  if not R.canAdd(p,recipe.grant) then return false,"Inventory full: cannot craft without losing items" end
  if not R.spend(p,recipe.cost) then return false,"Missing materials" end
  R.add(p,recipe.grant)
- p.CraftXP+=25
- while p.CraftLevel<20 and p.CraftXP>=p.CraftLevel*50 do
-  p.CraftXP-=p.CraftLevel*50;p.CraftLevel+=1
+ if p.CraftLevel<20 then
+  p.CraftXP+=25
+  while p.CraftLevel<20 and p.CraftXP>=p.CraftLevel*50 do
+   p.CraftXP-=p.CraftLevel*50;p.CraftLevel+=1
+  end
+  if p.CraftLevel>=20 then p.CraftXP=0 end
  end
  R.quest(p,"Maker",1)
  return true,"Crafted "..id
@@ -243,7 +246,7 @@ function E.tradeUp(p,rarity,species)
  if not R.canCreatePet(p) then return false,"Creature ID limit reached; contact support" end
  local remove={}
  for i,pet in ipairs(p.Pets) do
-  if pet.rarity==rarity and pet.id~=p.ActiveId then
+  if pet.rarity==rarity and pet.id~=p.ActiveId and pet.favorite~=true then
    table.insert(remove,i)
    if #remove>=3 then break end
   end

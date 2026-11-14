@@ -29,6 +29,7 @@ local function verify(profile,offer)
   if not pet or pet.id==profile.ActiveId or #profile.Pets<2 then
    return false,"Cannot trade an active or missing creature"
   end
+  if pet.favorite==true then return false,"Favorite creatures are protected from trading" end
   if not Config.Species[pet.species] then return false,"Unrecognized creature" end
   -- Current server-originated offers carry an immutable pet snapshot. Compare
   -- every progression attribute before committing so a previously approved

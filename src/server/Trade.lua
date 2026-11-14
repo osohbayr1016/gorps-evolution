@@ -109,6 +109,7 @@ function Trade.action(player,action,payload,get,changed,emit,settle)
  elseif action=="OfferPet" then
   local pet=R.pet(get(player),payload.id)
   if not pet or pet.id==get(player).ActiveId or #get(player).Pets<2 then return false,"Cannot offer that creature" end
+  if pet.favorite==true then return false,"Remove the favorite mark before trading" end
   -- Freeze exactly what both players are consenting to. Later feeding or
   -- evolution must not silently change an accepted creature offer.
   s.offers[id]={kind="Pet",id=pet.id,pet=R.copy(pet)}

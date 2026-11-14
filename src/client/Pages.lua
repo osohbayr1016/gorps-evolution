@@ -105,7 +105,8 @@ local function pets(parent,p,send)
    local header=Instance.new("TextLabel")
    header.Name="PetName";header.BackgroundTransparency=1
    header.Position=UDim2.fromOffset(120,5);header.Size=UDim2.new(1,-124,0,33)
-   header.Text=pet.species.."  "..(active and "✓" or "")
+   header.Text=pet.species.."  "..(active and "✓" or "")..
+    (pet.favorite==true and "  ★" or "")
    header.TextXAlignment=Enum.TextXAlignment.Left;header.Font=Enum.Font.GothamBold
    header.TextSize=21;header.TextColor3=C.light;header.Parent=row
    local rarity=Instance.new("TextLabel")
@@ -122,11 +123,15 @@ local function pets(parent,p,send)
    level.TextSize=13;level.TextColor3=C.muted;level.Parent=row
    local baseline=Rules.stats(pet)
    textRow(card,"HP "..baseline.hp.."    ATK "..baseline.attack.."    SPD "..baseline.speed)
-   W.progress(card,pet.xp/math.max(1,pet.level*45))
-   descriptor(card,"Growth XP  "..pet.xp.." / "..tostring(pet.level*45).."  •  Evolution "..pet.evolved.."/2")
+   W.progress(card,pet.level>=25 and 1 or pet.xp/math.max(1,pet.level*45))
+   descriptor(card,(pet.level>=25 and "MAX CREATURE LEVEL" or
+    "Growth XP  "..pet.xp.." / "..tostring(pet.level*45))..
+    "  •  Evolution "..pet.evolved.."/2")
    if not active then
     action(card,"EQUIP AS COMPANION",function() send("SelectPet",{id=pet.id}) end,true,C.gold)
    end
+   action(card,pet.favorite==true and "REMOVE FAVORITE PROTECTION" or "MARK AS FAVORITE",
+    function() send("ToggleFavorite",{id=pet.id}) end,true,C.blue)
    local hasFood=(p.Inventory.Meat or 0)>0 and (p.Inventory.Berries or 0)>0
    action(card,hasFood and ((active and "FEED & WATCH" or "FEED").."  ·  1 MEAT + 1 BERRY") or "NEED MEAT + BERRIES TO FEED",
     function() send("Feed",{id=pet.id}) end,hasFood,C.mint)
@@ -331,7 +336,7 @@ local function trade(parent,p,tradeState,send)
    end
   end
   for _,pet in ipairs(p.Pets) do
-   if pet.id~=p.ActiveId then
+   if pet.id~=p.ActiveId and pet.favorite~=true then
     action(parent,"OFFER "..pet.species.." #"..pet.id,
      function() send("OfferPet",{id=pet.id}) end,not tradeState.finalizing,C.blue)
    end
@@ -371,7 +376,8 @@ local function events(parent,p,send)
  local ufo=W.card(parent,"WEEKEND UFO","Only on Saturdays and Sundays (UTC).")
  descriptor(ufo,"Exchange 3 crystals + 5 iron for a rare Gorp.")
  action(ufo,"VISIT THE UFO TRADER",function() send("UFO",{}) end,true,C.blue)
- local upgrade=W.card(parent,"TRADE UP","Combine three inactive pets from the same rarity.")
+ local upgrade=W.card(parent,"TRADE UP",
+  "Combine three inactive, non-favorite pets of the same rarity.")
  for _,rarity in ipairs(Config.Rarities) do
   if rarity~="Legendary" then
    action(upgrade,"UPGRADE 3 "..string.upper(rarity),
