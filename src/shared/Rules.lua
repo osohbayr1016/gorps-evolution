@@ -1,5 +1,8 @@
 local C=require(script.Parent.Config)
 local R={}
+-- Gameplay values must stay within their existing persisted hydration limits.
+R.MAX_COINS=4000000000
+R.MAX_PET_ID=10000000
 function R.copy(value)
  if type(value)~="table" then return value end
  local nextValue={}
@@ -139,16 +142,31 @@ function R.add(p,goods)
   container[id]=math.min(1000000,(container[id] or 0)+n)
  end
 end
+function R.canCreditCoins(p,amount)
+ return valid(amount,R.MAX_COINS) and type(p.Coins)=="number"
+  and p.Coins==p.Coins and p.Coins>=0 and p.Coins<=R.MAX_COINS-amount
+end
+function R.creditCoins(p,amount)
+ if not valid(amount,R.MAX_COINS) then return false end
+ p.Coins=math.min(R.MAX_COINS,p.Coins+amount)
+ return true
+end
 function R.xp(p,n)
  p.XP+=n
  while p.Level<100 and p.XP>=p.Level*50 do
-  p.XP-=p.Level*50;p.Level+=1;p.Coins+=15
+  p.XP-=p.Level*50;p.Level+=1;R.creditCoins(p,15)
  end
 end
 function R.quest(p,id,n) p.Quests[id]=math.min(1000000,(p.Quests[id] or 0)+n) end
+function R.canCreatePet(p)
+ return type(p)=="table" and valid(p.NextId,R.MAX_PET_ID) and p.NextId>=1
+end
 function R.addPet(p,species,rarity)
  if not C.Species[species] then return false,"Unknown creature" end
  if #p.Pets>=R.capacity(p) then return false,"Expand your fence for more creatures" end
+ if not R.canCreatePet(p) then
+  return false,"Creature ID limit reached; contact support"
+ end
  local pet={id=p.NextId,species=species,rarity=rarity or C.Species[species].rarity,level=1,xp=0,evolved=0}
  p.NextId+=1;table.insert(p.Pets,pet);return true,"Received "..species
 end
@@ -185,7 +203,7 @@ function R.gather(p,id)
  if not R.canAdd(p,{[node[1]]=amount}) then
   return false,"Backpack full: sell or spend materials before harvesting"
  end
- R.add(p,{[node[1]]=amount});p.Coins+=id=="Wild" and 8 or 2;R.xp(p,5)
+ R.add(p,{[node[1]]=amount});R.creditCoins(p,id=="Wild" and 8 or 2);R.xp(p,5)
  R.quest(p,"Gatherer",amount)
  if id=="Wild" then R.quest(p,"Explorer",1) end
  return true,"Collected "..amount.." "..node[1]
@@ -196,6 +214,7 @@ function R.hatchEgg(p,id,roll)
  local egg=C.Eggs[id]
  if not egg then return false,"Unknown egg" end
  if #p.Pets>=R.capacity(p) then return false,"Ranch full: expand before hatching" end
+ if not R.canCreatePet(p) then return false,"Creature ID limit reached; contact support" end
  if p.Coins<egg.price then return false,"Need "..egg.price.." coins" end
  local total=0
  for _,entry in ipairs(egg.pool) do total+=entry.weight end
