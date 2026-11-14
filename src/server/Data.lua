@@ -9,12 +9,14 @@ local Rules=require(ReplicatedStorage.Shared.Rules)
 local PlaytimeClock=require(ReplicatedStorage.Shared.PlaytimeClock)
 local Config=require(ReplicatedStorage.Shared.Config)
 local SessionPolicy=require(script.Parent.SessionPolicy)
+local AutosaveSchedule=require(script.Parent.AutosaveSchedule)
 local TradePersistence=require(script.Parent.TradePersistence)
 local TradeSettlement=require(script.Parent.TradeSettlement)
 local TradeStoreAdapter=require(script.Parent.TradeStoreAdapter)
 local Data={}
 local profiles={}
 local lastPlaytime={}
+local nextAutosave={}
 local versions={}
 local dirty={}
 local saving={}
@@ -160,7 +162,10 @@ function Data.load(player)
  end
  local p=Rules.load(saved,os.time())
  profiles[player]=p
- lastPlaytime[player]=os.clock()
+ local nowClock=os.clock()
+ lastPlaytime[player]=nowClock
+ nextAutosave[player]=AutosaveSchedule.initial(nowClock,
+  math.random(AutosaveSchedule.MIN_OFFSET,AutosaveSchedule.MAX_OFFSET))
  versions[player]=0;dirty[player]=false;unloading[player]=nil
  syncBoard(player,p)
  return p
@@ -328,6 +333,7 @@ function Data.unload(player)
  end
  profiles[player]=nil
  lastPlaytime[player]=nil
+ nextAutosave[player]=nil
  dirty[player]=nil
  versions[player]=nil
  saving[player]=nil
@@ -338,11 +344,18 @@ function Data.unload(player)
 end
 function Data.start()
  task.spawn(function()
-  while task.wait(60) do
+  -- Run a lightweight clock check; each session has its own initial jitter
+  -- and subsequent 60-second deadline. This spreads datastore requests
+  -- rather than firing a simultaneous burst for every loaded player.
+  while task.wait(AutosaveSchedule.TICK) do
+   local nowClock=os.clock()
    for player in pairs(profiles) do
     if not unloading[player] and not settling[player] then
      Data.accountPlaytime(player)
-     if not studio then task.spawn(Data.save,player) end
+     if not studio and AutosaveSchedule.due(nowClock,nextAutosave[player]) then
+      nextAutosave[player]=AutosaveSchedule.advance(nowClock)
+      task.spawn(Data.save,player)
+     end
     end
    end
   end

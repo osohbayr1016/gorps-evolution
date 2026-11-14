@@ -71,7 +71,8 @@ contracts={
  )) and Path("scripts/test_leaderboards.luau").exists(),
  "per-player monotonic playtime with leave flush": all(token in data for token in (
     'local PlaytimeClock=require(ReplicatedStorage.Shared.PlaytimeClock)',
-    'lastPlaytime[player]=os.clock()',
+    'lastPlaytime[player]=nowClock',
+    'local nowClock=os.clock()',
     'function Data.accountPlaytime(player)',
     'PlaytimeClock.advance(since,os.clock())',
     'Data.accountPlaytime(player)',
@@ -249,6 +250,16 @@ contracts={
     'ready>=2',
     'Rules.MAX_COINS',
  )) and Path("scripts/test_claim_all_quests.luau").exists(),
+ "staggered session autosaves": all(token in data for token in (
+    'local AutosaveSchedule=require(script.Parent.AutosaveSchedule)',
+    'local nextAutosave={}',
+    'math.random(AutosaveSchedule.MIN_OFFSET,AutosaveSchedule.MAX_OFFSET)',
+    'while task.wait(AutosaveSchedule.TICK) do',
+    'AutosaveSchedule.due(nowClock,nextAutosave[player])',
+    'nextAutosave[player]=AutosaveSchedule.advance(nowClock)',
+    'nextAutosave[player]=nil',
+ )) and Path("scripts/test_autosave_schedule.luau").exists()
+    and 'while task.wait(60) do' not in data,
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
