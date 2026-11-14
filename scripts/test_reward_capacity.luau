@@ -100,16 +100,26 @@ equal(hunter.Inventory.Meat,1000000,"hunter gets exact meat on victory")
 
 local spin=player()
 spin.Inventory.Berries=1000000
-equal(E.wheel(spin,now,2),false,"full food wheel prize is blocked")
-equal(spin.LastWheel,0,"blocked wheel doesn't consume daily reward")
+local beforeMeat=spin.Inventory.Meat
+equal(E.wheel(spin,now,2),true,"full food prize creates a reserved reward")
+equal(spin.LastWheel,now,"draw consumes one daily spin, avoiding prize rerolls")
+equal(spin.WheelPending.roll,2,"original food prize stays reserved")
+equal(spin.Inventory.Meat,beforeMeat,"no partial food is granted on reservation")
 spin.Inventory.Berries=0
 spin.Inventory.Crystal=999999
-equal(E.wheel(spin,now,3),false,"full crystal wheel prize is blocked")
-equal(spin.LastWheel,0,"crystal overflow doesn't consume daily reward")
-spin.Inventory.Crystal=999998
-equal(E.wheel(spin,now,3),true,"fitting crystal reward succeeds")
-equal(spin.Inventory.Crystal,1000000,"spin grants exact crystals")
-equal(spin.LastWheel,now,"successful wheel is claimed once")
+equal(E.wheel(spin,now,3),true,"next claim ignores a new roll and grants original food")
+equal(spin.Inventory.Meat,beforeMeat+6,"original food prize is delivered in full")
+equal(spin.Inventory.Crystal,999999,"rejected alternate crystal roll was not awarded")
+equal(spin.WheelPending,nil,"claim clears reserved food exactly once")
+equal(E.wheel(spin,now,3),false,"second same-day draw stays on cooldown")
+local crystalSpin=player()
+crystalSpin.Inventory.Crystal=999999
+equal(E.wheel(crystalSpin,now,3),true,"full crystal reward is reserved")
+equal(crystalSpin.WheelPending.roll,3,"crystal prize cannot be rerolled")
+crystalSpin.Inventory.Crystal=999998
+equal(E.wheel(crystalSpin,now,1),true,"claim ignores alternate roll for reserved crystals")
+equal(crystalSpin.Inventory.Crystal,1000000,"reserved crystals fit and grant exactly")
+equal(crystalSpin.WheelPending,nil,"crystal claim clears original reservation")
 
 local crew=player()
 equal(E.hire(crew,"Farmer",now),true,"hire farmer for warehouse congestion")
