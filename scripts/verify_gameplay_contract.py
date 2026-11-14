@@ -69,6 +69,16 @@ contracts={
     'refreshing=false',
     'entries[id]=cache[id] or {}',
  )) and Path("scripts/test_leaderboards.luau").exists(),
+ "per-player monotonic playtime with leave flush": all(token in data for token in (
+    'local PlaytimeClock=require(ReplicatedStorage.Shared.PlaytimeClock)',
+    'lastPlaytime[player]=os.clock()',
+    'function Data.accountPlaytime(player)',
+    'PlaytimeClock.advance(since,os.clock())',
+    'Data.accountPlaytime(player)',
+    'lastPlaytime[player]=nil'
+ )) and 'Data.accountPlaytime(player)' in server
+    and 'p.Seconds+=60' not in data
+    and Path("scripts/test_playtime_clock.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

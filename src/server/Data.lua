@@ -6,6 +6,7 @@ local HttpService=game:GetService("HttpService")
 local RunService=game:GetService("RunService")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Rules=require(ReplicatedStorage.Shared.Rules)
+local PlaytimeClock=require(ReplicatedStorage.Shared.PlaytimeClock)
 local Config=require(ReplicatedStorage.Shared.Config)
 local SessionPolicy=require(script.Parent.SessionPolicy)
 local TradePersistence=require(script.Parent.TradePersistence)
@@ -13,6 +14,7 @@ local TradeSettlement=require(script.Parent.TradeSettlement)
 local TradeStoreAdapter=require(script.Parent.TradeStoreAdapter)
 local Data={}
 local profiles={}
+local lastPlaytime={}
 local versions={}
 local dirty={}
 local saving={}
@@ -158,6 +160,7 @@ function Data.load(player)
  end
  local p=Rules.load(saved,os.time())
  profiles[player]=p
+ lastPlaytime[player]=os.clock()
  versions[player]=0;dirty[player]=false;unloading[player]=nil
  syncBoard(player,p)
  return p
@@ -170,6 +173,21 @@ function Data.change(player)
  dirty[player]=true
  syncBoard(player,p)
  return true
+end
+function Data.accountPlaytime(player)
+ if unloading[player] or settling[player] then return 0 end
+ local p=profiles[player]
+ local since=lastPlaytime[player]
+ if not p or not since then return 0 end
+ local elapsed,nextCheckpoint=PlaytimeClock.advance(since,os.clock())
+ lastPlaytime[player]=nextCheckpoint
+ if elapsed<1 then return 0 end
+ local credited=math.min(elapsed,math.max(0,4000000000-p.Seconds))
+ if credited>0 then
+  p.Seconds+=credited
+  Data.change(player)
+ end
+ return credited
 end
 function Data.save(player,release)
  if studio then return true end
@@ -302,12 +320,14 @@ function Data.settleTrade(left,right,leftOffer,rightOffer)
  return nil,"Trade recovery required"
 end
 function Data.unload(player)
+ Data.accountPlaytime(player)
  unloading[player]=true
  if not studio then
   if settlementFault[player] or settling[player] then rawRelease(player)
   else Data.save(player,true) end
  end
  profiles[player]=nil
+ lastPlaytime[player]=nil
  dirty[player]=nil
  versions[player]=nil
  saving[player]=nil
@@ -319,10 +339,9 @@ end
 function Data.start()
  task.spawn(function()
   while task.wait(60) do
-   for player,p in pairs(profiles) do
+   for player in pairs(profiles) do
     if not unloading[player] and not settling[player] then
-     p.Seconds+=60
-     Data.change(player)
+     Data.accountPlaytime(player)
      if not studio then task.spawn(Data.save,player) end
     end
    end
@@ -334,6 +353,7 @@ function Data.start()
   for player in pairs(profiles) do
    jobs+=1
    task.spawn(function()
+    Data.accountPlaytime(player)
     unloading[player]=true
     if settlementFault[player] or settling[player] then rawRelease(player)
     else Data.save(player,true) end

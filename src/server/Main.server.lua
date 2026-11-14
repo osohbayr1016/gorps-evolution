@@ -231,6 +231,9 @@ Players.PlayerRemoving:Connect(function(player)
  starting[player]=nil
  Trade.disconnect(player,function(who,msg) send(who,msg) end)
  World.release(player)
+ -- Final whole seconds belong to this player's actual session, not to the
+ -- server's shared autosave timer. Snapshot rankings after final credit.
+ Data.accountPlaytime(player)
  local p=Data.get(player)
  if p then task.spawn(Leaderboards.write,player,R.copy(p)) end
  Data.unload(player)
