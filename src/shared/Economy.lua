@@ -52,6 +52,15 @@ local function readCohorts(w,now)
  if w.count>0 then return {{count=w.count,last=w.last or now}} end
  return {}
 end
+-- A paid delivery must fit in the destination inventory in full.
+local function storageSteps(inventory,worker,count)
+ local capacity=60
+ for id,amount in pairs(worker.grant) do
+  local available=1000000-(inventory[id] or 0)
+  capacity=math.min(capacity,math.max(0,math.floor(available/(amount*count))))
+ end
+ return capacity
+end
 function E.hire(p,id,now)
  local worker=C.Workers[id]
  if not worker then return false,"Unknown worker" end
@@ -75,7 +84,9 @@ function E.tick(p,now)
     local elapsed=math.max(0,now-cohort.last)
     local steps=math.min(60,math.floor(elapsed/60))
     if steps>0 then
-     local payable=math.min(steps,math.floor(p.Coins/(def.wage*cohort.count)))
+     local wages=math.floor(p.Coins/(def.wage*cohort.count))
+     local capacity=storageSteps(p.Inventory,def,cohort.count)
+     local payable=math.min(steps,wages,capacity)
      if payable>0 then
       local batches=payable*cohort.count
       p.Coins-=def.wage*batches
@@ -90,9 +101,12 @@ function E.tick(p,now)
        end
       end
      end
-     -- Paid collections retain this cohort's sub-minute work. Unpaid whole
-     -- minutes (including over-cap work) expire without becoming wage debt.
-     if payable>0 then cohort.last=now-(elapsed%60)
+     -- Inventory congestion is not permission to charge wages for lost goods.
+     -- Hold storage-blocked accrued minutes up to the existing 60-minute cap.
+     -- Unfunded wage minutes keep their existing no-debt expiration policy.
+     if capacity<math.min(steps,wages) then
+      cohort.last=math.max(cohort.last+payable*60,now-3600-(elapsed%60))
+     elseif payable>0 then cohort.last=now-(elapsed%60)
      else cohort.last=now end
     end
    end
