@@ -37,6 +37,10 @@ function Adventure.hunt(profile,enemyLevel)
  end
  local meat=2+math.floor(enemyLevel/2)
  local coins=12+enemyLevel*6
+ if not Rules.canAdd(profile,{Meat=meat}) then
+  return false,"Backpack full: clear space for hunt rewards",
+   {victory=false,turns=turns,remainingHP=heroHP,enemyLevel=enemyLevel}
+ end
  Rules.add(profile,{Meat=meat})
  profile.Coins+=coins
  Rules.xp(profile,10+enemyLevel*5)
