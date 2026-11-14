@@ -534,6 +534,8 @@ function UI:render()
  Pages.render(self.page,self.tab,p,self.trade,function(action,args)
   if action=="__openTab" then
    self:openTab(args.id)
+  elseif action=="__refreshPage" then
+   self:render()
   else
    self.send(action,args)
   end
