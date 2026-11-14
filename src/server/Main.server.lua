@@ -196,7 +196,10 @@ local function initializePlayer(player)
    if Data.get(player)==p then Data.unload(player) end
    return
   end
-  E.tick(p,os.time())
+  -- Rejoins are not explicit claims: never expire mature, wage-blocked
+  -- cohorts merely because a profile finished loading. Funded work still
+  -- settles through the same capped, authoritative payroll path.
+  local _,resumeStatus=E.collect(p,os.time())
   Data.change(player)
   if starting[player]~=token or player.Parent~=Players then return end
   if not World.assign(player,p) then
@@ -213,7 +216,9 @@ local function initializePlayer(player)
    if starting[player]==token and player.Parent==Players then movement(player) end
   end
   if starting[player]==token and player.Parent==Players then
-   send(player,"Welcome to Chaos Galaxy!")
+   send(player,resumeStatus.state=="blocked"
+    and "Welcome back! Crew delivery held until wages are funded."
+    or "Welcome to Chaos Galaxy!")
    print("[Gorps Server] Player ready:",player.UserId)
   end
  end)
