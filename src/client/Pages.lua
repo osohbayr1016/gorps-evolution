@@ -378,9 +378,16 @@ end
 local function events(parent,p,send)
  local left=86400-(os.time()-p.LastWheel)
  local wheel=W.card(parent,"DAILY REWARD","One free spin every 24 hours. Includes coins, food or a creature.")
- action(wheel,left<=0 and "SPIN FREE WHEEL" or
-  "AVAILABLE IN "..math.ceil(left/3600).." HOURS",
-  function() send("Wheel",{}) end,left<=0,C.gold)
+ local pending=p.WheelPending
+ if pending then
+  local reward=({[1]="100 coins",[2]="6 meat + 8 berries",[3]="2 crystals"})[pending.roll]
+   or (pending.fallback and "250 coins" or tostring(pending.species).." creature")
+  descriptor(wheel,"RESERVED REWARD  ·  "..reward)
+  descriptor(wheel,"Your original spin is locked until claimed. Clear inventory or wallet space.")
+ end
+ action(wheel,pending and "CLAIM RESERVED REWARD" or
+  left<=0 and "SPIN FREE WHEEL" or "AVAILABLE IN "..math.ceil(left/3600).." HOURS",
+  function() send("Wheel",{}) end,pending~=nil or left<=0,C.gold)
  local ufo=W.card(parent,"WEEKEND UFO","Only on Saturdays and Sundays (UTC).")
  descriptor(ufo,"Exchange 3 crystals + 5 iron for a rare Gorp.")
  action(ufo,"VISIT THE UFO TRADER",function() send("UFO",{}) end,true,C.blue)
