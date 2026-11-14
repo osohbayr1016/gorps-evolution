@@ -209,4 +209,32 @@ equal(cProfile.Pets[2].species,"Shade","recipient receives exact named creature"
 equal(cProfile.Pets[2].xp,35,"received pet retains accepted XP")
 equal(Trade.status(bob).partner,nil,"completed pet trade clears both sessions")
 
+-- The receiver's open trade page must be refreshed after an invite is
+-- withdrawn, and the sender must learn when their recipient declines.
+now=1150
+equal(action(bob,"Invite",{target="Cara"}),true,"outgoing cancellation test invite opened")
+equal(Trade.status(cara).pendingFrom,"Bob","recipient sees active invite before cancel")
+local beforeWithdraw=#messages
+equal(action(bob,"Cancel"),true,"sender may withdraw a pending invite")
+equal(Trade.status(cara).pendingFrom,nil,"withdrawal invalidates recipient invitation")
+equal(Trade.status(bob).pendingTo,nil,"withdrawal clears sender pending UI")
+equal(#messages,beforeWithdraw+1,"withdrawal sends recipient exactly one event")
+equal(messages[#messages].to,"Cara","withdrawal event addresses recipient")
+equal(messages[#messages].message,"Bob withdrew the trade invitation",
+ "withdrawal explicitly explains why the invite disappeared")
+equal(action(cara,"Join"),false,"withdrawn invitation cannot be accepted")
+
+now=1154
+equal(action(cara,"Invite",{target="Bob"}),true,"recipient starts reverse invitation")
+equal(Trade.status(cara).pendingTo,"Bob","new sender sees pending recipient")
+local beforeDecline=#messages
+equal(action(bob,"Cancel"),true,"recipient can decline invitation before joining")
+equal(Trade.status(cara).pendingTo,nil,"decline clears sender's waiting screen")
+equal(Trade.status(bob).pendingFrom,nil,"decline clears recipient's incoming screen")
+equal(#messages,beforeDecline+1,"decline sends sender exactly one event")
+equal(messages[#messages].to,"Cara","decline notifies original sender")
+equal(messages[#messages].message,"Bob declined your trade invitation",
+ "decline message distinguishes refusal from session cancellation")
+equal(action(bob,"Join"),false,"declined invitation cannot be joined")
+
 print("PASS: "..checks.." trade invitation assertions (Studio multiplayer QA remains pending).")

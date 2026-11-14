@@ -202,6 +202,15 @@ contracts={
     'if data.pickup then ui:showPickup(data.pickup) end',
     'if data.combat then ui:showCombat(data.combat) end',
  )) and Path("scripts/test_snapshot_order.luau").exists(),
+ "invite cancellation sends two-party state refresh": all(token in trade for token in (
+    'emit(incoming.sender,player.Name.." declined your trade invitation")',
+    'emit(recipient,player.Name.." withdrew the trade invitation")',
+    'if not s then return true end',
+ )) and all(token in Path("scripts/test_trade_invites.luau").read_text() for token in (
+    'withdrawal invalidates recipient invitation',
+    'decline clears sender\'s waiting screen',
+    'declined invitation cannot be joined',
+ )),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
