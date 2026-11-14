@@ -63,12 +63,16 @@ local function gather(player,kind,worldPosition)
   end
   wildCooldown[player]=now
   local enemyLevel=math.clamp(math.floor(p.Level/3)+1,1,20)
-  local won,message=Adventure.hunt(p,enemyLevel)
+  local won,message,combat=Adventure.hunt(p,enemyLevel)
   if not won then
+   -- Refusing a full backpack is not a battle. Do not consume hunt cooldown.
+   if not combat or combat.outcome=="storage_full" then wildCooldown[player]=nil end
    send(player,message)
+   if combat then notify:FireClient(player,{combat=combat}) end
    return false
   end
   changed(player,message,false)
+  if combat then notify:FireClient(player,{combat=combat}) end
  else
   local ok,message=R.gather(p,kind)
   if not ok then send(player,message);return false end

@@ -419,6 +419,49 @@ function UI:showPickup(reward)
   if notification.Parent then notification:Destroy() end
  end)
 end
+-- Compact, non-modal PvE result banner. The server owns all damage and
+-- rewards; this only renders the read-only combat summary.
+function UI:showCombat(result)
+ if type(result)~="table" then return end
+ local outcome=result.outcome
+ if outcome~="victory" and outcome~="defeat" and outcome~="storage_full" then return end
+ if self.combatCard and self.combatCard.Parent then self.combatCard:Destroy() end
+ local positive=outcome=="victory"
+ local blocked=outcome=="storage_full"
+ local bg=positive and Color3.fromRGB(28,94,75)
+  or (blocked and Color3.fromRGB(103,73,34) or Color3.fromRGB(118,51,62))
+ local card=framed(self.gui,"CombatReport",bg)
+ card.AnchorPoint=Vector2.new(.5,0)
+ card.Position=UDim2.new(.5,0,0,132)
+ card.Size=UDim2.new(1,-32,0,85)
+ local constraint=Instance.new("UISizeConstraint")
+ constraint.MaxSize=Vector2.new(380,85)
+ constraint.Parent=card
+ self.combatCard=card
+ local headingText=positive and "WILD ENCOUNTER WON"
+  or (blocked and "BACKPACK FULL" or "WILD ENCOUNTER LOST")
+ local headline=absoluteText(card,headingText,16,C.light)
+ headline.Position=UDim2.fromOffset(12,9)
+ headline.Size=UDim2.new(1,-24,0,25)
+ headline.TextXAlignment=Enum.TextXAlignment.Center
+ local turns=math.max(0,math.floor(tonumber(result.turns) or 0))
+ local hp=math.max(0,math.floor(tonumber(result.remainingHP) or 0))
+ local description
+ if blocked then
+  description="Sell or use meat before hunting again"
+ else
+  description=tostring(result.companion or "Companion").."  ·  "
+   ..turns.." rounds  ·  "..hp.." HP remaining"
+ end
+ local detail=absoluteText(card,description,13,C.light)
+ detail.Position=UDim2.fromOffset(8,40)
+ detail.Size=UDim2.new(1,-16,0,30)
+ detail.TextXAlignment=Enum.TextXAlignment.Center
+ task.delay(3.1,function()
+  if self.combatCard==card then self.combatCard=nil end
+  if card.Parent then card:Destroy() end
+ end)
+end
 function UI:showHatch(pet)
  if type(pet)~="table" or not Config.Species[pet.species] then return end
  if self.hatchDismiss then self.hatchDismiss() end

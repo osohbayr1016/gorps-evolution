@@ -10,6 +10,13 @@ function Adventure.hunt(profile,enemyLevel)
  if not active then return false,"Select a companion first",nil end
  local stats=Rules.stats(active)
  if not stats then return false,"Invalid companion",nil end
+ -- A full backpack must block a hunt before combat or cooldown is spent.
+ local meat=2+math.floor(enemyLevel/2)
+ if not Rules.canAdd(profile,{Meat=meat}) then
+  return false,"Backpack full: clear space for hunt rewards",
+   {victory=false,outcome="storage_full",turns=0,remainingHP=stats.hp,
+    enemyLevel=enemyLevel,companion=active.species,role=stats.role}
+ end
  local heroHP=stats.hp
  local beastHP=45+enemyLevel*17
  local beastAttack=4+enemyLevel*3
@@ -33,20 +40,17 @@ function Adventure.hunt(profile,enemyLevel)
  end
  if heroHP<=0 or beastHP>0 then
   return false,"Your "..active.species.." was defeated. Feed and train it before another hunt.",
-   {victory=false,turns=turns,remainingHP=math.max(0,heroHP),enemyLevel=enemyLevel}
+   {victory=false,outcome="defeat",turns=turns,remainingHP=math.max(0,heroHP),
+    enemyLevel=enemyLevel,companion=active.species,role=stats.role}
  end
- local meat=2+math.floor(enemyLevel/2)
  local coins=12+enemyLevel*6
- if not Rules.canAdd(profile,{Meat=meat}) then
-  return false,"Backpack full: clear space for hunt rewards",
-   {victory=false,turns=turns,remainingHP=heroHP,enemyLevel=enemyLevel}
- end
  Rules.add(profile,{Meat=meat})
  profile.Coins+=coins
  Rules.xp(profile,10+enemyLevel*5)
  Rules.quest(profile,"Explorer",1)
  Rules.quest(profile,"Gatherer",meat)
  return true,active.species.." defeated a wild creature! +"..meat.." meat, +"..coins.." coins",
-  {victory=true,turns=turns,remainingHP=heroHP,enemyLevel=enemyLevel,damage=totalDamage}
+  {victory=true,outcome="victory",turns=turns,remainingHP=heroHP,
+   enemyLevel=enemyLevel,damage=totalDamage,companion=active.species,role=stats.role}
 end
 return Adventure

@@ -43,6 +43,7 @@ task.spawn(function()
    ui:update(data.profile,data.trade,data.message,data.rankings)
    if data.openTab then ui:openTab(data.openTab) end
    if data.pickup then ui:showPickup(data.pickup) end
+   if data.combat then ui:showCombat(data.combat) end
   end
  end)
  for attempt=1,20 do
