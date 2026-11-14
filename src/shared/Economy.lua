@@ -5,6 +5,7 @@ function E.craft(p,id)
  local recipe=C.Recipes[id]
  if not recipe then return false,"Unknown recipe" end
  if p.CraftLevel<recipe.level then return false,"Crafting level too low" end
+ if not R.canAdd(p,recipe.grant) then return false,"Inventory full: cannot craft without losing items" end
  if not R.spend(p,recipe.cost) then return false,"Missing materials" end
  R.add(p,recipe.grant)
  p.CraftXP+=25
@@ -18,6 +19,7 @@ function E.buy(p,id)
  local item=C.Shop[id]
  if not item then return false,"Unknown item" end
  if p.Coins<item.price then return false,"Not enough coins" end
+ if not R.canAdd(p,item.grant) then return false,"Inventory full: purchase would lose items" end
  p.Coins-=item.price;R.add(p,item.grant)
  return true,"Purchased "..id
 end
@@ -170,6 +172,12 @@ end
 function E.wheel(p,now,roll)
  if now-p.LastWheel<86400 then return false,"Wheel is on cooldown" end
  if type(roll)~="number" or roll<1 or roll>4 or roll%1~=0 then return false,"Invalid roll" end
+ if roll==2 and not R.canAdd(p,{Meat=6,Berries=8}) then
+  return false,"Backpack full: free space before claiming food"
+ end
+ if roll==3 and not R.canAdd(p,{Crystal=2}) then
+  return false,"Backpack full: free space before claiming crystals"
+ end
  p.LastWheel=now
  if roll==1 then p.Coins+=100
  elseif roll==2 then R.add(p,{Meat=6,Berries=8})
