@@ -98,7 +98,7 @@ local wheelMessage
 local wheelOK
 wheelOK,wheelMessage=E.wheel(exhausted,now,4)
 equal(wheelOK,true,"pet wheel fallback succeeds for exhausted pet IDs")
-equal(wheelMessage,"250 coins!","exhausted pet ID wheel uses truthful coin fallback")
+equal(wheelMessage,"Daily reward claimed: 250 coins","exhausted pet ID wheel uses truthful coin fallback")
 equal(#exhausted.Pets,petsBefore,"fallback does not create an unaddressable pet")
 equal(exhausted.Coins,coinsBefore+250,"fallback pays full alternative coins")
 
