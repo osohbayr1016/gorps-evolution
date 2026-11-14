@@ -85,6 +85,26 @@ contracts={
     'lastInvite[uid(player)]=nil',
  )) and 'Trade.leave(player,function(who,msg) send(who,msg) end)' in server
     and 'cancel cannot bypass sender cooldown' in Path("scripts/test_trade_invites.luau").read_text(),
+ "one outgoing trade invite with live status": all(token in trade for token in (
+    'local function outgoingTarget(sender)',
+    'if outgoingTarget(player) then return false',
+    'recipient=target,expiresAt=now+INVITE_TTL',
+    'pendingTo=outgoing and outgoing.Name or nil',
+ )) and all(token in pages for token in (
+    'if tradeState.pendingTo then',
+    '"INVITATION PENDING"',
+    '"CANCEL INVITATION"',
+ )),
+ "trade settlement is mutually exclusive": all(token in trade for token in (
+    'if s.settling then return false,"Trade is finalizing" end',
+    'if s and s.settling and not force then return false',
+    's.settling=true',
+    'pcall(function()',
+    's.settling=false',
+ )) and all(token in pages for token in (
+    'if tradeState.finalizing then',
+    'not tradeState.finalizing',
+ )) and 'concurrent double accept denied during finalization' in Path("scripts/test_trade_invites.luau").read_text(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data
