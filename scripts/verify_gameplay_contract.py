@@ -71,7 +71,8 @@ contracts={
  )) and Path("scripts/test_leaderboards.luau").exists(),
  "per-player monotonic playtime with leave flush": all(token in data for token in (
     'local PlaytimeClock=require(ReplicatedStorage.Shared.PlaytimeClock)',
-    'lastPlaytime[player]=os.clock()',
+    'lastPlaytime[player]=nowClock',
+    'local nowClock=os.clock()',
     'function Data.accountPlaytime(player)',
     'PlaytimeClock.advance(since,os.clock())',
     'Data.accountPlaytime(player)',
