@@ -141,6 +141,7 @@ local function act(player,action,payload)
  elseif action=="TradeUp" then return E.tradeUp(p,payload.rarity,C.SpeciesOrder[math.random(1,#C.SpeciesOrder)])
  elseif action=="Hatch" then
   if #p.Pets>=R.capacity(p) then return false,"Expand your ranch first" end
+  if not R.canCreatePet(p) then return false,"Creature ID limit reached; contact support" end
   if not R.spend(p,{EggIncubator=1,Crystal=1}) then return false,"Need incubator and crystal" end
   local species=C.SpeciesOrder[math.random(1,#C.SpeciesOrder)]
   local rarity=p.EggInfusion>=3 and "Epic" or (p.EggInfusion>=1 and "Rare" or C.Species[species].rarity)
@@ -150,6 +151,7 @@ local function act(player,action,payload)
   local t=os.date("!*t",os.time())
   if t.wday~=1 and t.wday~=7 then return false,"UFO trader is available Saturdays and Sundays (UTC)" end
   if #p.Pets>=R.capacity(p) then return false,"Your ranch is full" end
+  if not R.canCreatePet(p) then return false,"Creature ID limit reached; contact support" end
   if not R.spend(p,{Crystal=3,Iron=5}) then return false,"Need 3 crystals and 5 iron" end
   return R.addPet(p,C.SpeciesOrder[math.random(1,#C.SpeciesOrder)],"Rare")
  end

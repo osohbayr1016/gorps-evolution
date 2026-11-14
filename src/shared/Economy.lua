@@ -26,8 +26,11 @@ end
 function E.sell(p,id,count)
  if not C.Resources[id] then return false,"Unknown material" end
  if type(count)~="number" or count%1~=0 or count<1 or count>100 then return false,"Invalid quantity" end
+ if not R.canCreditCoins(p,count*C.Resources[id]) then
+  return false,"Coin wallet full: spend coins before selling"
+ end
  if not R.spend(p,{[id]=count}) then return false,"Not enough materials" end
- p.Coins+=count*C.Resources[id];return true,"Sold "..count.." "..id
+ R.creditCoins(p,count*C.Resources[id]);return true,"Sold "..count.." "..id
 end
 local function cohorts(w,now)
  if type(w.cohorts)~="table" then
@@ -199,7 +202,10 @@ function E.claim(p,id)
  if not q then return false,"Unknown mission" end
  if p.Claimed[id] then return false,"Already claimed" end
  if (p.Quests[id] or 0)<q.goal then return false,"Mission incomplete" end
- p.Claimed[id]=true;p.Coins+=q.reward
+ if not R.canCreditCoins(p,q.reward) then
+  return false,"Coin wallet full: spend coins before claiming"
+ end
+ p.Claimed[id]=true;R.creditCoins(p,q.reward)
  return true,"Quest reward: "..q.reward.." coins"
 end
 function E.wheel(p,now,roll)
@@ -211,17 +217,22 @@ function E.wheel(p,now,roll)
  if roll==3 and not R.canAdd(p,{Crystal=2}) then
   return false,"Backpack full: free space before claiming crystals"
  end
+ local canAwardPet=#p.Pets<R.capacity(p) and R.canCreatePet(p)
+ if (roll==1 and not R.canCreditCoins(p,100))
+  or (roll==4 and not canAwardPet and not R.canCreditCoins(p,250)) then
+  return false,"Coin wallet full: spend coins before spinning again"
+ end
  p.LastWheel=now
- if roll==1 then p.Coins+=100
+ if roll==1 then R.creditCoins(p,100)
  elseif roll==2 then R.add(p,{Meat=6,Berries=8})
  elseif roll==3 then R.add(p,{Crystal=2})
  else
-  if #p.Pets<R.capacity(p) then
+  if canAwardPet then
    local species=C.SpeciesOrder[math.random(1,#C.SpeciesOrder)]
    R.addPet(p,species)
    return true,"Daily wheel pet: "..species
   end
-  p.Coins+=250
+  R.creditCoins(p,250)
  end
  return true,({"100 coins!","Food bundle!","2 crystals!","250 coins!"})[roll]
 end
@@ -229,6 +240,7 @@ function E.tradeUp(p,rarity,species)
  local tier=table.find(C.Rarities,rarity)
  if not tier or tier>=#C.Rarities then return false,"Invalid rarity" end
  if not C.Species[species] then return false,"Invalid creature" end
+ if not R.canCreatePet(p) then return false,"Creature ID limit reached; contact support" end
  local remove={}
  for i,pet in ipairs(p.Pets) do
   if pet.rarity==rarity and pet.id~=p.ActiveId then
