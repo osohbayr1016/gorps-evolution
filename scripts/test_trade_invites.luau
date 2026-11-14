@@ -92,13 +92,20 @@ equal(Trade.status(bob).partner,nil,"cancellation clears recipient session")
 now=1040
 equal(action(alice,"Invite",{target="Bob"}),true,"sender can issue an invite after cancellation")
 now=1044
-equal(action(alice,"Invite",{target="Cara"}),true,"sender can invite another player after cooldown")
+equal(action(alice,"Invite",{target="Cara"}),false,"only one outgoing invite can remain pending")
+equal(Trade.status(alice).pendingTo,"Bob","inviter sees their sole pending recipient")
 equal(Trade.status(bob).pendingFrom,"Alice","first pending recipient remains assigned")
-equal(Trade.status(cara).pendingFrom,"Alice","second pending recipient remains assigned")
+equal(Trade.status(cara).pendingFrom,nil,"second recipient never receives stale consent")
+equal(action(bob,"Join"),true,"first recipient may still accept")
+equal(Trade.status(alice).pendingTo,nil,"joined trade clears outgoing invitation")
+equal(action(bob,"Cancel"),true,"joined trade can cancel safely")
+now=1048
+equal(action(alice,"Invite",{target="Cara"}),true,"sender can invite another player after cancellation")
+equal(Trade.status(alice).pendingTo,"Cara","outgoing status follows current recipient")
 alice.Parent=nil
 Trade.leave(alice,emit)
-equal(Trade.status(bob).pendingFrom,nil,"disconnect invalidates first pending invite")
-equal(Trade.status(cara).pendingFrom,nil,"disconnect invalidates second pending invite")
+equal(Trade.status(bob).pendingFrom,nil,"disconnect leaves no stale first invite")
+equal(Trade.status(cara).pendingFrom,nil,"disconnect invalidates pending new invite")
 equal(action(bob,"Join"),false,"recipient cannot join disconnected inviter")
 equal(action(cara,"Join"),false,"second recipient cannot join disconnected inviter")
 -- Cancel only withdraws pending invites; it cannot erase anti-spam history.
@@ -115,4 +122,52 @@ eve.Parent=nil
 equal(Trade.status(eve).pendingFrom,"Cara","recipient can read pending state before leave")
 cara.Parent=nil
 equal(Trade.status(eve).pendingFrom,nil,"disconnected sender invalidates invitation")
+-- Re-enter each action from inside an asynchronous settlement callback to
+-- simulate concurrent RemoteFunction invocations while the trade is pending.
+now=1060
+equal(action(bob,"Invite",{target="Cara"}),true,"sender starts new two-party trade")
+equal(action(cara,"Join"),true,"recipient joins consented invite")
+equal(action(bob,"OfferMaterial",{resource="Wood",amount=1}),true,"first party offers wood")
+equal(action(cara,"OfferMaterial",{resource="Stone",amount=1}),true,"second party offers stone")
+equal(action(bob,"Accept"),true,"first party accepts the current snapshot")
+local overlapChecks=0
+local function blockedSettlement(left,right,leftOffer,rightOffer)
+ equal(left,bob,"settlement receives first party")
+ equal(right,cara,"settlement receives second party")
+ equal(leftOffer.id,"Wood","settlement snapshots first offer")
+ equal(rightOffer.id,"Stone","settlement snapshots second offer")
+ local cancelOK,cancelMessage=Trade.action(bob,"Cancel",{},get,changed,emit)
+ equal(cancelOK,false,"concurrent cancel denied during finalization")
+ equal(cancelMessage,"Trade is finalizing","cancel describes finalization lock")
+ local editOK=Trade.action(cara,"OfferMaterial",{resource="Stone",amount=2},get,changed,emit)
+ equal(editOK,false,"concurrent offer edit denied during finalization")
+ local retryOK=Trade.action(bob,"Accept",{},get,changed,emit)
+ equal(retryOK,false,"concurrent double accept denied during finalization")
+ local state=Trade.status(bob)
+ equal(state.finalizing,true,"both parties see finalization flag during settlement")
+ overlapChecks+=1
+ return false,"Simulated safe rollback"
+end
+local attempted,reason=Trade.action(cara,"Accept",{},get,changed,emit,blockedSettlement)
+equal(attempted,false,"failed settlement returns without a trade")
+equal(reason,"Simulated safe rollback","safe settlement error is returned")
+equal(overlapChecks,1,"settlement callback was invoked exactly once")
+equal(Trade.status(bob).finalizing,false,"failed settlement releases finalization lock")
+equal(Trade.status(bob).mine.id,"Wood","failed settlement retains original offer")
+equal(Trade.status(cara).mine.id,"Stone","failed settlement retains partner offer")
+equal(Trade.status(bob).acceptedMine,false,"failed settlement resets consent")
+equal(action(bob,"Accept"),true,"first party can explicitly reaccept")
+local failed,failMessage=Trade.action(cara,"Accept",{},get,changed,emit,
+ function() error("Simulated unexpected settlement error") end)
+equal(failed,false,"exception in settlement is contained")
+equal(failMessage,"Trade could not be finalized","exception is normalized")
+equal(Trade.status(cara).finalizing,false,"exception unlocks trade")
+equal(action(bob,"Accept"),true,"first party reaccepts after exception")
+local success,successMessage=Trade.action(cara,"Accept",{},get,changed,emit,
+ function() return true,"Trade completed" end)
+equal(success,true,"successful durable adapter result completes trade")
+equal(successMessage,"Trade completed","successful settlement response")
+equal(Trade.status(bob).partner,nil,"successful settlement removes first session")
+equal(Trade.status(cara).partner,nil,"successful settlement removes second session")
+
 print("PASS: "..checks.." trade invitation assertions (Studio multiplayer QA remains pending).")
