@@ -30,6 +30,19 @@ local function verify(profile,offer)
    return false,"Cannot trade an active or missing creature"
   end
   if not Config.Species[pet.species] then return false,"Unrecognized creature" end
+  -- Current server-originated offers carry an immutable pet snapshot. Compare
+  -- every progression attribute before committing so a previously approved
+  -- offer cannot change via Feed/Evolve while the trade is open.
+  -- Legacy offline receipts may omit this field; those remain recoverable.
+  if offer.pet~=nil then
+   local snapshot=offer.pet
+   if type(snapshot)~="table"
+    or snapshot.id~=pet.id or snapshot.species~=pet.species
+    or snapshot.rarity~=pet.rarity or snapshot.level~=pet.level
+    or snapshot.xp~=pet.xp or snapshot.evolved~=pet.evolved then
+    return false,"Offered creature changed; refresh your offer and accept again"
+   end
+  end
   return true
  end
  return false,"Invalid offer type"
