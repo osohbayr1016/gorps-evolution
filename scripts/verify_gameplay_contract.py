@@ -190,6 +190,18 @@ contracts={
     and 'send("SellMax",{id=id})' in pages
     and 'maximum=math.min(count,math.floor(headroom/value))' in pages
     and Path("scripts/test_sell_max.luau").exists(),
+ "ordered client snapshots and independent visual events": all(token in server for token in (
+    'local snapshotSerial={}',
+    'local function nextSnapshotSerial(player)',
+    'sequence=nextSnapshotSerial(player)',
+    'snapshotSerial[player]=nil',
+ )) and all(token in client for token in (
+    'local SnapshotOrder=require(script.Parent.SnapshotOrder)',
+    'local function acceptServerUpdate(data)',
+    'SnapshotOrder.accept(latestSnapshot,data.sequence)',
+    'if data.pickup then ui:showPickup(data.pickup) end',
+    'if data.combat then ui:showCombat(data.combat) end',
+ )) and Path("scripts/test_snapshot_order.luau").exists(),
  "gameplay dock": 'framed(gui,"ActionDock"' in ui,
  "atomic persisted session claim":'liveStore:UpdateAsync(key,function(old)' in data
     and 'SessionPolicy.claim(old,token,os.time())' in data

@@ -1,6 +1,20 @@
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local UI=require(script.Parent.Ui)
+local SnapshotOrder=require(script.Parent.SnapshotOrder)
 local ui
+local latestSnapshot=0
+local function acceptServerUpdate(data)
+ if type(data)~="table" then return false end
+ if data.profile or data.trade or data.rankings then
+  local accept,sequence=SnapshotOrder.accept(latestSnapshot,data.sequence)
+  if not accept then return false end
+  latestSnapshot=sequence
+  ui:update(data.profile,data.trade,data.message,data.rankings)
+ elseif data.message then
+  ui:toastMessage(data.message)
+ end
+ return true
+end
 local busy=false
 local action=nil
 local function send(name,args)
@@ -16,7 +30,7 @@ local function send(name,args)
   ui:toastMessage("Server request failed - open the Studio Server Output")
   return
  end
- ui:update(result.profile,result.trade,result.message,result.rankings)
+ acceptServerUpdate(result)
  -- Reveal the active companion's successful reaction instead of hiding it behind the menu.
  if result.ok and result.profile and (name=="Feed" or name=="Evolve" or name=="SelectPet")
   and args and args.id==result.profile.ActiveId then ui:setOpen(false) end
@@ -40,7 +54,7 @@ task.spawn(function()
  end
  update.OnClientEvent:Connect(function(data)
   if type(data)=="table" then
-   ui:update(data.profile,data.trade,data.message,data.rankings)
+   acceptServerUpdate(data)
    if data.openTab then ui:openTab(data.openTab) end
    if data.pickup then ui:showPickup(data.pickup) end
    if data.combat then ui:showCombat(data.combat) end
@@ -49,7 +63,8 @@ task.spawn(function()
  for attempt=1,20 do
   local success,result=pcall(function() return action:InvokeServer("State",{}) end)
   if success and type(result)=="table" and result.ok and result.profile then
-   ui:update(result.profile,result.trade,"Planet Verdant is ready!")
+   acceptServerUpdate(result)
+   if latestSnapshot>0 then ui:toastMessage("Planet Verdant is ready!") end
    print("[Gorps Client] UI connected and profile synchronized.")
    return
   end
